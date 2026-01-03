@@ -1,0 +1,201 @@
+log_id,date,time,equipment_name,staff_name,duration_min,status
+E0000,2026-01-01,17:30:00,Ulthera,Therapist X,60,Normal
+E0001,2025-12-05,19:00:00,PicoSure,Nurse A,90,Normal
+E0002,2025-11-09,15:00:00,Centrifuge,Nurse C,60,Normal
+E0003,2025-12-30,11:00:00,Centrifuge,Nurse C,30,Normal
+E0004,2025-12-01,19:00:00,Ulthera,Nurse C,60,Normal
+E0005,2025-12-05,12:00:00,PicoSure,Therapist Y,90,Normal
+E0006,2025-11-12,19:30:00,Ulthera,Nurse C,30,Normal
+E0007,2025-12-20,17:30:00,Centrifuge,Nurse B,30,Normal
+E0008,2025-11-12,16:00:00,Centrifuge,Therapist X,30,Normal
+E0009,2025-12-16,16:30:00,Ulthera,Nurse A,30,Normal
+E0010,2025-11-17,14:00:00,PicoSure,Nurse A,30,Normal
+E0011,2025-12-09,17:00:00,Centrifuge,Nurse C,60,Normal
+E0012,2025-12-07,19:00:00,PicoSure,Therapist X,60,Normal
+E0013,2025-11-13,14:00:00,Centrifuge,Nurse A,30,Normal
+E0014,2025-12-01,14:00:00,Thermage FLX,Therapist X,90,Normal
+E0015,2025-12-20,16:00:00,PicoSure,Nurse A,90,Normal
+E0016,2025-11-19,15:30:00,Ulthera,Nurse B,30,Normal
+E0017,2025-12-26,11:30:00,Centrifuge,Therapist X,90,Normal
+E0018,2025-12-29,13:30:00,Thermage FLX,Nurse C,30,Normal
+E0019,2025-11-16,15:30:00,Ulthera,Nurse B,30,Normal
+E0020,2025-12-25,15:30:00,Centrifuge,Therapist X,90,Normal
+E0021,2025-11-10,10:00:00,Centrifuge,Therapist X,90,Normal
+E0022,2025-11-06,15:30:00,Centrifuge,Nurse C,60,Normal
+E0023,2025-12-21,13:30:00,Ulthera,Therapist X,90,Normal
+E0024,2025-11-12,10:30:00,Ulthera,Nurse B,90,Normal
+E0025,2025-12-19,15:30:00,Thermage FLX,Nurse C,60,Normal
+E0026,2025-11-13,19:30:00,PicoSure,Nurse A,60,Normal
+E0027,2025-11-15,12:30:00,Ulthera,Nurse A,90,Normal
+E0028,2025-11-21,15:00:00,Centrifuge,Therapist X,30,Normal
+E0029,2025-11-30,18:30:00,Ulthera,Therapist Y,60,Normal
+E0030,2025-11-18,10:00:00,PicoSure,Therapist Y,30,Normal
+E0031,2025-11-14,12:30:00,Ulthera,Therapist Y,60,Normal
+E0032,2025-11-26,17:00:00,PicoSure,Nurse C,90,Normal
+E0033,2025-11-04,16:30:00,Thermage FLX,Therapist Y,90,Normal
+E0034,2025-12-07,16:00:00,Ulthera,Therapist Y,90,Normal
+E0035,2025-12-17,15:30:00,Ulthera,Therapist X,90,Normal
+E0036,2025-12-09,14:00:00,Centrifuge,Therapist X,30,Normal
+E0037,2025-12-06,10:00:00,PicoSure,Therapist Y,30,Normal
+E0038,2025-11-18,16:30:00,Thermage FLX,Therapist X,30,Normal
+E0039,2025-11-06,11:00:00,Centrifuge,Nurse C,60,Normal
+E0040,2025-11-10,17:00:00,Thermage FLX,Therapist X,90,Normal
+E0041,2025-12-09,15:30:00,PicoSure,Therapist X,30,Normal
+E0042,2025-11-10,16:30:00,Ulthera,Nurse B,60,Normal
+E0043,2025-11-09,13:00:00,Thermage FLX,Therapist Y,90,Normal
+E0044,2025-12-14,17:30:00,Centrifuge,Nurse B,60,Normal
+E0045,2025-12-12,15:30:00,Ulthera,Nurse A,60,Normal
+E0046,2025-12-21,11:00:00,Thermage FLX,Nurse A,30,Normal
+E0047,2025-11-12,10:00:00,Thermage FLX,Therapist X,60,Normal
+E0048,2025-11-11,15:30:00,Thermage FLX,Therapist X,30,Normal
+E0049,2025-11-25,18:00:00,Ulthera,Nurse B,90,Normal
+E0050,2025-11-20,13:30:00,Centrifuge,Therapist X,90,Normal
+E0051,2025-11-06,11:00:00,Centrifuge,Nurse B,90,Normal
+E0052,2025-12-08,13:00:00,Thermage FLX,Nurse A,90,Normal
+E0053,2025-11-21,11:00:00,Thermage FLX,Nurse C,60,Normal
+E0054,2025-11-11,16:30:00,Thermage FLX,Nurse A,30,Normal
+E0055,2025-12-16,15:00:00,Thermage FLX,Nurse C,30,Normal
+E0056,2026-01-01,11:30:00,Thermage FLX,Therapist Y,60,Normal
+E0057,2025-11-24,12:00:00,Centrifuge,Therapist X,30,Normal
+E0058,2025-11-07,13:30:00,Thermage FLX,Nurse C,30,Normal
+E0059,2025-11-23,12:00:00,Thermage FLX,Therapist X,60,Normal
+E0060,2025-11-20,17:00:00,Centrifuge,Nurse B,60,Normal
+E0061,2025-11-21,11:30:00,PicoSure,Therapist X,90,Normal
+E0062,2025-12-26,19:30:00,PicoSure,Therapist X,90,Normal
+E0063,2025-11-20,13:30:00,Thermage FLX,Nurse B,90,Normal
+E0064,2025-12-27,14:30:00,Centrifuge,Nurse A,90,Normal
+E0065,2025-12-19,16:30:00,PicoSure,Nurse C,60,Normal
+E0066,2025-12-21,13:00:00,Thermage FLX,Therapist X,90,Normal
+E0067,2025-11-14,17:00:00,PicoSure,Nurse B,90,Normal
+E0068,2025-11-21,11:30:00,Centrifuge,Nurse A,60,Normal
+E0069,2025-12-23,13:00:00,Centrifuge,Therapist X,90,Normal
+E0070,2025-11-26,18:30:00,Thermage FLX,Nurse B,90,Normal
+E0071,2025-11-20,11:30:00,Thermage FLX,Therapist X,60,Normal
+E0072,2025-12-27,19:00:00,PicoSure,Nurse B,30,Normal
+E0073,2025-12-12,12:00:00,PicoSure,Therapist Y,60,Normal
+E0074,2026-01-01,11:30:00,PicoSure,Nurse C,90,Normal
+E0075,2025-11-11,12:00:00,PicoSure,Therapist X,60,Normal
+E0076,2025-11-27,14:00:00,Centrifuge,Therapist X,60,Normal
+E0077,2025-12-27,10:30:00,Thermage FLX,Nurse A,60,Normal
+E0078,2025-12-13,17:00:00,Ulthera,Nurse A,90,Normal
+E0079,2026-01-01,11:00:00,Centrifuge,Nurse C,60,Normal
+E0080,2025-11-30,13:30:00,Centrifuge,Therapist X,30,Normal
+E0081,2025-12-23,10:00:00,PicoSure,Nurse C,90,Normal
+E0082,2025-12-29,15:00:00,Centrifuge,Nurse A,90,Normal
+E0083,2025-12-13,15:00:00,PicoSure,Therapist X,30,Normal
+E0084,2025-11-09,18:00:00,Thermage FLX,Nurse A,90,Normal
+E0085,2026-01-01,15:00:00,Centrifuge,Therapist Y,30,Normal
+E0086,2025-12-18,13:00:00,Ulthera,Therapist Y,90,Normal
+E0087,2025-11-08,14:30:00,Centrifuge,Therapist X,60,Normal
+E0088,2025-12-17,11:00:00,Centrifuge,Nurse A,90,Normal
+E0089,2025-11-26,14:30:00,Thermage FLX,Nurse B,60,Normal
+E0090,2025-12-26,10:30:00,Centrifuge,Therapist X,90,Normal
+E0091,2025-12-03,12:30:00,PicoSure,Nurse B,60,Normal
+E0092,2025-11-22,17:30:00,Ulthera,Nurse B,60,Normal
+E0093,2025-11-17,16:30:00,Ulthera,Nurse A,60,Normal
+E0094,2025-11-20,12:00:00,PicoSure,Nurse C,60,Normal
+E0095,2025-12-18,11:00:00,Centrifuge,Nurse C,30,Normal
+E0096,2025-11-27,12:00:00,Ulthera,Nurse C,30,Normal
+E0097,2025-11-22,18:00:00,Thermage FLX,Nurse A,60,Normal
+E0098,2025-12-30,10:00:00,PicoSure,Nurse C,60,Normal
+E0099,2025-12-24,16:00:00,Centrifuge,Therapist Y,60,Normal
+E0100,2025-12-23,15:00:00,PicoSure,Nurse C,90,Normal
+E0101,2025-11-28,19:30:00,Thermage FLX,Nurse A,90,Normal
+E0102,2025-11-29,17:00:00,Ulthera,Nurse C,60,Normal
+E0103,2025-12-14,14:30:00,PicoSure,Therapist X,30,Normal
+E0104,2025-11-19,10:30:00,Centrifuge,Therapist X,90,Normal
+E0105,2025-11-12,14:00:00,Centrifuge,Nurse C,60,Normal
+E0106,2025-11-03,18:00:00,Thermage FLX,Nurse A,90,Normal
+E0107,2025-12-17,12:00:00,Centrifuge,Therapist Y,60,Normal
+E0108,2025-11-14,17:30:00,Ulthera,Nurse A,30,Normal
+E0109,2025-12-10,13:00:00,Thermage FLX,Nurse A,30,Normal
+E0110,2025-12-16,15:30:00,PicoSure,Therapist Y,90,Normal
+E0111,2025-12-10,10:00:00,Thermage FLX,Nurse C,30,Normal
+E0112,2025-11-12,17:00:00,Ulthera,Therapist X,90,Normal
+E0113,2025-12-26,15:00:00,PicoSure,Therapist X,90,Normal
+E0114,2025-11-28,12:00:00,Ulthera,Nurse A,60,Normal
+E0115,2025-12-08,11:00:00,PicoSure,Nurse A,60,Normal
+E0116,2025-12-02,19:00:00,PicoSure,Nurse A,90,Normal
+E0117,2025-11-03,10:00:00,PicoSure,Therapist Y,90,Normal
+E0118,2025-11-20,15:30:00,Thermage FLX,Therapist X,30,Normal
+E0119,2025-12-20,17:00:00,PicoSure,Nurse C,30,Normal
+E0120,2025-11-19,19:30:00,PicoSure,Nurse A,90,Normal
+E0121,2025-12-04,13:00:00,Thermage FLX,Nurse B,60,Normal
+E0122,2025-12-22,18:30:00,Ulthera,Nurse C,90,Normal
+E0123,2025-11-21,10:00:00,PicoSure,Nurse B,90,Normal
+E0124,2025-12-03,10:00:00,PicoSure,Therapist X,30,Normal
+E0125,2025-12-07,13:00:00,PicoSure,Nurse B,60,Normal
+E0126,2025-12-11,19:00:00,Centrifuge,Therapist X,30,Normal
+E0127,2025-11-19,15:00:00,Centrifuge,Nurse B,30,Normal
+E0128,2025-11-13,14:30:00,Thermage FLX,Nurse B,30,Normal
+E0129,2025-11-21,19:30:00,Ulthera,Therapist Y,30,Normal
+E0130,2025-12-29,10:30:00,Thermage FLX,Nurse B,30,Normal
+E0131,2025-12-07,10:00:00,Thermage FLX,Nurse B,30,Normal
+E0132,2025-12-13,15:30:00,Thermage FLX,Nurse A,60,Normal
+E0133,2025-11-19,15:30:00,Thermage FLX,Nurse B,90,Normal
+E0134,2025-11-24,17:00:00,Ulthera,Therapist X,60,Normal
+E0135,2025-12-15,10:30:00,PicoSure,Nurse A,30,Normal
+E0136,2025-12-22,15:30:00,Ulthera,Nurse B,90,Normal
+E0137,2025-11-23,19:00:00,Thermage FLX,Nurse C,30,Normal
+E0138,2025-11-28,14:00:00,Ulthera,Nurse B,60,Normal
+E0139,2026-01-02,11:00:00,PicoSure,Therapist X,30,Normal
+E0140,2025-12-30,11:30:00,Thermage FLX,Therapist X,30,Normal
+E0141,2025-12-10,10:00:00,Thermage FLX,Nurse C,90,Normal
+E0142,2025-12-02,19:00:00,Centrifuge,Therapist X,90,Normal
+E0143,2025-11-13,18:00:00,Ulthera,Nurse B,60,Normal
+E0144,2025-11-04,17:00:00,Thermage FLX,Nurse A,60,Normal
+E0145,2025-11-21,10:00:00,Thermage FLX,Therapist Y,60,Normal
+E0146,2025-11-19,11:30:00,Thermage FLX,Nurse B,90,Normal
+E0147,2025-12-24,12:30:00,Ulthera,Therapist X,30,Normal
+E0148,2025-11-18,16:00:00,Thermage FLX,Nurse A,90,Normal
+E0149,2025-12-12,17:30:00,Ulthera,Therapist X,30,Normal
+E0150,2025-11-19,16:30:00,Thermage FLX,Nurse A,30,Normal
+E0151,2025-12-25,15:00:00,Centrifuge,Nurse C,60,Normal
+E0152,2025-12-21,15:30:00,PicoSure,Nurse B,30,Normal
+E0153,2026-01-02,13:30:00,Centrifuge,Therapist X,90,Normal
+E0154,2025-12-14,16:00:00,PicoSure,Therapist Y,60,Normal
+E0155,2025-11-16,13:30:00,Ulthera,Nurse A,30,Normal
+E0156,2025-11-10,14:00:00,Thermage FLX,Nurse C,60,Normal
+E0157,2025-12-13,11:30:00,Thermage FLX,Therapist Y,90,Normal
+E0158,2025-11-14,10:00:00,Ulthera,Nurse A,90,Normal
+E0159,2025-11-23,10:30:00,Thermage FLX,Nurse B,90,Normal
+E0160,2025-12-13,10:30:00,Thermage FLX,Therapist X,60,Normal
+E0161,2025-12-11,10:00:00,PicoSure,Nurse C,90,Normal
+E0162,2025-12-04,12:00:00,Centrifuge,Nurse C,90,Normal
+E0163,2025-12-08,11:30:00,PicoSure,Therapist Y,60,Normal
+E0164,2025-11-28,12:30:00,Ulthera,Therapist X,60,Normal
+E0165,2025-12-28,10:00:00,Centrifuge,Nurse A,60,Normal
+E0166,2026-01-01,19:30:00,Ulthera,Nurse C,30,Normal
+E0167,2025-12-05,19:30:00,Centrifuge,Nurse C,90,Normal
+E0168,2025-11-28,10:30:00,Thermage FLX,Nurse C,90,Normal
+E0169,2025-11-17,10:00:00,PicoSure,Nurse C,60,Normal
+E0170,2025-12-29,10:00:00,Thermage FLX,Nurse A,30,Normal
+E0171,2025-12-29,16:30:00,Thermage FLX,Therapist Y,90,Normal
+E0172,2025-11-18,19:00:00,Ulthera,Nurse C,30,Normal
+E0173,2025-11-28,18:30:00,Centrifuge,Nurse B,30,Normal
+E0174,2025-12-10,14:30:00,PicoSure,Therapist Y,60,Normal
+E0175,2025-11-25,11:00:00,Thermage FLX,Nurse A,60,Normal
+E0176,2025-11-04,13:00:00,Centrifuge,Therapist X,30,Normal
+E0177,2025-12-07,13:30:00,PicoSure,Nurse C,60,Normal
+E0178,2025-11-27,11:30:00,Centrifuge,Nurse B,30,Normal
+E0179,2025-12-21,19:00:00,Centrifuge,Nurse A,30,Normal
+E0180,2025-12-18,17:00:00,Thermage FLX,Nurse A,30,Normal
+E0181,2025-11-20,11:30:00,PicoSure,Nurse B,90,Normal
+E0182,2025-12-01,10:30:00,Centrifuge,Therapist Y,90,Normal
+E0183,2025-12-24,16:00:00,Centrifuge,Nurse C,30,Normal
+E0184,2025-11-26,10:00:00,Thermage FLX,Therapist Y,60,Normal
+E0185,2025-11-16,14:00:00,Thermage FLX,Nurse C,60,Normal
+E0186,2025-12-18,15:00:00,Centrifuge,Nurse A,90,Normal
+E0187,2025-12-18,16:00:00,Thermage FLX,Therapist Y,90,Normal
+E0188,2025-11-17,16:30:00,Ulthera,Nurse B,30,Normal
+E0189,2025-12-29,14:30:00,Ulthera,Nurse B,60,Normal
+E0190,2025-12-20,13:30:00,Thermage FLX,Nurse A,60,Normal
+E0191,2025-11-15,14:00:00,Thermage FLX,Nurse A,90,Normal
+E0192,2025-11-25,11:00:00,Thermage FLX,Nurse C,30,Normal
+E0193,2025-12-19,17:00:00,Ulthera,Therapist X,60,Normal
+E0194,2025-11-05,16:30:00,Thermage FLX,Nurse B,60,Normal
+E0195,2025-11-25,12:30:00,Thermage FLX,Nurse C,30,Normal
+E0196,2025-11-09,14:00:00,Centrifuge,Therapist X,90,Normal
+E0197,2025-11-05,19:30:00,Thermage FLX,Nurse C,90,Normal
+E0198,2025-12-29,13:00:00,PicoSure,Nurse B,90,Normal
+E0199,2025-12-17,11:30:00,PicoSure,Nurse B,30,Normal
