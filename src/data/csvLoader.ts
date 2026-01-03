@@ -1,7 +1,7 @@
-import { getAssetPath } from "../utils/pathUtils.js";
+import { withBase } from "../utils/pathUtils.js";
 
 export async function loadCSV<T>(path: string): Promise<T[]> {
-  const fullPath = getAssetPath(path);
+  const fullPath = withBase(path);
   // console.log(`[CSV Loader] Fetching: ${fullPath} (Base: ${path})`);
   
   const response = await fetch(fullPath);

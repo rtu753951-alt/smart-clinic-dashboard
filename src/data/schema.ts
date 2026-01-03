@@ -198,8 +198,8 @@ export interface PackageUsageRecord {
   last_used_date: string;  // "YYYY-MM-DD"
 }
 
-export interface CustomerRecord {
-  customer_id: string;
+export interface CustomerProfile {
+  customer_id: string; // CUSTxxx
   gender: string;
   age: number;
   birth_year: number;
@@ -207,6 +207,25 @@ export interface CustomerRecord {
   first_visit_date: string;
   last_visit_date: string;
   visit_count: number;
+}
+// Alias for backward compatibility
+export type CustomerRecord = CustomerProfile;
+
+export interface CustomerVisit {
+  customer_id: string; // C00xxx
+  name: string;
+  gender: string;
+  age: number;
+  visit_date: string;
+  visit_time: string;
+  treatment_type: string;
+  doctor: string;
+  nurse: string;
+  room_id: string;
+  is_new: boolean;
+  source: string;
+  status: string;
+  revenue: number;
 }
 
 export interface AppointmentRecord {

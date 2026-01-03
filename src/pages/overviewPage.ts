@@ -32,8 +32,8 @@ export function initOverviewPage() {
     // 📅 Section 2-4: 月份相關內容（使用選定月份）
     refreshMonthlyContent();
     
-    // Bind modal interactions (只需綁定一次)
-    bindOverviewCards();
+    // Bind modal interactions handled by global delegation in main.ts
+    // handleOverviewModal is exposed globally below
 }
 
 /**
@@ -2218,4 +2218,120 @@ function generateResourceDetail(type: 'room' | 'equip'): string {
     html += `</tbody></table></div></div>`;
     return html;
 }
+
+/* ===================== 全域彈窗委派處理 ===================== */
+export function handleOverviewModal(modalType: string): boolean {
+    if (!modalType) return false;
+    
+    switch(modalType) {
+        case "doc-top3":
+        case "doctor": {
+            ModalManager.loading();
+            setTimeout(() => {
+                const content = generateDoctorDetail(getDoctorTop3(dataStore.appointments, dataStore.staff));
+                ModalManager.open("👨‍⚕️ 醫師 Top 3 詳細明細", content, "max-w-4xl");
+            }, 500);
+            return true;
+        }
+            
+        case "treat-top3":
+        case "treatment": {
+            ModalManager.loading();
+            setTimeout(() => {
+                const content = generateTreatmentDetail(getTopTreatments(dataStore.appointments));
+                ModalManager.open("🔥 熱門療程 Top 3 詳細明細", content, "max-w-4xl");
+            }, 500);
+            return true;
+        }
+            
+        case "room": {
+            ModalManager.loading();
+            setTimeout(() => {
+                const content = generateResourceDetail("room");
+                ModalManager.open("🏥 診間資源監控表", content, "max-w-4xl");
+            }, 500);
+            return true;
+        }
+            
+        case "equip": {
+            ModalManager.loading();
+            setTimeout(() => {
+                const content = generateResourceDetail("equip");
+                ModalManager.open("⚡ 設備資源監控表", content, "max-w-4xl");
+            }, 500);
+            return true;
+        }
+            
+        case "alert": {
+            let detailContent = document.getElementById("ai-alert-detail")?.innerHTML || "";
+            try {
+                const tasks = TaskStore.getTasks();
+                const suggestedTask = tasks.find(t => t.aiSuggestion && t.aiSuggestion.suggestion && t.aiSuggestion.suggestion.trim() !== "");
+                if (suggestedTask && suggestedTask.aiSuggestion) {
+                    const txt = suggestedTask.aiSuggestion.suggestion;
+                    if (!detailContent.includes(txt.substring(0, 20))) {
+                        const suggestionHtml = `
+                            <div style="margin-bottom: 24px; padding: 16px; background: rgba(139, 92, 246, 0.08); border-left: 4px solid #7c3aed; border-radius: 8px;">
+                                <h4 style="color: #6d28d9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 700;">
+                                    <span style="font-size: 1.4rem;">🤖</span>
+                                    AI 合規建議 (最新)
+                                </h4>
+                                <div style="color: #1f2937; line-height: 1.6; font-size: 0.95rem; font-weight: 500;">
+                                    "${txt}"
+                                </div>
+                            </div>`;
+                        if (detailContent.includes('</h3>')) {
+                            detailContent = detailContent.replace('</h3>', '</h3>' + suggestionHtml);
+                        } else {
+                            detailContent = suggestionHtml + detailContent;
+                        }
+                    }
+                }
+            } catch(e) { console.warn("Auto-inject failed", e); }
+            const content = detailContent || "無風險資料";
+            ModalManager.open("🚨 AI 風險預警完整內容", content);
+            return true;
+        }
+        
+        case "modal-ai": {
+            const detailContent = document.getElementById("ai-full-report")?.innerHTML || "";
+            const content = detailContent || "無趨勢資料";
+            ModalManager.open("📊 AI 趨勢完整分析", content);
+            return true;
+        }
+        
+        case "revenue-today": {
+            const detailContent = document.getElementById("revenue-today-detail")?.innerHTML || "";
+            const content = detailContent || "無營收資料";
+            ModalManager.open("💰 今日營收狀態詳細分析", content);
+            return true;
+        }
+        
+        case "revenue-monthly": {
+            const detailContent = document.getElementById("revenue-monthly-detail")?.innerHTML || "";
+            const content = detailContent || "無營收資料";
+            ModalManager.open("📊 本月營收詳細分析", content);
+            return true;
+        }
+        
+        case "return-visit": {
+            const detailContent = document.getElementById("return-visit-detail")?.innerHTML || "";
+            const content = detailContent || "無回診資料";
+            ModalManager.open("🔄 本月顧客回診率詳細分析", content);
+            return true;
+        }
+
+        case "kpi-today":
+        case "kpi-show-rate":
+        case "kpi-doc":
+        case "kpi-nurse":
+        case "kpi-consultant": {
+            const content = generateKPIDetail(modalType);
+            ModalManager.open("📊 營運指標詳細分析", content);
+            return true;
+        }
+    }
+    return false;
+}
+(window as any).handleOverviewModal = handleOverviewModal;
 

@@ -24,3 +24,8 @@ export function getAssetPath(path: string): string {
     
     return `${cleanBase}${cleanPath}`;
 }
+
+/**
+ * Alias for getAssetPath (Requested by user) have explicit withBase naming
+ */
+export const withBase = getAssetPath;
