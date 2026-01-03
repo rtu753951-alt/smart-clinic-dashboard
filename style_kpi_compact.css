@@ -40,8 +40,8 @@
 /* 🎯 Icon - 實色 + 淺底背景，高對比 */
 .kpi-icon {
   font-size: 1.1rem;
-  color: #2563eb;  /* 實色藍，不用淡藍 */
-  background: rgba(59, 130, 246, 0.12);  /* 淺底背景 */
+  color: #60a5fa;  /* Lighter Blue for Dark Mode */
+  background: rgba(59, 130, 246, 0.15);
   padding: 8px;
   border-radius: 8px;
   flex-shrink: 0;
@@ -62,13 +62,12 @@
 
 /* 🎯 主數字 - Primary：最大、最清楚、高對比 */
 .kpi-value {
-  font-size: 20px;  /* 提升至 20px */
+  font-size: 20px;
   font-weight: 700;
-  color: #0f172a;  /* 高對比深色 */
+  color: var(--text-heading);  /* Fix: Use theme variable for dark mode */
   line-height: 1.2;
   letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;  /* 等寬數字 */
-  /* 確保銳利度 */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -76,9 +75,9 @@
 
 /* 🎯 KPI 標籤 - Secondary：清楚但不搶 */
 .kpi-label {
-  font-size: 13px;  /* 提升至 13px */
-  font-weight: 500;  /* 提升至 500 */
-  color: #475569;  /* 避免灰階透明，使用實色 */
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);  /* Fix: Use theme variable */
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
@@ -90,7 +89,7 @@
 /* 🔍 高解析螢幕 / 高 DPI 優化 */
 @media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 144dpi) {
   .kpi-value {
-    font-size: 21px;  /* 高 DPI 下略微放大 */
+    font-size: 21px;
   }
   
   .kpi-label {

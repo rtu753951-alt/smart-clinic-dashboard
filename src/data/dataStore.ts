@@ -9,7 +9,9 @@ import type {
   StaffRecord,
   StaffWorkloadRecord,
   PackageUsageRecord,
-  CustomerRecord,
+  CustomerProfile,
+  CustomerVisit,
+  CustomerRecord, // Keep alias if needed or remove if unused, but user logic might use it
   StaffType,
   StaffRole,
   AppointmentStatus,
@@ -28,7 +30,8 @@ class DataStore {
   staff: StaffRecord[] = [];
   staffWorkload: StaffWorkloadRecord[] = [];
   packageUsage: PackageUsageRecord[] = [];
-  customers: CustomerRecord[] = [];
+  customers: CustomerProfile[] = [];
+  customerVisits: CustomerVisit[] = [];
 
   async loadAll() {
     console.log("DataStore: 開始讀取所有 CSV...");
@@ -42,16 +45,19 @@ class DataStore {
       rawStaff,
       rawStaffWorkload,
       rawPackageUsage,
-      rawCustomers,
+      rawCustomersProfile,
+      rawCustomerVisits
     ] = await Promise.all([
-      loadCSV<any>("data/appointments.csv"),
-      loadCSV<any>("data/services.csv"),
-      loadCSV<any>("data/rooms.csv"),
-      loadCSV<any>("data/equipment.csv"),
-      loadCSV<any>("data/staff.csv"),
-      loadCSV<any>("data/staff_workload.csv"),
-      loadCSV<any>("data/package_usage.csv"),
-      loadCSV<any>("data/customers.csv"),
+      loadCSV<any>("data/appointments.csv").catch(e => { console.error(e); return []; }),
+      loadCSV<any>("data/services.csv").catch(e => { console.error(e); return []; }),
+      loadCSV<any>("data/rooms.csv").catch(e => { console.error(e); return []; }),
+      loadCSV<any>("data/equipment.csv").catch(e => { console.error(e); return []; }),
+      loadCSV<any>("data/staff.csv").catch(e => { console.error(e); return []; }),
+      loadCSV<any>("data/staff_workload.csv").catch(e => { console.error(e); return []; }),
+      loadCSV<any>("data/package_usage.csv").catch(e => { console.error(e); return []; }),
+      // Split Customers
+      loadCSV<any>("data/customers_profile.csv").catch(e => { console.error("Profile Load Fail", e); return []; }),
+      loadCSV<any>("data/customer_visits.csv").catch(e => { console.error("Visit Load Fail", e); return []; }),
     ]);
 
 
@@ -231,8 +237,8 @@ class DataStore {
 
 
    
-    // -------------------- customers.csv 清洗 --------------------
-    this.customers = (rawCustomers || []).map((raw: any): CustomerRecord => {
+    // -------------------- customers_profile.csv 清洗 --------------------
+    this.customers = (rawCustomersProfile || []).map((raw: any): CustomerProfile => {
       return {
         customer_id: String(raw.customer_id ?? "").trim(),
         gender: String(raw.gender ?? "").trim(),
@@ -245,6 +251,30 @@ class DataStore {
       };
     });
 
+    // -------------------- customer_visits.csv 清洗 --------------------
+    this.customerVisits = (rawCustomerVisits || []).map((raw: any): CustomerVisit => {
+      // customer_id,name,gender,age,visit_date,visit_time,treatment_type,doctor,nurse,room_id,is_new,source,status,revenue
+      const isNewStr = String(raw.is_new ?? "").toLowerCase();
+      
+      return {
+          customer_id: String(raw.customer_id ?? "").trim(),
+          name: String(raw.name ?? "").trim(),
+          gender: String(raw.gender ?? "").trim(),
+          age: Number(raw.age) || 0,
+          visit_date: String(raw.visit_date ?? "").trim(),
+          visit_time: String(raw.visit_time ?? "").trim(),
+          treatment_type: String(raw.treatment_type ?? "").trim(),
+          doctor: String(raw.doctor ?? "").trim(),
+          nurse: String(raw.nurse ?? "").trim(),
+          room_id: String(raw.room_id ?? "").trim(),
+          is_new: isNewStr === "true" || isNewStr === "yes" || isNewStr === "1",
+          source: String(raw.source ?? "").trim(),
+          status: String(raw.status ?? "").trim(),
+          revenue: Number(raw.revenue) || 0
+      };
+    });
+
+    console.log(`[DataStore] Loaded: ${this.customers.length} Profiles, ${this.customerVisits.length} Visits`);
     console.log("[DataStore] All CSVs loaded and cleaned.");
   }
 

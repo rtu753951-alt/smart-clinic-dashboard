@@ -19,6 +19,7 @@ import { initStaffPage } from "./pages/staffPage.js";
 import { initCustomersPage } from "./pages/customersPage.js";
 import { initLaunchCover } from "./pages/launchCoverPage.js";
 import { initTasksPage } from "./pages/tasksPage.js";
+import { openChurnRiskViewGlobal } from "./pages/customersPage.js";
 
 
 // === 全域註冊頁面初始化（給 pageController 使用）===
@@ -28,7 +29,39 @@ import { initTasksPage } from "./pages/tasksPage.js";
 (window as any).initAppointmentsPage = initAppointmentsPage;
 (window as any).initStaffPage = initStaffPage;
 (window as any).initCustomersPage = initCustomersPage;
+(window as any).initLaunchCover = initLaunchCover;
 (window as any).initTasksPage = initTasksPage;
+
+// === Global Event Delegation for Modals ===
+document.addEventListener('click', (e) => {
+    const target = (e.target as Element).closest('.js-open-modal');
+    if (target) {
+        // Prevent default if it's a link
+        if ((target as HTMLElement).tagName === 'A') {
+            e.preventDefault();
+        }
+
+        const modalId = target.getAttribute('data-modal');
+        const modalTitle = target.getAttribute('data-title') || '詳細資訊';
+        
+        console.log(`[Global Click] Opening Modal: ${modalId}`);
+
+        // Handle Specific Modals
+        if (modalId === 'customer-modal') {
+             // For "Risk Customers", we usually use openChurnRiskViewGlobal
+             openChurnRiskViewGlobal();
+             return;
+        }
+
+        // Try Overview Page specific modals (Global Delegation)
+        if ((window as any).handleOverviewModal && (window as any).handleOverviewModal(modalId)) {
+            return;
+        }
+
+        // Generic Fallback
+        ModalManager.open(modalTitle, '<div class="p-8 text-center text-gray-500">功能開發中<br><small>此彈窗內容尚未串接</small></div>');
+    }
+});
 
 // === DOM Ready：所有初始化集中在這裡 ===
 window.addEventListener("DOMContentLoaded", async () => {
@@ -87,5 +120,7 @@ declare global {
         initAppointmentsPage?: () => void;
         initStaffPage?: () => void;
         initCustomersPage?: () => void;
+        initTasksPage?: () => void;
+        initLaunchCover?: () => void;
     }
 }
