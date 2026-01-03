@@ -1,158 +1,501 @@
-customer_id,gender,age,birth_year,age_group,first_visit_date,last_visit_date,visit_count
-CUST00001,male,25,1999,26-35,2025-10-27,2026-01-25,75
-CUST00002,female,26,1997,26-35,2025-10-27,2026-01-25,85
-CUST00003,female,36,1980,36-45,2025-10-27,2026-01-25,87
-CUST00004,female,55,1963,60+,2025-10-27,2026-01-22,40
-CUST00005,male,42,1994,26-35,2025-10-27,2026-01-24,72
-CUST00006,male,23,2004,18-25,2025-10-27,2026-01-18,22
-CUST00007,female,43,1981,36-45,2025-10-27,2026-01-25,82
-CUST00008,female,28,2000,18-25,2025-10-27,2026-01-25,63
-CUST00009,female,31,1988,36-45,2025-10-27,2026-01-25,82
-CUST00010,male,33,1995,26-35,2025-10-27,2026-01-24,70
-CUST00011,female,45,1989,36-45,2025-10-27,2026-01-25,82
-CUST00012,male,30,1991,26-35,2025-10-27,2026-01-24,53
-CUST00013,female,65,1961,60+,2025-10-27,2026-01-25,43
-CUST00014,female,41,1986,36-45,2025-10-27,2026-01-25,82
-CUST00015,female,29,1995,26-35,2025-10-27,2026-01-25,85
-CUST00016,male,26,1990,26-35,2025-10-27,2026-01-23,55
-CUST00017,male,37,1989,36-45,2025-10-27,2026-01-25,59
-CUST00018,female,31,2004,18-25,2025-10-27,2026-01-25,49
-CUST00019,female,62,1961,60+,2025-10-27,2026-01-22,20
-CUST00020,female,51,1976,46-60,2025-10-27,2026-01-21,40
-CUST00021,male,40,1984,36-45,2025-10-27,2026-01-23,58
-CUST00022,female,38,2002,18-25,2025-10-27,2026-01-25,72
-CUST00023,female,34,1989,36-45,2025-10-27,2026-01-24,72
-CUST00024,male,29,1995,26-35,2025-10-27,2026-01-24,51
-CUST00025,female,39,1990,26-35,2025-10-27,2026-01-25,69
-CUST00026,female,19,2004,18-25,2025-10-27,2026-01-25,28
-CUST00027,male,45,1983,36-45,2025-10-27,2026-01-25,52
-CUST00028,male,31,1993,26-35,2025-10-27,2026-01-23,44
-CUST00029,male,44,1982,36-45,2025-10-27,2026-01-25,35
-CUST00030,female,34,1991,26-35,2025-10-27,2026-01-24,63
-CUST00031,male,49,1971,46-60,2025-10-27,2026-01-25,23
-CUST00032,female,28,1994,26-35,2025-10-27,2026-01-25,67
-CUST00033,male,29,1997,26-35,2025-10-28,2026-01-24,46
-CUST00034,female,44,1983,36-45,2025-10-28,2026-01-24,64
-CUST00035,female,53,1968,46-60,2025-10-28,2026-01-23,34
-CUST00036,female,40,1983,36-45,2025-10-28,2026-01-25,61
-CUST00037,female,44,1986,36-45,2025-10-28,2026-01-24,51
-CUST00038,female,43,1985,36-45,2025-10-28,2026-01-24,51
-CUST00039,female,40,1984,36-45,2025-10-28,2026-01-25,44
-CUST00040,male,36,1987,36-45,2025-10-28,2026-01-24,40
-CUST00041,male,47,1977,46-60,2025-10-28,2026-01-25,17
-CUST00042,male,26,1997,26-35,2025-10-28,2026-01-23,34
-CUST00043,male,41,1986,36-45,2025-10-28,2026-01-10,25
-CUST00044,male,65,1961,60+,2025-10-28,2026-01-25,22
-CUST00045,male,36,1993,26-35,2025-10-28,2026-01-23,39
-CUST00046,male,51,1973,46-60,2025-10-28,2026-01-21,9
-CUST00047,male,21,2004,18-25,2025-10-28,2026-01-24,10
-CUST00048,female,20,2007,18-25,2025-10-29,2026-01-25,31
-CUST00049,male,45,1980,36-45,2025-10-29,2026-01-22,25
-CUST00050,female,36,1988,36-45,2025-10-29,2026-01-25,63
-CUST00051,male,53,1974,46-60,2025-10-29,2026-01-24,5
-CUST00052,female,55,1966,46-60,2025-10-29,2026-01-19,7
-CUST00053,female,53,1970,46-60,2025-10-29,2026-01-19,31
-CUST00054,female,27,1995,26-35,2025-10-29,2026-01-25,55
-CUST00055,male,63,1963,60+,2025-10-29,2026-01-17,24
-CUST00056,female,29,1999,26-35,2025-10-29,2026-01-25,46
-CUST00057,female,26,1995,26-35,2025-10-29,2026-01-25,36
-CUST00058,female,30,1994,26-35,2025-10-29,2026-01-25,37
-CUST00059,female,26,1996,26-35,2025-10-30,2026-01-25,25
-CUST00060,male,35,1984,36-45,2025-10-30,2026-01-18,30
-CUST00061,male,39,1982,36-45,2025-10-30,2026-01-23,16
-CUST00062,female,45,1980,36-45,2025-10-30,2026-01-24,35
-CUST00063,male,42,1982,36-45,2025-10-30,2025-12-19,5
-CUST00064,male,55,1965,46-60,2025-10-31,2026-01-25,30
-CUST00065,male,65,1960,60+,2025-10-31,2025-11-24,3
-CUST00066,female,40,1981,36-45,2025-10-31,2026-01-25,42
-CUST00067,female,36,1991,26-35,2025-10-31,2026-01-25,35
-CUST00068,female,41,1982,36-45,2025-10-31,2026-01-25,27
-CUST00069,female,65,1962,60+,2025-11-01,2026-01-25,12
-CUST00070,male,25,2001,18-25,2025-11-01,2026-01-23,17
-CUST00071,female,49,1979,46-60,2025-11-01,2026-01-19,19
-CUST00072,male,35,1988,36-45,2025-11-01,2026-01-18,17
-CUST00073,female,32,1998,26-35,2025-11-02,2026-01-25,23
-CUST00074,female,52,1973,46-60,2025-11-02,2026-01-15,19
-CUST00075,male,46,1976,46-60,2025-11-02,2026-01-13,8
-CUST00076,female,36,1987,36-45,2025-11-02,2026-01-23,34
-CUST00077,male,32,1999,26-35,2025-11-02,2026-01-21,23
-CUST00078,female,54,1972,46-60,2025-11-02,2026-01-19,7
-CUST00079,female,36,1988,36-45,2025-11-02,2026-01-19,17
-CUST00080,female,25,2000,18-25,2025-11-03,2026-01-24,9
-CUST00081,male,47,1978,46-60,2025-11-03,2025-12-08,10
-CUST00082,female,51,1975,46-60,2025-11-04,2026-01-14,14
-CUST00083,female,34,1991,26-35,2025-11-04,2026-01-19,15
-CUST00084,female,60,1969,46-60,2025-11-04,2026-01-25,16
-CUST00085,female,31,1991,26-35,2025-11-04,2026-01-13,11
-CUST00086,female,56,1969,46-60,2025-11-04,2025-12-09,4
-CUST00087,female,35,1990,26-35,2025-11-04,2025-12-23,5
-CUST00088,male,31,1995,26-35,2025-11-04,2026-01-21,22
-CUST00089,male,30,1997,26-35,2025-11-05,2026-01-09,7
-CUST00090,male,39,1986,36-45,2025-11-05,2026-01-04,11
-CUST00091,male,53,1968,46-60,2025-11-05,2026-01-22,16
-CUST00092,female,33,1994,26-35,2025-11-05,2026-01-17,14
-CUST00093,female,41,1987,36-45,2025-11-05,2026-01-24,22
-CUST00094,male,53,1971,46-60,2025-11-05,2026-01-09,14
-CUST00095,female,31,1994,26-35,2025-11-05,2025-12-14,5
-CUST00096,female,65,1960,60+,2025-11-06,2025-11-24,4
-CUST00097,male,44,1980,36-45,2025-11-06,2026-01-02,2
-CUST00098,female,21,2006,18-25,2025-11-06,2026-01-23,7
-CUST00099,female,50,1976,46-60,2025-11-07,2026-01-13,5
-CUST00100,female,47,1978,46-60,2025-11-08,2026-01-21,6
-CUST00101,male,34,1990,26-35,2025-11-08,2026-01-05,13
-CUST00102,female,46,1978,46-60,2025-11-08,2025-12-24,3
-CUST00103,female,39,1986,36-45,2025-11-09,2026-01-25,11
-CUST00104,male,19,2006,18-25,2025-11-10,2026-01-13,6
-CUST00105,female,40,1983,36-45,2025-11-11,2026-01-19,8
-CUST00106,female,51,1974,46-60,2025-11-12,2026-01-13,5
-CUST00107,male,38,1986,36-45,2025-11-12,2025-12-28,10
-CUST00108,female,42,1984,36-45,2025-11-13,2025-12-29,2
-CUST00109,female,41,1984,36-45,2025-11-13,2025-11-13,1
-CUST00110,female,41,1984,36-45,2025-11-13,2025-11-13,1
-CUST00111,female,43,1981,36-45,2025-11-15,2025-12-17,10
-CUST00112,male,33,1993,26-35,2025-11-18,2026-01-04,5
-CUST00113,male,25,2000,18-25,2025-11-19,2025-12-28,3
-CUST00114,female,29,1996,26-35,2025-11-20,2026-01-25,16
-CUST00115,female,29,1996,26-35,2025-11-20,2026-01-18,8
-CUST00116,female,45,1981,36-45,2025-11-22,2025-12-21,5
-CUST00117,female,22,2003,18-25,2025-11-25,2026-01-22,9
-CUST00118,male,23,2002,18-25,2025-11-26,2025-12-15,5
-CUST00119,male,34,1992,26-35,2025-11-26,2025-12-28,2
-CUST00120,male,53,1968,46-60,2025-11-27,2025-12-20,9
-CUST00121,female,27,1998,26-35,2025-11-30,2026-01-25,6
-CUST00122,male,61,1962,60+,2025-12-01,2026-01-21,4
-CUST00123,male,30,1995,26-35,2025-12-01,2025-12-01,1
-CUST00124,male,63,1963,60+,2025-12-02,2026-01-10,3
-CUST00125,female,58,1968,46-60,2025-12-04,2026-01-23,2
-CUST00126,female,35,1990,26-35,2025-12-07,2025-12-23,2
-CUST00127,female,63,1962,60+,2025-12-09,2025-12-29,6
-CUST00128,female,31,1995,26-35,2025-12-11,2025-12-14,2
-CUST00129,female,38,1986,36-45,2025-12-12,2026-01-23,5
-CUST00130,female,43,1982,36-45,2025-12-13,2025-12-13,1
-CUST00131,male,40,1985,36-45,2025-12-14,2026-01-04,3
-CUST00132,male,41,1985,36-45,2025-12-14,2025-12-15,2
-CUST00133,female,31,1994,26-35,2025-12-14,2025-12-14,1
-CUST00134,female,37,1988,36-45,2025-12-15,2025-12-15,1
-CUST00135,female,29,1996,26-35,2025-12-15,2026-01-18,3
-CUST00136,male,37,1990,26-35,2025-12-17,2025-12-28,4
-CUST00137,male,35,1990,26-35,2025-12-17,2025-12-24,2
-CUST00138,male,35,1990,26-35,2025-12-17,2025-12-17,1
-CUST00139,male,55,1970,46-60,2025-12-17,2026-01-24,3
-CUST00140,female,24,2000,18-25,2025-12-19,2026-01-19,2
-CUST00141,male,43,1982,36-45,2025-12-19,2025-12-19,1
-CUST00142,male,53,1972,46-60,2025-12-20,2025-12-20,1
-CUST00143,female,54,1971,46-60,2025-12-20,2025-12-20,1
-CUST00144,female,45,1980,36-45,2025-12-21,2025-12-21,1
-CUST00145,female,33,1992,26-35,2025-12-22,2025-12-30,2
-CUST00146,male,59,1967,46-60,2025-12-22,2026-01-20,9
-CUST00147,female,18,2007,18-25,2025-12-25,2026-01-18,4
-CUST00148,male,38,1987,36-45,2025-12-25,2025-12-25,1
-CUST00149,female,60,1965,46-60,2025-12-31,2026-01-24,5
-CUST00150,male,27,1998,26-35,2026-01-01,2026-01-15,2
-CUST00151,male,20,2005,18-25,2026-01-02,2026-01-04,2
-CUST00152,male,45,1980,36-45,2026-01-02,2026-01-02,1
-CUST00153,male,58,1967,46-60,2026-01-12,2026-01-13,2
-CUST00154,female,60,1966,46-60,2026-01-18,2026-01-24,2
-CUST00155,female,18,2007,18-25,2026-01-18,2026-01-18,1
-CUST00156,female,26,1999,26-35,2026-01-24,2026-01-24,1
-CUST00157,female,26,1999,26-35,2026-01-24,2026-01-24,1
+customer_id,name,gender,age,visit_date,visit_time,treatment_type,doctor,nurse,room_id,is_new,source,status,revenue
+C0000,Guest_0,F,33,2025-12-19,20:45:00,Ultherapy,Dr. Lee,Nurse B,VIP Room,TRUE,Walk-in,Booked,50000
+C0001,Guest_1,F,29,2025-11-09,18:15:00,Thermage,Dr. Wang,Nurse A,Room 102,FALSE,Walk-in,No-show,0
+C0002,Guest_2,F,42,2025-12-20,16:45:00,Thermage,Dr. Lee,Nurse A,Room 102,TRUE,Web,Booked,60000
+C0003,Guest_3,F,26,2025-11-12,12:15:00,Botox,Dr. Wang,Therapist X,Room 101,TRUE,LINE,Completed,5000
+C0004,Guest_4,F,31,2025-12-15,15:45:00,Ultherapy,Dr. Lee,Nurse A,Room 101,TRUE,Web,Completed,50000
+C0005,Guest_5,M,59,2025-12-19,20:45:00,Ultherapy,Dr. Chen,Nurse B,VIP Room,TRUE,LINE,Booked,50000
+C0006,Guest_6,F,23,2025-12-27,16:15:00,Pico Laser,Dr. Chen,Therapist X,Room 103,FALSE,Walk-in,Booked,3000
+C0007,Guest_7,F,31,2025-12-16,18:00:00,Consultation,Dr. Wang,Nurse C,VIP Room,FALSE,Web,Completed,500
+C0008,Guest_8,F,46,2025-11-27,12:00:00,Ultherapy,Dr. Lee,Nurse A,Room 103,FALSE,Web,Completed,50000
+C0009,Guest_9,M,45,2025-12-12,18:30:00,Facial,Dr. Lee,Nurse C,Room 101,FALSE,Walk-in,Completed,2000
+C0010,Guest_10,F,25,2026-01-01,20:15:00,Botox,Dr. Chen,Nurse A,Room 102,FALSE,Walk-in,Booked,5000
+C0011,Guest_11,F,42,2025-12-04,19:15:00,Botox,Dr. Wang,Nurse A,Room 103,TRUE,LINE,Completed,5000
+C0012,Guest_12,F,34,2025-12-26,19:30:00,Ultherapy,Dr. Lee,Nurse B,Room 102,TRUE,Walk-in,Booked,50000
+C0013,Guest_13,F,26,2025-12-12,13:30:00,Consultation,Dr. Chen,Therapist Y,Room 103,TRUE,Walk-in,Cancelled,0
+C0014,Guest_14,M,38,2025-12-28,19:15:00,Facial,Dr. Lee,Nurse C,Room 101,TRUE,Phone,Booked,2000
+C0015,Guest_15,F,45,2025-12-05,17:15:00,Ultherapy,Dr. Chen,Therapist Y,VIP Room,TRUE,LINE,Completed,50000
+C0016,Guest_16,F,38,2025-11-19,15:30:00,Facial,Dr. Wang,Therapist Y,Room 103,TRUE,Phone,No-show,0
+C0017,Guest_17,F,26,2025-12-23,17:45:00,Botox,Dr. Lee,Nurse C,Room 103,TRUE,LINE,Booked,5000
+C0018,Guest_18,F,22,2025-12-24,15:30:00,Consultation,Dr. Wang,Nurse A,Room 101,FALSE,LINE,Booked,500
+C0019,Guest_19,M,59,2026-01-02,12:00:00,Facial,Dr. Lee,Nurse B,VIP Room,FALSE,LINE,Booked,2000
+C0020,Guest_20,F,30,2025-11-07,15:45:00,Botox,Dr. Wang,Therapist Y,Room 101,FALSE,LINE,Cancelled,0
+C0021,Guest_21,F,31,2025-11-04,13:30:00,Botox,Dr. Lee,Nurse C,Room 103,FALSE,LINE,Cancelled,0
+C0022,Guest_22,M,45,2025-11-28,16:15:00,Botox,Dr. Chen,Nurse A,Room 102,FALSE,LINE,Completed,5000
+C0023,Guest_23,F,57,2025-11-11,14:15:00,Thermage,Dr. Lee,Nurse A,VIP Room,TRUE,Web,Completed,60000
+C0024,Guest_24,M,43,2025-11-04,17:30:00,Botox,Dr. Wang,Nurse A,VIP Room,FALSE,Phone,Completed,5000
+C0025,Guest_25,F,42,2025-11-27,20:00:00,Ultherapy,Dr. Lee,Nurse C,VIP Room,FALSE,Web,Completed,50000
+C0026,Guest_26,M,37,2025-11-14,12:45:00,Thermage,Dr. Wang,Nurse C,Room 101,TRUE,LINE,Completed,60000
+C0027,Guest_27,F,34,2025-11-06,12:45:00,Ultherapy,Dr. Wang,Nurse C,Room 103,TRUE,Phone,Completed,50000
+C0028,Guest_28,M,58,2025-12-26,16:15:00,Pico Laser,Dr. Chen,Therapist Y,Room 103,FALSE,LINE,Booked,3000
+C0029,Guest_29,M,23,2025-12-12,13:15:00,Botox,Dr. Lee,Therapist X,Room 102,TRUE,Web,Completed,5000
+C0030,Guest_30,F,41,2025-12-23,12:00:00,Thermage,Dr. Wang,Therapist Y,VIP Room,FALSE,LINE,Booked,60000
+C0031,Guest_31,F,28,2025-12-03,15:30:00,Facial,Dr. Lee,Nurse B,Room 102,TRUE,Web,Cancelled,0
+C0032,Guest_32,F,43,2025-12-13,20:45:00,Consultation,Dr. Wang,Therapist Y,Room 102,TRUE,Web,Cancelled,0
+C0033,Guest_33,F,57,2025-12-08,14:15:00,Pico Laser,Dr. Chen,Nurse A,Room 103,FALSE,Web,No-show,0
+C0034,Guest_34,F,31,2025-11-19,16:45:00,Thermage,Dr. Wang,Nurse B,Room 102,TRUE,Phone,No-show,0
+C0035,Guest_35,F,49,2025-12-14,16:30:00,Thermage,Dr. Wang,Therapist Y,Room 103,TRUE,Phone,Cancelled,0
+C0036,Guest_36,F,42,2025-12-26,19:00:00,Consultation,Dr. Chen,Nurse A,Room 102,FALSE,LINE,Booked,500
+C0037,Guest_37,F,31,2025-11-11,18:00:00,Botox,Dr. Lee,Therapist Y,Room 102,FALSE,Walk-in,Cancelled,0
+C0038,Guest_38,F,40,2025-11-05,12:15:00,Consultation,Dr. Wang,Nurse B,Room 101,FALSE,Walk-in,Cancelled,0
+C0039,Guest_39,F,49,2025-12-04,18:30:00,Pico Laser,Dr. Wang,Nurse C,Room 103,TRUE,Walk-in,Completed,3000
+C0040,Guest_40,F,42,2025-12-25,15:15:00,Facial,Dr. Lee,Nurse B,Room 102,FALSE,Web,Booked,2000
+C0041,Guest_41,M,37,2025-12-12,20:00:00,Botox,Dr. Lee,Nurse B,Room 102,FALSE,Walk-in,Completed,5000
+C0042,Guest_42,F,25,2025-11-26,18:00:00,Facial,Dr. Chen,Nurse A,Room 101,FALSE,Web,Cancelled,0
+C0043,Guest_43,M,20,2025-12-03,12:45:00,Consultation,Dr. Lee,Nurse C,Room 102,FALSE,Walk-in,Completed,500
+C0044,Guest_44,M,42,2025-11-30,14:45:00,Thermage,Dr. Lee,Nurse C,Room 102,FALSE,Web,Completed,60000
+C0045,Guest_45,F,38,2025-11-29,20:45:00,Botox,Dr. Wang,Therapist Y,VIP Room,TRUE,Web,No-show,0
+C0046,Guest_46,F,54,2025-11-24,12:45:00,Botox,Dr. Lee,Therapist Y,Room 103,FALSE,LINE,Completed,5000
+C0047,Guest_47,F,34,2026-01-02,19:00:00,Ultherapy,Dr. Chen,Therapist Y,Room 102,TRUE,Phone,Booked,50000
+C0048,Guest_48,M,24,2025-12-11,17:00:00,Pico Laser,Dr. Chen,Nurse C,Room 102,FALSE,Walk-in,Completed,3000
+C0049,Guest_49,F,42,2025-11-28,20:00:00,Thermage,Dr. Wang,Therapist X,Room 102,TRUE,Phone,Cancelled,0
+C0050,Guest_50,M,50,2025-11-04,12:15:00,Consultation,Dr. Wang,Therapist X,Room 102,FALSE,Walk-in,Completed,500
+C0051,Guest_51,F,32,2025-12-18,15:00:00,Pico Laser,Dr. Chen,Nurse C,VIP Room,TRUE,Web,No-show,0
+C0052,Guest_52,F,21,2025-11-24,14:30:00,Thermage,Dr. Chen,Nurse A,Room 102,TRUE,Phone,Completed,60000
+C0053,Guest_53,M,46,2025-11-23,14:30:00,Thermage,Dr. Lee,Nurse C,Room 101,TRUE,Walk-in,No-show,0
+C0054,Guest_54,F,23,2025-11-12,16:30:00,Pico Laser,Dr. Lee,Nurse A,Room 101,TRUE,Web,Cancelled,0
+C0055,Guest_55,F,44,2025-12-22,19:45:00,Consultation,Dr. Lee,Therapist Y,Room 103,TRUE,LINE,Booked,500
+C0056,Guest_56,F,31,2025-11-09,19:00:00,Ultherapy,Dr. Chen,Therapist Y,Room 102,TRUE,Walk-in,Completed,50000
+C0057,Guest_57,F,57,2025-12-05,20:45:00,Botox,Dr. Chen,Nurse B,VIP Room,FALSE,Phone,Cancelled,0
+C0058,Guest_58,F,21,2025-11-04,18:15:00,Botox,Dr. Lee,Therapist X,Room 102,FALSE,LINE,Completed,5000
+C0059,Guest_59,M,51,2025-12-29,12:00:00,Botox,Dr. Lee,Nurse A,VIP Room,TRUE,LINE,Booked,5000
+C0060,Guest_60,F,42,2025-11-06,15:00:00,Consultation,Dr. Wang,Nurse C,Room 102,TRUE,Walk-in,No-show,0
+C0061,Guest_61,F,20,2025-11-13,14:30:00,Facial,Dr. Wang,Therapist X,Room 102,TRUE,Web,Completed,2000
+C0062,Guest_62,M,57,2025-11-08,16:30:00,Ultherapy,Dr. Wang,Nurse A,Room 103,TRUE,Phone,Completed,50000
+C0063,Guest_63,F,39,2025-11-19,15:45:00,Thermage,Dr. Wang,Nurse C,VIP Room,TRUE,Walk-in,Completed,60000
+C0064,Guest_64,F,36,2025-11-17,14:45:00,Botox,Dr. Wang,Nurse C,Room 101,FALSE,Phone,Completed,5000
+C0065,Guest_65,M,26,2025-11-19,14:15:00,Thermage,Dr. Wang,Therapist X,Room 103,FALSE,LINE,Completed,60000
+C0066,Guest_66,F,53,2025-11-25,14:30:00,Consultation,Dr. Wang,Nurse C,Room 103,FALSE,LINE,Cancelled,0
+C0067,Guest_67,M,33,2025-11-09,12:45:00,Facial,Dr. Lee,Therapist Y,Room 101,TRUE,Phone,Completed,2000
+C0068,Guest_68,F,41,2025-12-04,20:00:00,Facial,Dr. Lee,Nurse A,Room 103,TRUE,Phone,Cancelled,0
+C0069,Guest_69,F,41,2025-12-31,14:30:00,Botox,Dr. Lee,Nurse A,Room 102,FALSE,Web,Booked,5000
+C0070,Guest_70,F,56,2025-11-09,19:15:00,Facial,Dr. Chen,Nurse A,Room 101,FALSE,Walk-in,Completed,2000
+C0071,Guest_71,F,60,2025-12-19,13:00:00,Thermage,Dr. Chen,Therapist Y,VIP Room,FALSE,Walk-in,Booked,60000
+C0072,Guest_72,F,32,2025-12-19,16:00:00,Botox,Dr. Lee,Therapist Y,Room 103,FALSE,Phone,Booked,5000
+C0073,Guest_73,M,43,2025-12-03,20:15:00,Botox,Dr. Chen,Nurse B,Room 101,FALSE,Phone,Completed,5000
+C0074,Guest_74,F,56,2025-12-25,19:30:00,Ultherapy,Dr. Wang,Nurse A,Room 101,TRUE,Walk-in,Booked,50000
+C0075,Guest_75,F,52,2025-12-15,13:30:00,Ultherapy,Dr. Lee,Therapist X,VIP Room,FALSE,Web,No-show,0
+C0076,Guest_76,M,45,2025-12-04,18:15:00,Botox,Dr. Wang,Therapist Y,VIP Room,TRUE,LINE,Cancelled,0
+C0077,Guest_77,F,56,2025-12-18,13:45:00,Facial,Dr. Lee,Therapist X,VIP Room,TRUE,Walk-in,Completed,2000
+C0078,Guest_78,M,23,2025-11-07,13:30:00,Facial,Dr. Lee,Nurse B,Room 103,TRUE,Walk-in,Completed,2000
+C0079,Guest_79,F,28,2025-11-27,13:45:00,Facial,Dr. Wang,Nurse A,Room 103,TRUE,LINE,Completed,2000
+C0080,Guest_80,F,24,2025-12-03,12:45:00,Facial,Dr. Chen,Nurse B,Room 103,FALSE,Web,Completed,2000
+C0081,Guest_81,M,29,2026-01-02,16:00:00,Consultation,Dr. Chen,Nurse B,Room 101,FALSE,LINE,Booked,500
+C0082,Guest_82,F,34,2025-11-25,15:45:00,Ultherapy,Dr. Wang,Therapist X,Room 103,TRUE,LINE,Cancelled,0
+C0083,Guest_83,F,54,2025-11-05,12:15:00,Thermage,Dr. Chen,Nurse C,Room 101,TRUE,LINE,Completed,60000
+C0084,Guest_84,M,43,2026-01-01,14:00:00,Botox,Dr. Wang,Nurse B,Room 103,FALSE,Web,Booked,5000
+C0085,Guest_85,F,51,2025-11-27,17:45:00,Consultation,Dr. Lee,Nurse B,Room 102,FALSE,Phone,No-show,0
+C0086,Guest_86,F,53,2025-12-26,19:00:00,Ultherapy,Dr. Chen,Therapist Y,Room 101,TRUE,LINE,Booked,50000
+C0087,Guest_87,F,41,2025-12-06,20:15:00,Facial,Dr. Lee,Nurse B,Room 101,FALSE,Phone,No-show,0
+C0088,Guest_88,F,49,2025-12-05,17:15:00,Thermage,Dr. Wang,Nurse B,Room 101,FALSE,Walk-in,Completed,60000
+C0089,Guest_89,F,36,2025-12-06,13:30:00,Botox,Dr. Chen,Nurse B,Room 101,TRUE,LINE,Cancelled,0
+C0090,Guest_90,F,59,2025-12-26,13:15:00,Ultherapy,Dr. Lee,Therapist Y,Room 103,TRUE,LINE,Booked,50000
+C0091,Guest_91,F,49,2025-11-21,15:45:00,Consultation,Dr. Lee,Nurse A,Room 102,TRUE,LINE,Cancelled,0
+C0092,Guest_92,F,28,2025-11-30,14:30:00,Ultherapy,Dr. Chen,Therapist X,VIP Room,TRUE,Web,No-show,0
+C0093,Guest_93,M,30,2025-12-02,12:30:00,Consultation,Dr. Lee,Nurse B,VIP Room,TRUE,Phone,Completed,500
+C0094,Guest_94,F,59,2025-12-20,18:00:00,Pico Laser,Dr. Chen,Nurse C,VIP Room,FALSE,Web,Booked,3000
+C0095,Guest_95,M,41,2025-12-18,20:45:00,Botox,Dr. Lee,Therapist Y,Room 101,TRUE,Web,Cancelled,0
+C0096,Guest_96,F,49,2025-11-14,16:30:00,Thermage,Dr. Wang,Therapist Y,Room 102,TRUE,Web,Completed,60000
+C0097,Guest_97,F,48,2025-12-30,13:00:00,Pico Laser,Dr. Lee,Therapist Y,VIP Room,FALSE,Walk-in,Booked,3000
+C0098,Guest_98,F,23,2025-12-03,13:45:00,Facial,Dr. Lee,Nurse B,VIP Room,FALSE,Phone,Cancelled,0
+C0099,Guest_99,F,26,2025-12-02,17:00:00,Consultation,Dr. Chen,Nurse B,Room 101,TRUE,Web,No-show,0
+C0100,Guest_100,F,21,2025-11-20,18:45:00,Botox,Dr. Wang,Nurse A,Room 101,FALSE,Walk-in,Cancelled,0
+C0101,Guest_101,F,49,2025-12-11,17:15:00,Thermage,Dr. Lee,Nurse A,VIP Room,FALSE,Phone,Completed,60000
+C0102,Guest_102,F,42,2026-01-01,19:00:00,Botox,Dr. Wang,Nurse B,Room 103,TRUE,Web,Booked,5000
+C0103,Guest_103,F,29,2025-11-16,14:45:00,Consultation,Dr. Chen,Nurse B,Room 102,FALSE,LINE,Cancelled,0
+C0104,Guest_104,F,55,2025-11-16,16:45:00,Pico Laser,Dr. Wang,Therapist Y,Room 103,TRUE,Walk-in,Completed,3000
+C0105,Guest_105,F,56,2025-12-19,12:30:00,Thermage,Dr. Wang,Therapist X,Room 103,FALSE,Web,Booked,60000
+C0106,Guest_106,F,39,2025-12-23,12:00:00,Consultation,Dr. Chen,Therapist Y,VIP Room,FALSE,Phone,Booked,500
+C0107,Guest_107,M,38,2025-12-03,13:45:00,Facial,Dr. Lee,Therapist X,Room 102,FALSE,Walk-in,Completed,2000
+C0108,Guest_108,F,56,2025-12-04,16:15:00,Pico Laser,Dr. Chen,Nurse C,VIP Room,TRUE,Walk-in,Completed,3000
+C0109,Guest_109,F,21,2025-11-20,13:00:00,Facial,Dr. Wang,Therapist X,Room 103,TRUE,Walk-in,No-show,0
+C0110,Guest_110,F,21,2025-11-26,20:45:00,Thermage,Dr. Chen,Therapist Y,VIP Room,TRUE,Walk-in,Cancelled,0
+C0111,Guest_111,F,60,2025-12-21,15:15:00,Facial,Dr. Chen,Therapist Y,VIP Room,TRUE,Web,Booked,2000
+C0112,Guest_112,M,37,2025-12-08,16:00:00,Consultation,Dr. Chen,Nurse C,Room 101,FALSE,Walk-in,Completed,500
+C0113,Guest_113,F,24,2025-12-13,13:00:00,Facial,Dr. Lee,Therapist X,Room 101,FALSE,Web,Cancelled,0
+C0114,Guest_114,F,49,2025-12-04,17:45:00,Facial,Dr. Lee,Therapist X,Room 101,FALSE,LINE,Completed,2000
+C0115,Guest_115,M,38,2025-12-18,17:45:00,Pico Laser,Dr. Wang,Nurse C,Room 103,FALSE,Walk-in,Completed,3000
+C0116,Guest_116,M,40,2025-11-14,13:00:00,Consultation,Dr. Chen,Nurse C,Room 102,TRUE,Walk-in,No-show,0
+C0117,Guest_117,F,35,2025-11-27,18:45:00,Consultation,Dr. Lee,Nurse A,VIP Room,TRUE,Web,Completed,500
+C0118,Guest_118,F,52,2025-12-30,18:45:00,Consultation,Dr. Wang,Nurse C,Room 103,FALSE,Walk-in,Booked,500
+C0119,Guest_119,M,44,2025-11-10,19:00:00,Consultation,Dr. Wang,Therapist Y,VIP Room,FALSE,Phone,Completed,500
+C0120,Guest_120,F,33,2025-12-10,14:00:00,Ultherapy,Dr. Lee,Therapist X,Room 103,FALSE,Walk-in,Cancelled,0
+C0121,Guest_121,F,59,2025-12-28,14:45:00,Ultherapy,Dr. Lee,Therapist Y,Room 103,TRUE,Walk-in,Booked,50000
+C0122,Guest_122,F,26,2025-11-27,14:45:00,Pico Laser,Dr. Chen,Nurse B,Room 101,TRUE,LINE,No-show,0
+C0123,Guest_123,M,27,2025-12-29,12:45:00,Thermage,Dr. Wang,Therapist X,Room 102,FALSE,Phone,Booked,60000
+C0124,Guest_124,M,20,2025-12-31,18:00:00,Facial,Dr. Chen,Therapist X,Room 102,FALSE,Web,Booked,2000
+C0125,Guest_125,F,27,2025-11-03,19:45:00,Botox,Dr. Chen,Therapist Y,Room 101,TRUE,LINE,No-show,0
+C0126,Guest_126,M,56,2025-12-17,18:45:00,Pico Laser,Dr. Chen,Therapist Y,Room 102,FALSE,Web,Completed,3000
+C0127,Guest_127,F,27,2025-12-13,15:00:00,Botox,Dr. Wang,Therapist Y,Room 101,FALSE,Web,No-show,0
+C0128,Guest_128,F,53,2025-11-03,19:15:00,Botox,Dr. Lee,Therapist Y,Room 103,FALSE,LINE,No-show,0
+C0129,Guest_129,F,26,2025-12-25,15:00:00,Ultherapy,Dr. Lee,Therapist Y,Room 101,FALSE,Phone,Booked,50000
+C0130,Guest_130,F,49,2025-11-19,20:30:00,Consultation,Dr. Wang,Therapist Y,Room 102,TRUE,Walk-in,Completed,500
+C0131,Guest_131,M,58,2025-11-07,19:45:00,Consultation,Dr. Wang,Nurse C,VIP Room,FALSE,LINE,Completed,500
+C0132,Guest_132,F,38,2025-12-02,12:30:00,Botox,Dr. Wang,Therapist Y,Room 102,FALSE,Walk-in,Completed,5000
+C0133,Guest_133,F,38,2025-12-12,14:00:00,Pico Laser,Dr. Lee,Therapist Y,VIP Room,FALSE,Walk-in,Cancelled,0
+C0134,Guest_134,M,60,2025-11-26,18:45:00,Thermage,Dr. Chen,Nurse A,Room 101,FALSE,Walk-in,Completed,60000
+C0135,Guest_135,F,25,2025-12-13,18:15:00,Facial,Dr. Wang,Nurse C,Room 102,TRUE,Web,Completed,2000
+C0136,Guest_136,M,50,2025-11-30,15:00:00,Pico Laser,Dr. Wang,Therapist Y,Room 101,TRUE,LINE,Completed,3000
+C0137,Guest_137,M,53,2025-11-16,20:15:00,Consultation,Dr. Wang,Nurse B,VIP Room,FALSE,LINE,Cancelled,0
+C0138,Guest_138,M,54,2025-11-07,14:45:00,Thermage,Dr. Lee,Nurse B,Room 103,FALSE,Phone,Completed,60000
+C0139,Guest_139,F,53,2025-12-24,16:00:00,Botox,Dr. Chen,Therapist X,Room 103,TRUE,Walk-in,Booked,5000
+C0140,Guest_140,M,24,2025-11-19,20:00:00,Pico Laser,Dr. Chen,Therapist X,VIP Room,FALSE,Web,Completed,3000
+C0141,Guest_141,M,46,2025-12-06,20:15:00,Facial,Dr. Lee,Therapist Y,Room 103,FALSE,Phone,Completed,2000
+C0142,Guest_142,F,54,2025-12-23,18:15:00,Thermage,Dr. Lee,Nurse C,Room 102,FALSE,Phone,Booked,60000
+C0143,Guest_143,M,54,2025-12-16,13:30:00,Thermage,Dr. Lee,Therapist Y,VIP Room,FALSE,Phone,Cancelled,0
+C0144,Guest_144,F,29,2025-12-30,13:45:00,Facial,Dr. Wang,Nurse C,Room 102,TRUE,Web,Booked,2000
+C0145,Guest_145,F,55,2025-11-23,16:15:00,Thermage,Dr. Lee,Nurse B,Room 102,FALSE,Walk-in,No-show,0
+C0146,Guest_146,F,38,2025-11-26,16:45:00,Consultation,Dr. Wang,Nurse C,Room 103,TRUE,Web,Completed,500
+C0147,Guest_147,F,32,2026-01-02,15:00:00,Consultation,Dr. Wang,Nurse B,VIP Room,TRUE,Web,Booked,500
+C0148,Guest_148,F,31,2025-11-28,13:30:00,Thermage,Dr. Chen,Therapist Y,Room 103,TRUE,Walk-in,Cancelled,0
+C0149,Guest_149,M,54,2025-12-09,17:30:00,Facial,Dr. Wang,Therapist Y,Room 103,TRUE,Walk-in,Completed,2000
+C0150,Guest_150,F,24,2025-12-01,14:00:00,Thermage,Dr. Chen,Nurse B,Room 102,TRUE,Phone,Completed,60000
+C0151,Guest_151,F,45,2025-11-18,20:00:00,Ultherapy,Dr. Chen,Therapist X,Room 101,FALSE,Phone,No-show,0
+C0152,Guest_152,F,41,2025-12-29,14:30:00,Thermage,Dr. Lee,Nurse C,Room 103,FALSE,Phone,Booked,60000
+C0153,Guest_153,F,37,2025-11-19,15:15:00,Facial,Dr. Lee,Therapist X,Room 103,TRUE,LINE,Completed,2000
+C0154,Guest_154,M,21,2025-11-25,13:00:00,Pico Laser,Dr. Chen,Therapist Y,VIP Room,FALSE,Web,Completed,3000
+C0155,Guest_155,F,60,2025-11-22,14:45:00,Consultation,Dr. Wang,Therapist X,Room 103,TRUE,LINE,No-show,0
+C0156,Guest_156,F,31,2025-12-14,16:15:00,Botox,Dr. Wang,Therapist Y,Room 102,TRUE,Walk-in,Cancelled,0
+C0157,Guest_157,F,40,2025-12-01,20:15:00,Botox,Dr. Chen,Therapist X,Room 102,TRUE,Walk-in,Cancelled,0
+C0158,Guest_158,F,22,2025-12-07,20:15:00,Consultation,Dr. Wang,Therapist Y,Room 101,TRUE,Web,Completed,500
+C0159,Guest_159,F,21,2025-11-10,14:00:00,Ultherapy,Dr. Lee,Nurse C,Room 102,FALSE,Walk-in,Completed,50000
+C0160,Guest_160,F,31,2025-11-13,18:30:00,Pico Laser,Dr. Chen,Nurse C,Room 102,FALSE,Web,Completed,3000
+C0161,Guest_161,F,47,2025-12-05,15:30:00,Botox,Dr. Lee,Therapist Y,Room 102,TRUE,Web,Cancelled,0
+C0162,Guest_162,F,38,2025-12-22,15:30:00,Facial,Dr. Lee,Therapist X,Room 101,TRUE,Web,Booked,2000
+C0163,Guest_163,F,35,2025-11-11,17:15:00,Pico Laser,Dr. Lee,Nurse C,VIP Room,FALSE,Phone,Completed,3000
+C0164,Guest_164,M,25,2025-11-27,20:15:00,Pico Laser,Dr. Wang,Nurse A,Room 101,TRUE,Phone,Cancelled,0
+C0165,Guest_165,F,41,2025-11-27,17:15:00,Botox,Dr. Chen,Nurse C,Room 101,FALSE,LINE,Completed,5000
+C0166,Guest_166,F,25,2025-12-28,19:00:00,Botox,Dr. Lee,Therapist Y,VIP Room,TRUE,Walk-in,Booked,5000
+C0167,Guest_167,M,44,2025-11-22,15:15:00,Pico Laser,Dr. Lee,Nurse A,VIP Room,FALSE,Phone,Completed,3000
+C0168,Guest_168,F,36,2025-12-09,20:45:00,Pico Laser,Dr. Chen,Therapist X,Room 101,TRUE,Phone,Completed,3000
+C0169,Guest_169,F,52,2025-12-21,16:45:00,Pico Laser,Dr. Lee,Nurse B,Room 101,FALSE,Walk-in,Booked,3000
+C0170,Guest_170,F,21,2025-11-14,14:00:00,Thermage,Dr. Lee,Nurse C,Room 101,FALSE,Web,Completed,60000
+C0171,Guest_171,F,34,2026-01-02,18:00:00,Ultherapy,Dr. Wang,Nurse C,VIP Room,TRUE,Walk-in,Booked,50000
+C0172,Guest_172,M,60,2025-12-29,15:15:00,Facial,Dr. Lee,Nurse A,Room 103,TRUE,Walk-in,Booked,2000
+C0173,Guest_173,F,44,2025-11-27,17:00:00,Thermage,Dr. Lee,Therapist Y,VIP Room,FALSE,LINE,Cancelled,0
+C0174,Guest_174,F,40,2025-11-30,13:30:00,Pico Laser,Dr. Wang,Nurse C,Room 101,FALSE,Phone,Completed,3000
+C0175,Guest_175,M,28,2025-11-18,15:30:00,Facial,Dr. Chen,Nurse A,VIP Room,TRUE,Walk-in,Cancelled,0
+C0176,Guest_176,M,54,2025-11-18,14:45:00,Thermage,Dr. Wang,Nurse B,Room 103,FALSE,Phone,Completed,60000
+C0177,Guest_177,F,26,2025-12-31,19:00:00,Ultherapy,Dr. Chen,Nurse B,Room 102,TRUE,LINE,Booked,50000
+C0178,Guest_178,F,51,2025-11-11,16:45:00,Thermage,Dr. Lee,Nurse C,Room 101,FALSE,Walk-in,No-show,0
+C0179,Guest_179,F,22,2025-11-09,18:30:00,Consultation,Dr. Wang,Nurse A,Room 103,FALSE,LINE,Completed,500
+C0180,Guest_180,M,34,2025-12-07,15:15:00,Ultherapy,Dr. Lee,Nurse C,VIP Room,TRUE,LINE,Cancelled,0
+C0181,Guest_181,F,21,2025-11-24,12:00:00,Botox,Dr. Wang,Therapist Y,Room 103,FALSE,Walk-in,Completed,5000
+C0182,Guest_182,F,56,2026-01-01,13:30:00,Ultherapy,Dr. Lee,Nurse A,Room 103,FALSE,LINE,Booked,50000
+C0183,Guest_183,M,29,2025-12-29,20:30:00,Ultherapy,Dr. Wang,Nurse C,Room 102,FALSE,Phone,Booked,50000
+C0184,Guest_184,F,48,2025-12-27,15:30:00,Pico Laser,Dr. Chen,Nurse B,Room 101,TRUE,Web,Booked,3000
+C0185,Guest_185,F,28,2025-11-12,20:15:00,Pico Laser,Dr. Wang,Nurse C,Room 103,TRUE,Walk-in,Cancelled,0
+C0186,Guest_186,F,34,2025-11-15,19:15:00,Pico Laser,Dr. Lee,Nurse A,Room 103,TRUE,Walk-in,Completed,3000
+C0187,Guest_187,F,22,2026-01-01,17:30:00,Ultherapy,Dr. Lee,Nurse B,Room 102,FALSE,LINE,Booked,50000
+C0188,Guest_188,F,52,2025-12-05,13:15:00,Thermage,Dr. Chen,Nurse C,VIP Room,TRUE,Web,Completed,60000
+C0189,Guest_189,F,37,2025-12-27,14:15:00,Consultation,Dr. Wang,Therapist X,Room 103,FALSE,Phone,Booked,500
+C0190,Guest_190,F,45,2025-12-23,15:45:00,Pico Laser,Dr. Wang,Nurse A,Room 101,FALSE,Walk-in,Booked,3000
+C0191,Guest_191,F,36,2025-12-17,18:30:00,Ultherapy,Dr. Wang,Therapist Y,Room 102,TRUE,Phone,Completed,50000
+C0192,Guest_192,F,44,2025-11-07,12:15:00,Botox,Dr. Wang,Nurse A,Room 103,TRUE,Phone,No-show,0
+C0193,Guest_193,F,37,2025-12-20,12:15:00,Thermage,Dr. Wang,Nurse C,VIP Room,FALSE,Web,Booked,60000
+C0194,Guest_194,F,20,2025-12-29,19:15:00,Consultation,Dr. Wang,Nurse B,VIP Room,TRUE,LINE,Booked,500
+C0195,Guest_195,F,50,2025-11-12,12:00:00,Botox,Dr. Chen,Nurse B,Room 102,TRUE,Phone,No-show,0
+C0196,Guest_196,F,38,2025-11-20,15:00:00,Ultherapy,Dr. Chen,Nurse B,Room 103,FALSE,LINE,Cancelled,0
+C0197,Guest_197,F,35,2025-12-19,16:45:00,Thermage,Dr. Chen,Nurse A,Room 102,FALSE,Web,Booked,60000
+C0198,Guest_198,F,47,2025-12-02,13:30:00,Ultherapy,Dr. Chen,Therapist Y,VIP Room,TRUE,Walk-in,No-show,0
+C0199,Guest_199,M,52,2025-12-17,14:15:00,Ultherapy,Dr. Chen,Nurse B,VIP Room,FALSE,Phone,Completed,50000
+C0200,Guest_200,F,47,2025-12-08,13:30:00,Ultherapy,Dr. Wang,Therapist X,Room 102,TRUE,Phone,Completed,50000
+C0201,Guest_201,F,36,2025-12-15,15:00:00,Consultation,Dr. Lee,Nurse B,Room 103,FALSE,Walk-in,Completed,500
+C0202,Guest_202,F,27,2026-01-01,19:00:00,Botox,Dr. Lee,Nurse A,Room 103,TRUE,Walk-in,Booked,5000
+C0203,Guest_203,F,50,2025-12-11,12:15:00,Facial,Dr. Wang,Therapist X,VIP Room,TRUE,Walk-in,No-show,0
+C0204,Guest_204,F,28,2025-12-01,19:15:00,Thermage,Dr. Lee,Nurse C,Room 102,TRUE,Walk-in,Completed,60000
+C0205,Guest_205,F,31,2025-11-28,16:30:00,Botox,Dr. Wang,Therapist X,Room 103,FALSE,Walk-in,Cancelled,0
+C0206,Guest_206,M,56,2025-12-09,12:00:00,Botox,Dr. Lee,Nurse A,Room 101,FALSE,Phone,No-show,0
+C0207,Guest_207,F,38,2025-12-02,19:00:00,Botox,Dr. Lee,Nurse B,VIP Room,FALSE,Web,Cancelled,0
+C0208,Guest_208,M,38,2025-12-06,12:00:00,Consultation,Dr. Chen,Nurse B,VIP Room,TRUE,Phone,Completed,500
+C0209,Guest_209,F,40,2025-11-27,12:00:00,Botox,Dr. Wang,Nurse C,VIP Room,FALSE,Walk-in,Completed,5000
+C0210,Guest_210,M,23,2025-12-15,18:30:00,Consultation,Dr. Lee,Nurse C,VIP Room,FALSE,Walk-in,Completed,500
+C0211,Guest_211,F,38,2025-12-16,15:45:00,Botox,Dr. Lee,Nurse C,Room 101,FALSE,Phone,Completed,5000
+C0212,Guest_212,F,38,2025-11-21,12:00:00,Botox,Dr. Lee,Therapist Y,Room 102,TRUE,Web,No-show,0
+C0213,Guest_213,F,37,2025-11-23,12:15:00,Thermage,Dr. Wang,Nurse A,VIP Room,FALSE,LINE,Completed,60000
+C0214,Guest_214,F,37,2025-12-05,13:00:00,Ultherapy,Dr. Wang,Therapist Y,Room 101,TRUE,Web,Completed,50000
+C0215,Guest_215,F,27,2025-11-22,15:15:00,Facial,Dr. Lee,Nurse B,VIP Room,FALSE,LINE,Completed,2000
+C0216,Guest_216,F,27,2025-11-08,20:15:00,Ultherapy,Dr. Lee,Therapist X,Room 103,TRUE,Phone,Completed,50000
+C0217,Guest_217,M,55,2025-11-16,20:45:00,Consultation,Dr. Lee,Nurse A,Room 103,FALSE,Web,Completed,500
+C0218,Guest_218,F,51,2025-11-15,19:45:00,Facial,Dr. Wang,Therapist X,Room 102,TRUE,Walk-in,Completed,2000
+C0219,Guest_219,M,42,2025-12-24,16:30:00,Consultation,Dr. Wang,Nurse A,Room 101,TRUE,Walk-in,Booked,500
+C0220,Guest_220,F,23,2025-11-08,16:00:00,Thermage,Dr. Chen,Therapist X,Room 101,TRUE,Phone,No-show,0
+C0221,Guest_221,F,59,2025-11-17,20:00:00,Thermage,Dr. Chen,Therapist Y,Room 103,TRUE,Walk-in,No-show,0
+C0222,Guest_222,F,49,2025-11-27,16:15:00,Ultherapy,Dr. Wang,Therapist Y,Room 103,TRUE,Phone,No-show,0
+C0223,Guest_223,F,42,2025-12-02,16:45:00,Consultation,Dr. Wang,Nurse C,Room 101,FALSE,Phone,No-show,0
+C0224,Guest_224,F,32,2025-12-22,20:15:00,Thermage,Dr. Chen,Nurse B,VIP Room,TRUE,Web,Booked,60000
+C0225,Guest_225,F,54,2025-11-09,12:00:00,Pico Laser,Dr. Lee,Therapist Y,Room 103,FALSE,Walk-in,Completed,3000
+C0226,Guest_226,M,50,2025-12-03,13:30:00,Consultation,Dr. Lee,Therapist X,Room 103,FALSE,LINE,Completed,500
+C0227,Guest_227,M,28,2025-12-15,20:15:00,Pico Laser,Dr. Chen,Nurse C,Room 102,FALSE,Web,Completed,3000
+C0228,Guest_228,F,43,2025-11-10,20:30:00,Thermage,Dr. Lee,Nurse B,VIP Room,TRUE,LINE,Completed,60000
+C0229,Guest_229,F,56,2025-11-10,20:30:00,Ultherapy,Dr. Chen,Nurse C,Room 101,FALSE,LINE,Cancelled,0
+C0230,Guest_230,F,56,2025-11-07,18:30:00,Thermage,Dr. Lee,Therapist Y,Room 102,TRUE,Web,Completed,60000
+C0231,Guest_231,F,40,2025-11-13,18:30:00,Pico Laser,Dr. Wang,Nurse B,Room 101,TRUE,LINE,Cancelled,0
+C0232,Guest_232,F,42,2025-12-01,13:45:00,Thermage,Dr. Lee,Therapist Y,Room 102,FALSE,Walk-in,Completed,60000
+C0233,Guest_233,F,36,2025-11-27,19:15:00,Ultherapy,Dr. Chen,Therapist X,VIP Room,TRUE,Walk-in,No-show,0
+C0234,Guest_234,F,26,2025-12-28,16:45:00,Ultherapy,Dr. Lee,Nurse B,VIP Room,TRUE,LINE,Booked,50000
+C0235,Guest_235,F,35,2025-11-22,17:00:00,Thermage,Dr. Wang,Therapist X,VIP Room,FALSE,LINE,No-show,0
+C0236,Guest_236,M,33,2025-11-19,17:45:00,Facial,Dr. Wang,Therapist Y,Room 102,FALSE,Web,No-show,0
+C0237,Guest_237,M,53,2025-11-05,17:30:00,Thermage,Dr. Wang,Therapist Y,Room 103,TRUE,Phone,No-show,0
+C0238,Guest_238,F,46,2025-11-17,15:00:00,Thermage,Dr. Lee,Therapist Y,Room 102,FALSE,LINE,Cancelled,0
+C0239,Guest_239,F,30,2025-11-03,18:45:00,Consultation,Dr. Lee,Nurse B,Room 102,FALSE,LINE,Completed,500
+C0240,Guest_240,F,37,2025-11-18,12:15:00,Botox,Dr. Lee,Therapist X,Room 101,FALSE,Phone,No-show,0
+C0241,Guest_241,F,23,2025-11-14,17:00:00,Thermage,Dr. Wang,Nurse C,Room 103,FALSE,Web,Completed,60000
+C0242,Guest_242,M,35,2025-12-18,18:45:00,Thermage,Dr. Lee,Therapist X,Room 101,FALSE,Web,Completed,60000
+C0243,Guest_243,F,45,2025-12-09,20:15:00,Consultation,Dr. Wang,Nurse A,Room 103,FALSE,Phone,Cancelled,0
+C0244,Guest_244,F,21,2025-11-25,12:45:00,Thermage,Dr. Chen,Nurse C,Room 101,FALSE,Walk-in,Completed,60000
+C0245,Guest_245,F,24,2025-11-04,20:00:00,Pico Laser,Dr. Lee,Nurse A,Room 103,FALSE,LINE,Completed,3000
+C0246,Guest_246,F,48,2025-11-26,16:15:00,Thermage,Dr. Wang,Therapist X,Room 101,FALSE,Web,Completed,60000
+C0247,Guest_247,M,35,2025-12-25,16:30:00,Ultherapy,Dr. Chen,Therapist Y,VIP Room,TRUE,Phone,Booked,50000
+C0248,Guest_248,F,59,2025-11-23,15:00:00,Botox,Dr. Wang,Nurse A,Room 102,FALSE,Web,No-show,0
+C0249,Guest_249,M,54,2025-11-14,16:00:00,Facial,Dr. Wang,Nurse B,Room 101,FALSE,Web,Completed,2000
+C0250,Guest_250,M,29,2025-12-06,15:00:00,Ultherapy,Dr. Wang,Therapist X,VIP Room,FALSE,Web,Completed,50000
+C0251,Guest_251,F,21,2025-12-16,14:00:00,Pico Laser,Dr. Lee,Nurse B,Room 102,TRUE,Phone,Cancelled,0
+C0252,Guest_252,F,54,2025-12-31,19:30:00,Consultation,Dr. Chen,Nurse C,Room 101,FALSE,LINE,Booked,500
+C0253,Guest_253,F,49,2025-11-22,18:00:00,Facial,Dr. Lee,Nurse C,Room 103,FALSE,Walk-in,No-show,0
+C0254,Guest_254,F,36,2025-12-21,19:15:00,Facial,Dr. Lee,Nurse B,Room 101,TRUE,Phone,Booked,2000
+C0255,Guest_255,F,22,2025-12-18,13:45:00,Consultation,Dr. Chen,Nurse A,Room 103,TRUE,Web,No-show,0
+C0256,Guest_256,F,31,2026-01-02,18:15:00,Thermage,Dr. Chen,Therapist Y,VIP Room,FALSE,Phone,Booked,60000
+C0257,Guest_257,M,60,2025-11-24,14:45:00,Consultation,Dr. Chen,Nurse A,Room 101,TRUE,Phone,Cancelled,0
+C0258,Guest_258,F,52,2025-12-12,13:00:00,Ultherapy,Dr. Chen,Nurse C,Room 101,FALSE,Web,Completed,50000
+C0259,Guest_259,F,27,2025-11-25,15:30:00,Pico Laser,Dr. Chen,Nurse A,Room 103,FALSE,Phone,Completed,3000
+C0260,Guest_260,F,26,2025-12-22,14:00:00,Botox,Dr. Chen,Nurse C,Room 102,TRUE,LINE,Booked,5000
+C0261,Guest_261,F,38,2025-11-21,20:00:00,Ultherapy,Dr. Wang,Nurse B,Room 102,FALSE,Walk-in,Completed,50000
+C0262,Guest_262,M,44,2025-11-23,16:15:00,Pico Laser,Dr. Wang,Therapist X,Room 101,FALSE,Phone,Completed,3000
+C0263,Guest_263,F,50,2025-12-20,13:15:00,Botox,Dr. Lee,Nurse B,Room 103,FALSE,Phone,Booked,5000
+C0264,Guest_264,F,52,2025-11-14,16:00:00,Facial,Dr. Lee,Therapist Y,VIP Room,TRUE,Walk-in,Completed,2000
+C0265,Guest_265,F,56,2025-11-08,20:15:00,Ultherapy,Dr. Wang,Nurse A,Room 101,TRUE,Web,Cancelled,0
+C0266,Guest_266,F,21,2025-11-12,13:30:00,Facial,Dr. Wang,Therapist Y,Room 102,FALSE,Web,No-show,0
+C0267,Guest_267,F,55,2025-12-31,12:00:00,Botox,Dr. Wang,Nurse C,Room 101,FALSE,LINE,Booked,5000
+C0268,Guest_268,F,48,2025-11-25,19:15:00,Pico Laser,Dr. Wang,Therapist X,VIP Room,FALSE,Web,Completed,3000
+C0269,Guest_269,F,45,2025-12-23,19:00:00,Botox,Dr. Chen,Therapist Y,Room 103,FALSE,LINE,Booked,5000
+C0270,Guest_270,F,39,2025-12-05,20:45:00,Consultation,Dr. Wang,Nurse B,VIP Room,TRUE,Web,Completed,500
+C0271,Guest_271,F,23,2025-11-20,17:45:00,Facial,Dr. Chen,Nurse C,Room 103,TRUE,LINE,Completed,2000
+C0272,Guest_272,F,39,2025-12-13,17:15:00,Ultherapy,Dr. Chen,Nurse A,VIP Room,FALSE,Web,No-show,0
+C0273,Guest_273,M,27,2025-12-29,19:45:00,Botox,Dr. Lee,Nurse B,Room 103,TRUE,LINE,Booked,5000
+C0274,Guest_274,F,45,2025-12-12,17:15:00,Consultation,Dr. Lee,Therapist Y,Room 101,TRUE,Phone,Completed,500
+C0275,Guest_275,F,22,2025-11-07,14:45:00,Pico Laser,Dr. Lee,Nurse B,Room 103,TRUE,Walk-in,Cancelled,0
+C0276,Guest_276,F,31,2025-11-03,14:30:00,Facial,Dr. Lee,Therapist X,Room 103,FALSE,Walk-in,Cancelled,0
+C0277,Guest_277,F,32,2025-12-29,12:30:00,Consultation,Dr. Chen,Nurse A,VIP Room,TRUE,LINE,Booked,500
+C0278,Guest_278,F,30,2025-12-23,15:00:00,Pico Laser,Dr. Lee,Nurse A,Room 103,TRUE,Web,Booked,3000
+C0279,Guest_279,F,40,2025-12-13,15:15:00,Facial,Dr. Chen,Nurse C,Room 103,FALSE,LINE,Cancelled,0
+C0280,Guest_280,M,27,2025-12-22,19:15:00,Facial,Dr. Chen,Therapist Y,Room 102,FALSE,Phone,Booked,2000
+C0281,Guest_281,F,45,2025-12-07,17:15:00,Facial,Dr. Chen,Nurse A,VIP Room,FALSE,Web,Cancelled,0
+C0282,Guest_282,F,38,2025-11-19,13:45:00,Thermage,Dr. Chen,Therapist X,Room 101,FALSE,Walk-in,Cancelled,0
+C0283,Guest_283,F,59,2025-11-28,12:45:00,Thermage,Dr. Wang,Therapist Y,VIP Room,FALSE,Phone,No-show,0
+C0284,Guest_284,F,43,2025-12-28,19:00:00,Consultation,Dr. Lee,Nurse B,Room 102,FALSE,Phone,Booked,500
+C0285,Guest_285,M,57,2025-11-03,14:30:00,Ultherapy,Dr. Chen,Nurse B,VIP Room,FALSE,Phone,Completed,50000
+C0286,Guest_286,F,51,2025-12-27,18:45:00,Botox,Dr. Wang,Nurse C,Room 101,FALSE,Walk-in,Booked,5000
+C0287,Guest_287,F,56,2025-12-21,12:45:00,Thermage,Dr. Wang,Nurse B,Room 101,TRUE,Web,Booked,60000
+C0288,Guest_288,M,50,2025-11-21,13:15:00,Facial,Dr. Wang,Nurse C,Room 102,TRUE,Walk-in,No-show,0
+C0289,Guest_289,F,56,2025-11-18,12:15:00,Ultherapy,Dr. Wang,Nurse B,Room 102,TRUE,LINE,Completed,50000
+C0290,Guest_290,M,47,2025-12-17,12:45:00,Botox,Dr. Wang,Nurse C,Room 102,FALSE,Walk-in,Cancelled,0
+C0291,Guest_291,F,54,2025-11-19,18:00:00,Ultherapy,Dr. Lee,Therapist X,VIP Room,FALSE,Walk-in,Completed,50000
+C0292,Guest_292,F,59,2025-11-08,18:15:00,Ultherapy,Dr. Wang,Nurse C,VIP Room,FALSE,LINE,Completed,50000
+C0293,Guest_293,F,22,2025-12-31,14:45:00,Facial,Dr. Lee,Therapist X,VIP Room,TRUE,Phone,Booked,2000
+C0294,Guest_294,F,22,2025-11-13,17:15:00,Thermage,Dr. Wang,Nurse C,Room 103,TRUE,LINE,Cancelled,0
+C0295,Guest_295,F,29,2025-12-26,18:15:00,Facial,Dr. Lee,Therapist X,VIP Room,TRUE,Walk-in,Booked,2000
+C0296,Guest_296,M,32,2025-11-08,19:30:00,Facial,Dr. Chen,Nurse A,VIP Room,TRUE,Web,Completed,2000
+C0297,Guest_297,F,41,2025-12-07,18:00:00,Botox,Dr. Lee,Therapist Y,Room 103,FALSE,Phone,Completed,5000
+C0298,Guest_298,F,46,2025-12-23,20:30:00,Facial,Dr. Chen,Therapist Y,Room 102,TRUE,Web,Booked,2000
+C0299,Guest_299,F,41,2025-12-06,13:00:00,Consultation,Dr. Wang,Nurse C,Room 103,FALSE,Web,Completed,500
+C0300,Guest_300,F,29,2025-11-18,14:15:00,Ultherapy,Dr. Lee,Nurse A,Room 103,FALSE,Phone,Completed,50000
+C0301,Guest_301,F,41,2025-12-11,12:00:00,Ultherapy,Dr. Wang,Therapist Y,Room 101,FALSE,Walk-in,Completed,50000
+C0302,Guest_302,F,54,2025-11-22,20:15:00,Facial,Dr. Wang,Nurse B,VIP Room,FALSE,Phone,No-show,0
+C0303,Guest_303,F,23,2025-11-12,17:45:00,Facial,Dr. Chen,Therapist Y,Room 103,FALSE,Walk-in,Completed,2000
+C0304,Guest_304,F,33,2025-11-09,14:30:00,Consultation,Dr. Wang,Therapist Y,Room 102,FALSE,LINE,Completed,500
+C0305,Guest_305,F,48,2025-12-10,17:45:00,Ultherapy,Dr. Lee,Nurse B,Room 102,TRUE,Web,Completed,50000
+C0306,Guest_306,F,42,2025-12-02,13:15:00,Botox,Dr. Lee,Therapist Y,Room 103,FALSE,Web,No-show,0
+C0307,Guest_307,F,58,2025-11-07,12:15:00,Pico Laser,Dr. Chen,Therapist X,Room 102,FALSE,Walk-in,No-show,0
+C0308,Guest_308,F,26,2025-11-17,14:15:00,Thermage,Dr. Wang,Nurse C,VIP Room,FALSE,Phone,No-show,0
+C0309,Guest_309,F,21,2025-12-28,18:00:00,Pico Laser,Dr. Chen,Therapist X,VIP Room,FALSE,LINE,Booked,3000
+C0310,Guest_310,M,31,2025-11-10,13:30:00,Pico Laser,Dr. Lee,Therapist X,Room 102,TRUE,Phone,Completed,3000
+C0311,Guest_311,F,53,2025-11-15,12:00:00,Facial,Dr. Lee,Nurse A,Room 103,TRUE,Phone,Completed,2000
+C0312,Guest_312,F,30,2026-01-01,18:30:00,Pico Laser,Dr. Wang,Therapist X,Room 102,FALSE,LINE,Booked,3000
+C0313,Guest_313,F,57,2026-01-02,17:15:00,Facial,Dr. Wang,Therapist X,Room 101,FALSE,Walk-in,Booked,2000
+C0314,Guest_314,M,60,2026-01-02,18:00:00,Consultation,Dr. Chen,Nurse B,Room 103,TRUE,Phone,Booked,500
+C0315,Guest_315,F,42,2025-12-10,13:45:00,Pico Laser,Dr. Lee,Nurse C,VIP Room,TRUE,Web,Completed,3000
+C0316,Guest_316,M,46,2025-12-12,20:30:00,Ultherapy,Dr. Wang,Therapist X,Room 101,TRUE,Walk-in,Cancelled,0
+C0317,Guest_317,M,25,2025-12-30,12:15:00,Facial,Dr. Chen,Nurse C,Room 102,TRUE,Phone,Booked,2000
+C0318,Guest_318,F,60,2025-11-16,15:45:00,Ultherapy,Dr. Chen,Nurse B,Room 103,TRUE,Web,Completed,50000
+C0319,Guest_319,M,39,2026-01-01,13:15:00,Botox,Dr. Wang,Nurse A,Room 102,TRUE,LINE,Booked,5000
+C0320,Guest_320,F,60,2025-12-27,15:15:00,Botox,Dr. Chen,Therapist X,VIP Room,TRUE,LINE,Booked,5000
+C0321,Guest_321,F,26,2025-12-09,20:30:00,Facial,Dr. Chen,Therapist Y,Room 103,TRUE,Web,Completed,2000
+C0322,Guest_322,F,49,2025-12-18,12:30:00,Botox,Dr. Wang,Therapist Y,VIP Room,TRUE,Phone,Completed,5000
+C0323,Guest_323,M,34,2025-11-18,17:30:00,Facial,Dr. Lee,Therapist Y,Room 101,FALSE,Phone,Cancelled,0
+C0324,Guest_324,F,56,2025-12-11,15:00:00,Consultation,Dr. Wang,Therapist Y,VIP Room,FALSE,Web,Cancelled,0
+C0325,Guest_325,F,42,2025-11-29,12:00:00,Pico Laser,Dr. Chen,Therapist Y,VIP Room,TRUE,Walk-in,Completed,3000
+C0326,Guest_326,F,37,2025-12-14,20:45:00,Thermage,Dr. Chen,Nurse A,VIP Room,TRUE,Walk-in,No-show,0
+C0327,Guest_327,F,34,2025-12-08,20:45:00,Ultherapy,Dr. Chen,Therapist Y,Room 103,TRUE,Walk-in,Completed,50000
+C0328,Guest_328,F,39,2025-11-06,19:30:00,Facial,Dr. Chen,Nurse B,Room 103,TRUE,Walk-in,Completed,2000
+C0329,Guest_329,M,46,2025-11-09,16:15:00,Consultation,Dr. Chen,Therapist X,VIP Room,FALSE,Web,No-show,0
+C0330,Guest_330,M,32,2025-12-20,18:30:00,Botox,Dr. Lee,Therapist Y,VIP Room,TRUE,Web,Booked,5000
+C0331,Guest_331,F,59,2025-12-22,14:30:00,Thermage,Dr. Chen,Nurse B,VIP Room,TRUE,Walk-in,Booked,60000
+C0332,Guest_332,F,55,2025-11-07,17:15:00,Pico Laser,Dr. Wang,Nurse B,VIP Room,FALSE,LINE,Completed,3000
+C0333,Guest_333,F,30,2025-11-10,12:00:00,Pico Laser,Dr. Lee,Nurse B,Room 102,FALSE,LINE,Cancelled,0
+C0334,Guest_334,M,36,2025-12-01,13:45:00,Consultation,Dr. Wang,Nurse A,Room 102,TRUE,Web,Cancelled,0
+C0335,Guest_335,F,56,2025-12-20,18:45:00,Facial,Dr. Wang,Nurse A,Room 103,TRUE,Walk-in,Booked,2000
+C0336,Guest_336,M,37,2025-11-12,18:45:00,Thermage,Dr. Chen,Therapist X,Room 102,TRUE,LINE,Cancelled,0
+C0337,Guest_337,F,44,2025-11-17,19:15:00,Facial,Dr. Wang,Nurse A,Room 103,FALSE,LINE,Completed,2000
+C0338,Guest_338,F,31,2025-12-20,12:45:00,Botox,Dr. Chen,Therapist Y,Room 102,TRUE,Phone,Booked,5000
+C0339,Guest_339,F,60,2025-12-02,16:00:00,Consultation,Dr. Wang,Nurse C,VIP Room,FALSE,LINE,Completed,500
+C0340,Guest_340,F,33,2025-12-11,18:30:00,Facial,Dr. Chen,Therapist Y,VIP Room,TRUE,Phone,Completed,2000
+C0341,Guest_341,F,56,2025-11-04,16:00:00,Ultherapy,Dr. Chen,Nurse A,Room 102,FALSE,LINE,Completed,50000
+C0342,Guest_342,F,32,2025-12-23,15:00:00,Facial,Dr. Lee,Nurse B,Room 101,FALSE,Walk-in,Booked,2000
+C0343,Guest_343,F,52,2025-12-08,15:45:00,Consultation,Dr. Wang,Nurse C,Room 103,TRUE,Web,Completed,500
+C0344,Guest_344,F,56,2025-11-04,13:00:00,Thermage,Dr. Lee,Nurse C,Room 101,TRUE,Phone,Completed,60000
+C0345,Guest_345,M,55,2025-11-18,13:15:00,Consultation,Dr. Lee,Nurse B,Room 101,FALSE,LINE,Completed,500
+C0346,Guest_346,F,59,2025-11-30,14:00:00,Botox,Dr. Wang,Therapist X,VIP Room,FALSE,Phone,Completed,5000
+C0347,Guest_347,F,34,2025-12-18,16:30:00,Ultherapy,Dr. Wang,Nurse B,Room 101,TRUE,Phone,No-show,0
+C0348,Guest_348,M,36,2025-11-06,17:30:00,Ultherapy,Dr. Lee,Nurse C,Room 102,TRUE,Walk-in,Cancelled,0
+C0349,Guest_349,F,20,2025-11-18,12:00:00,Pico Laser,Dr. Chen,Therapist Y,Room 101,TRUE,Web,Completed,3000
+C0350,Guest_350,M,40,2025-12-11,20:45:00,Thermage,Dr. Wang,Therapist Y,VIP Room,TRUE,Web,Cancelled,0
+C0351,Guest_351,F,35,2025-12-06,18:15:00,Botox,Dr. Wang,Therapist X,Room 102,TRUE,LINE,Cancelled,0
+C0352,Guest_352,F,34,2025-12-07,15:00:00,Thermage,Dr. Lee,Therapist X,Room 102,TRUE,Web,Cancelled,0
+C0353,Guest_353,F,59,2025-12-01,17:30:00,Facial,Dr. Lee,Nurse C,VIP Room,FALSE,Web,Completed,2000
+C0354,Guest_354,M,43,2025-11-29,13:30:00,Pico Laser,Dr. Wang,Therapist X,Room 101,FALSE,LINE,Completed,3000
+C0355,Guest_355,M,44,2025-12-12,15:15:00,Thermage,Dr. Chen,Therapist X,Room 101,TRUE,LINE,Completed,60000
+C0356,Guest_356,F,38,2026-01-02,16:00:00,Facial,Dr. Wang,Nurse A,Room 101,FALSE,Phone,Booked,2000
+C0357,Guest_357,F,35,2025-11-08,13:15:00,Thermage,Dr. Lee,Nurse B,Room 103,TRUE,Phone,Completed,60000
+C0358,Guest_358,F,31,2025-12-07,20:30:00,Ultherapy,Dr. Wang,Nurse A,VIP Room,TRUE,Phone,No-show,0
+C0359,Guest_359,F,50,2025-11-27,12:30:00,Consultation,Dr. Chen,Therapist Y,Room 102,TRUE,LINE,Completed,500
+C0360,Guest_360,F,25,2025-11-04,15:15:00,Pico Laser,Dr. Chen,Nurse C,VIP Room,TRUE,Walk-in,Completed,3000
+C0361,Guest_361,F,59,2025-11-05,18:30:00,Consultation,Dr. Chen,Nurse A,Room 101,FALSE,Phone,Completed,500
+C0362,Guest_362,F,23,2025-12-10,17:15:00,Ultherapy,Dr. Wang,Nurse B,Room 103,FALSE,LINE,Completed,50000
+C0363,Guest_363,F,42,2025-12-14,14:00:00,Facial,Dr. Lee,Therapist Y,Room 102,TRUE,Web,Completed,2000
+C0364,Guest_364,F,20,2025-11-13,20:15:00,Botox,Dr. Wang,Nurse A,Room 103,FALSE,LINE,Completed,5000
+C0365,Guest_365,F,39,2025-11-05,17:15:00,Pico Laser,Dr. Lee,Therapist X,Room 101,FALSE,Web,Completed,3000
+C0366,Guest_366,F,39,2025-12-29,14:30:00,Pico Laser,Dr. Lee,Therapist Y,Room 102,FALSE,Walk-in,Booked,3000
+C0367,Guest_367,M,22,2025-11-12,18:00:00,Botox,Dr. Chen,Nurse C,VIP Room,TRUE,Web,Completed,5000
+C0368,Guest_368,F,56,2025-11-14,20:30:00,Facial,Dr. Lee,Therapist X,Room 102,FALSE,Web,Completed,2000
+C0369,Guest_369,F,30,2026-01-02,18:45:00,Botox,Dr. Lee,Nurse C,Room 101,FALSE,Web,Booked,5000
+C0370,Guest_370,F,36,2025-12-10,15:30:00,Ultherapy,Dr. Wang,Therapist Y,Room 103,FALSE,Web,No-show,0
+C0371,Guest_371,M,22,2025-11-21,19:00:00,Botox,Dr. Lee,Nurse A,Room 103,FALSE,Web,Completed,5000
+C0372,Guest_372,F,58,2025-12-04,20:00:00,Thermage,Dr. Chen,Nurse C,Room 103,FALSE,Walk-in,Completed,60000
+C0373,Guest_373,F,54,2025-12-15,12:30:00,Facial,Dr. Chen,Therapist Y,Room 103,TRUE,Phone,No-show,0
+C0374,Guest_374,M,26,2025-11-28,20:30:00,Ultherapy,Dr. Lee,Nurse A,VIP Room,FALSE,Phone,No-show,0
+C0375,Guest_375,F,58,2025-11-06,19:00:00,Consultation,Dr. Lee,Nurse B,Room 103,FALSE,LINE,No-show,0
+C0376,Guest_376,F,50,2025-12-30,19:45:00,Ultherapy,Dr. Chen,Therapist Y,Room 102,FALSE,Web,Booked,50000
+C0377,Guest_377,F,26,2025-12-21,19:00:00,Thermage,Dr. Chen,Therapist X,VIP Room,TRUE,Web,Booked,60000
+C0378,Guest_378,M,39,2025-12-23,12:00:00,Ultherapy,Dr. Chen,Nurse A,Room 103,TRUE,Phone,Booked,50000
+C0379,Guest_379,F,47,2025-12-24,13:00:00,Consultation,Dr. Chen,Therapist Y,VIP Room,TRUE,LINE,Booked,500
+C0380,Guest_380,M,37,2025-11-24,19:00:00,Pico Laser,Dr. Chen,Nurse B,VIP Room,TRUE,Web,Completed,3000
+C0381,Guest_381,M,41,2025-11-25,15:30:00,Botox,Dr. Lee,Nurse B,Room 103,TRUE,LINE,Cancelled,0
+C0382,Guest_382,M,46,2025-12-19,12:30:00,Pico Laser,Dr. Wang,Nurse C,Room 101,FALSE,LINE,Booked,3000
+C0383,Guest_383,F,40,2025-11-25,15:00:00,Consultation,Dr. Lee,Nurse B,Room 101,FALSE,LINE,Completed,500
+C0384,Guest_384,F,60,2025-11-04,18:30:00,Pico Laser,Dr. Lee,Nurse B,Room 101,FALSE,LINE,Cancelled,0
+C0385,Guest_385,M,33,2025-11-04,12:15:00,Pico Laser,Dr. Lee,Nurse A,Room 102,FALSE,Web,Cancelled,0
+C0386,Guest_386,F,44,2025-11-30,12:45:00,Consultation,Dr. Wang,Nurse B,Room 103,TRUE,Phone,Completed,500
+C0387,Guest_387,F,27,2025-11-23,20:30:00,Pico Laser,Dr. Chen,Therapist Y,Room 102,TRUE,Phone,Completed,3000
+C0388,Guest_388,F,41,2025-12-13,12:00:00,Pico Laser,Dr. Wang,Nurse A,Room 101,TRUE,Web,Completed,3000
+C0389,Guest_389,M,26,2025-11-05,19:45:00,Pico Laser,Dr. Wang,Nurse A,Room 102,TRUE,LINE,Cancelled,0
+C0390,Guest_390,F,32,2025-12-16,20:00:00,Thermage,Dr. Lee,Nurse C,Room 103,FALSE,Walk-in,Completed,60000
+C0391,Guest_391,F,20,2025-12-04,16:30:00,Botox,Dr. Lee,Therapist X,VIP Room,FALSE,Walk-in,Cancelled,0
+C0392,Guest_392,F,32,2025-12-29,19:00:00,Botox,Dr. Chen,Nurse B,Room 101,TRUE,Walk-in,Booked,5000
+C0393,Guest_393,F,21,2025-11-29,17:15:00,Pico Laser,Dr. Lee,Nurse C,VIP Room,TRUE,Web,Completed,3000
+C0394,Guest_394,F,32,2026-01-02,17:45:00,Pico Laser,Dr. Lee,Therapist Y,Room 103,TRUE,Walk-in,Booked,3000
+C0395,Guest_395,M,49,2025-12-24,16:15:00,Facial,Dr. Lee,Nurse A,Room 103,FALSE,LINE,Booked,2000
+C0396,Guest_396,F,47,2025-11-20,18:15:00,Botox,Dr. Chen,Therapist X,Room 102,TRUE,Walk-in,Completed,5000
+C0397,Guest_397,F,25,2025-12-08,20:45:00,Thermage,Dr. Chen,Therapist Y,VIP Room,FALSE,LINE,Completed,60000
+C0398,Guest_398,F,39,2025-12-28,14:00:00,Consultation,Dr. Lee,Nurse A,Room 101,FALSE,Walk-in,Booked,500
+C0399,Guest_399,F,21,2025-11-26,13:30:00,Pico Laser,Dr. Chen,Nurse B,Room 103,TRUE,Web,Completed,3000
+C0400,Guest_400,F,23,2025-12-29,17:45:00,Botox,Dr. Lee,Therapist X,Room 102,FALSE,Web,Booked,5000
+C0401,Guest_401,F,45,2025-11-15,12:15:00,Thermage,Dr. Wang,Nurse C,Room 103,FALSE,Walk-in,No-show,0
+C0402,Guest_402,F,34,2025-12-18,20:00:00,Thermage,Dr. Chen,Therapist X,Room 102,TRUE,Web,Completed,60000
+C0403,Guest_403,M,58,2025-11-16,18:45:00,Ultherapy,Dr. Wang,Nurse B,Room 103,TRUE,Web,Completed,50000
+C0404,Guest_404,M,24,2025-12-20,15:30:00,Pico Laser,Dr. Chen,Nurse A,Room 103,TRUE,Phone,Booked,3000
+C0405,Guest_405,F,37,2025-11-17,19:30:00,Pico Laser,Dr. Wang,Nurse C,VIP Room,FALSE,Phone,Completed,3000
+C0406,Guest_406,M,44,2025-12-07,18:15:00,Thermage,Dr. Chen,Therapist X,VIP Room,TRUE,Walk-in,Completed,60000
+C0407,Guest_407,M,56,2025-12-25,13:45:00,Botox,Dr. Lee,Nurse A,Room 101,TRUE,Walk-in,Booked,5000
+C0408,Guest_408,F,50,2025-11-11,12:30:00,Consultation,Dr. Wang,Nurse C,Room 101,TRUE,Phone,Completed,500
+C0409,Guest_409,M,32,2025-11-05,16:00:00,Facial,Dr. Chen,Nurse B,Room 102,FALSE,Web,Cancelled,0
+C0410,Guest_410,F,55,2025-11-28,16:45:00,Ultherapy,Dr. Wang,Nurse A,Room 103,FALSE,Phone,Completed,50000
+C0411,Guest_411,F,57,2026-01-01,19:30:00,Pico Laser,Dr. Wang,Therapist X,Room 101,FALSE,LINE,Booked,3000
+C0412,Guest_412,M,31,2025-12-28,19:45:00,Thermage,Dr. Wang,Nurse A,VIP Room,FALSE,Phone,Booked,60000
+C0413,Guest_413,F,48,2025-11-20,19:00:00,Thermage,Dr. Lee,Therapist Y,Room 102,TRUE,LINE,Completed,60000
+C0414,Guest_414,F,27,2025-12-11,17:30:00,Pico Laser,Dr. Chen,Nurse A,Room 101,TRUE,Web,Completed,3000
+C0415,Guest_415,F,34,2025-12-15,18:00:00,Thermage,Dr. Wang,Nurse A,Room 102,TRUE,LINE,Cancelled,0
+C0416,Guest_416,M,33,2025-12-20,20:00:00,Pico Laser,Dr. Lee,Nurse C,Room 103,FALSE,LINE,Booked,3000
+C0417,Guest_417,M,47,2025-12-31,14:00:00,Ultherapy,Dr. Chen,Nurse C,VIP Room,FALSE,Walk-in,Booked,50000
+C0418,Guest_418,F,32,2025-12-01,18:30:00,Consultation,Dr. Wang,Therapist Y,VIP Room,TRUE,LINE,Cancelled,0
+C0419,Guest_419,F,58,2025-12-08,17:00:00,Thermage,Dr. Lee,Nurse C,Room 101,TRUE,Walk-in,Completed,60000
+C0420,Guest_420,M,35,2025-12-31,12:00:00,Facial,Dr. Chen,Nurse A,Room 101,TRUE,Walk-in,Booked,2000
+C0421,Guest_421,F,46,2025-12-30,20:00:00,Facial,Dr. Chen,Nurse C,Room 102,FALSE,Walk-in,Booked,2000
+C0422,Guest_422,F,60,2025-11-23,12:15:00,Ultherapy,Dr. Chen,Therapist X,Room 103,FALSE,Walk-in,Completed,50000
+C0423,Guest_423,F,21,2025-11-30,19:45:00,Consultation,Dr. Chen,Nurse A,Room 102,FALSE,Walk-in,Cancelled,0
+C0424,Guest_424,M,50,2025-12-10,17:30:00,Ultherapy,Dr. Wang,Therapist X,VIP Room,TRUE,Walk-in,No-show,0
+C0425,Guest_425,F,24,2025-12-21,16:15:00,Ultherapy,Dr. Wang,Nurse C,Room 103,TRUE,Web,Booked,50000
+C0426,Guest_426,M,48,2025-11-23,20:45:00,Botox,Dr. Wang,Nurse A,Room 101,FALSE,LINE,Completed,5000
+C0427,Guest_427,F,54,2025-11-17,18:45:00,Facial,Dr. Wang,Nurse A,Room 102,FALSE,Phone,Cancelled,0
+C0428,Guest_428,F,58,2025-12-30,12:00:00,Thermage,Dr. Wang,Therapist Y,Room 101,TRUE,Walk-in,Booked,60000
+C0429,Guest_429,F,58,2025-11-29,16:45:00,Consultation,Dr. Chen,Nurse B,Room 101,FALSE,Web,Completed,500
+C0430,Guest_430,M,47,2025-11-16,19:45:00,Ultherapy,Dr. Chen,Nurse B,Room 102,TRUE,LINE,Completed,50000
+C0431,Guest_431,F,29,2025-11-20,14:00:00,Thermage,Dr. Wang,Therapist Y,Room 103,TRUE,Walk-in,Completed,60000
+C0432,Guest_432,F,40,2025-11-13,20:45:00,Facial,Dr. Wang,Nurse C,Room 101,FALSE,LINE,Completed,2000
+C0433,Guest_433,F,58,2025-12-23,12:30:00,Facial,Dr. Chen,Nurse A,Room 101,FALSE,LINE,Booked,2000
+C0434,Guest_434,F,28,2025-11-05,12:15:00,Thermage,Dr. Chen,Nurse B,Room 103,FALSE,Phone,Completed,60000
+C0435,Guest_435,F,59,2025-12-03,14:45:00,Thermage,Dr. Chen,Nurse A,VIP Room,TRUE,Walk-in,Completed,60000
+C0436,Guest_436,F,47,2025-12-19,20:00:00,Pico Laser,Dr. Chen,Nurse C,Room 103,FALSE,LINE,Booked,3000
+C0437,Guest_437,F,24,2025-11-18,19:00:00,Facial,Dr. Chen,Nurse B,Room 103,FALSE,Walk-in,No-show,0
+C0438,Guest_438,F,50,2025-11-22,12:15:00,Botox,Dr. Chen,Nurse C,VIP Room,TRUE,Web,Completed,5000
+C0439,Guest_439,M,28,2025-12-06,13:00:00,Facial,Dr. Lee,Nurse A,Room 103,FALSE,Web,Completed,2000
+C0440,Guest_440,F,40,2025-12-29,16:45:00,Botox,Dr. Lee,Nurse C,Room 103,FALSE,LINE,Booked,5000
+C0441,Guest_441,F,35,2025-12-02,12:45:00,Botox,Dr. Wang,Nurse A,Room 101,FALSE,Phone,Cancelled,0
+C0442,Guest_442,F,38,2025-12-14,18:30:00,Consultation,Dr. Chen,Nurse B,Room 103,FALSE,LINE,Completed,500
+C0443,Guest_443,F,29,2025-11-26,14:00:00,Facial,Dr. Wang,Nurse A,Room 102,TRUE,Web,No-show,0
+C0444,Guest_444,F,32,2025-12-18,17:30:00,Consultation,Dr. Lee,Therapist X,VIP Room,FALSE,Walk-in,Cancelled,0
+C0445,Guest_445,F,38,2025-11-14,17:15:00,Facial,Dr. Chen,Nurse B,Room 102,FALSE,Phone,Completed,2000
+C0446,Guest_446,F,42,2025-11-07,17:30:00,Ultherapy,Dr. Chen,Nurse B,Room 102,FALSE,Phone,No-show,0
+C0447,Guest_447,F,26,2025-12-16,18:15:00,Botox,Dr. Wang,Therapist X,Room 103,TRUE,Phone,Completed,5000
+C0448,Guest_448,F,28,2025-11-09,19:30:00,Botox,Dr. Chen,Nurse C,Room 102,FALSE,Web,Completed,5000
+C0449,Guest_449,F,37,2025-11-20,12:45:00,Botox,Dr. Chen,Nurse C,VIP Room,TRUE,Walk-in,Cancelled,0
+C0450,Guest_450,F,51,2025-11-11,19:30:00,Facial,Dr. Wang,Nurse A,VIP Room,FALSE,LINE,No-show,0
+C0451,Guest_451,F,42,2025-12-30,19:00:00,Ultherapy,Dr. Wang,Nurse A,Room 102,TRUE,LINE,Booked,50000
+C0452,Guest_452,F,29,2025-12-30,16:30:00,Consultation,Dr. Lee,Therapist Y,Room 101,TRUE,LINE,Booked,500
+C0453,Guest_453,F,38,2025-12-02,20:00:00,Facial,Dr. Lee,Nurse C,VIP Room,FALSE,Phone,Completed,2000
+C0454,Guest_454,F,47,2025-12-28,19:15:00,Botox,Dr. Lee,Nurse C,Room 102,TRUE,Phone,Booked,5000
+C0455,Guest_455,F,47,2025-12-11,18:45:00,Pico Laser,Dr. Wang,Nurse B,Room 102,TRUE,Web,Cancelled,0
+C0456,Guest_456,M,46,2025-11-13,17:15:00,Thermage,Dr. Wang,Nurse C,Room 102,FALSE,Phone,Cancelled,0
+C0457,Guest_457,F,30,2026-01-02,17:45:00,Pico Laser,Dr. Chen,Therapist Y,VIP Room,TRUE,Walk-in,Booked,3000
+C0458,Guest_458,F,48,2025-11-25,14:30:00,Ultherapy,Dr. Wang,Nurse A,VIP Room,FALSE,Walk-in,No-show,0
+C0459,Guest_459,F,50,2025-11-15,13:30:00,Botox,Dr. Chen,Therapist Y,VIP Room,FALSE,LINE,Cancelled,0
+C0460,Guest_460,F,46,2025-11-13,12:15:00,Consultation,Dr. Chen,Therapist Y,VIP Room,TRUE,Web,Completed,500
+C0461,Guest_461,F,50,2025-12-04,12:15:00,Ultherapy,Dr. Lee,Therapist X,VIP Room,FALSE,LINE,Completed,50000
+C0462,Guest_462,F,33,2025-12-12,17:00:00,Pico Laser,Dr. Lee,Therapist Y,Room 102,FALSE,Walk-in,Completed,3000
+C0463,Guest_463,M,52,2025-11-19,18:00:00,Facial,Dr. Chen,Therapist X,Room 102,TRUE,Web,Completed,2000
+C0464,Guest_464,F,54,2026-01-02,14:45:00,Pico Laser,Dr. Chen,Therapist X,VIP Room,FALSE,Web,Booked,3000
+C0465,Guest_465,F,48,2025-12-09,18:15:00,Ultherapy,Dr. Lee,Nurse A,VIP Room,FALSE,Web,Completed,50000
+C0466,Guest_466,F,38,2025-12-06,18:00:00,Thermage,Dr. Lee,Therapist X,VIP Room,FALSE,LINE,Completed,60000
+C0467,Guest_467,F,22,2025-11-23,17:15:00,Botox,Dr. Chen,Therapist X,Room 102,TRUE,LINE,Cancelled,0
+C0468,Guest_468,F,45,2025-12-14,17:00:00,Facial,Dr. Lee,Nurse A,VIP Room,TRUE,LINE,Completed,2000
+C0469,Guest_469,M,52,2025-11-22,18:45:00,Consultation,Dr. Chen,Nurse A,Room 101,TRUE,Phone,No-show,0
+C0470,Guest_470,M,23,2025-12-17,14:15:00,Ultherapy,Dr. Wang,Therapist Y,Room 102,FALSE,Walk-in,No-show,0
+C0471,Guest_471,F,59,2025-12-31,15:30:00,Thermage,Dr. Wang,Therapist X,Room 103,TRUE,Web,Booked,60000
+C0472,Guest_472,F,28,2025-11-18,15:00:00,Consultation,Dr. Chen,Therapist X,VIP Room,FALSE,Phone,Completed,500
+C0473,Guest_473,F,21,2025-11-14,15:00:00,Thermage,Dr. Lee,Nurse C,Room 101,FALSE,Walk-in,Completed,60000
+C0474,Guest_474,F,32,2025-12-22,15:45:00,Botox,Dr. Chen,Nurse A,Room 103,FALSE,Phone,Booked,5000
+C0475,Guest_475,F,25,2025-12-26,18:30:00,Pico Laser,Dr. Chen,Nurse B,Room 103,FALSE,Walk-in,Booked,3000
+C0476,Guest_476,F,33,2025-12-05,20:00:00,Thermage,Dr. Wang,Therapist X,Room 102,TRUE,LINE,Completed,60000
+C0477,Guest_477,F,30,2025-11-26,20:45:00,Consultation,Dr. Chen,Nurse A,Room 101,FALSE,Web,No-show,0
+C0478,Guest_478,F,42,2025-12-12,20:30:00,Consultation,Dr. Lee,Nurse B,Room 102,TRUE,Phone,Completed,500
+C0479,Guest_479,M,56,2025-12-26,19:30:00,Thermage,Dr. Chen,Nurse A,Room 101,TRUE,Web,Booked,60000
+C0480,Guest_480,F,58,2025-11-08,17:15:00,Ultherapy,Dr. Chen,Therapist Y,Room 102,FALSE,Web,Cancelled,0
+C0481,Guest_481,F,30,2025-12-31,14:00:00,Ultherapy,Dr. Lee,Therapist X,VIP Room,TRUE,Phone,Booked,50000
+C0482,Guest_482,M,51,2025-12-11,13:30:00,Thermage,Dr. Chen,Nurse B,VIP Room,FALSE,Walk-in,Completed,60000
+C0483,Guest_483,F,54,2025-12-15,15:15:00,Facial,Dr. Chen,Nurse C,Room 103,TRUE,Web,Completed,2000
+C0484,Guest_484,F,56,2025-11-09,14:30:00,Facial,Dr. Wang,Nurse C,Room 102,TRUE,Walk-in,Completed,2000
+C0485,Guest_485,M,57,2025-12-21,18:15:00,Facial,Dr. Chen,Nurse A,Room 102,FALSE,LINE,Booked,2000
+C0486,Guest_486,F,60,2025-11-07,19:30:00,Thermage,Dr. Lee,Therapist X,VIP Room,FALSE,Walk-in,Completed,60000
+C0487,Guest_487,F,24,2025-12-07,13:30:00,Facial,Dr. Lee,Therapist Y,Room 101,TRUE,Web,Completed,2000
+C0488,Guest_488,M,25,2025-11-24,12:45:00,Facial,Dr. Lee,Nurse B,Room 102,FALSE,Web,Completed,2000
+C0489,Guest_489,M,51,2025-11-05,14:00:00,Pico Laser,Dr. Lee,Therapist X,VIP Room,TRUE,LINE,Completed,3000
+C0490,Guest_490,M,43,2025-12-22,20:30:00,Consultation,Dr. Chen,Nurse C,Room 101,TRUE,Web,Booked,500
+C0491,Guest_491,M,34,2025-12-28,20:00:00,Consultation,Dr. Chen,Therapist Y,Room 102,TRUE,LINE,Booked,500
+C0492,Guest_492,F,55,2025-11-06,14:30:00,Facial,Dr. Chen,Therapist X,Room 102,TRUE,LINE,No-show,0
+C0493,Guest_493,F,46,2025-11-29,18:15:00,Botox,Dr. Chen,Nurse B,Room 102,TRUE,LINE,No-show,0
+C0494,Guest_494,F,22,2025-11-20,19:15:00,Pico Laser,Dr. Lee,Nurse B,Room 101,TRUE,LINE,Completed,3000
+C0495,Guest_495,F,26,2025-11-06,17:15:00,Facial,Dr. Lee,Nurse B,VIP Room,TRUE,LINE,Cancelled,0
+C0496,Guest_496,F,37,2025-12-19,17:45:00,Botox,Dr. Chen,Nurse B,Room 102,TRUE,Walk-in,Booked,5000
+C0497,Guest_497,F,46,2025-12-14,16:30:00,Consultation,Dr. Wang,Therapist Y,VIP Room,FALSE,Web,Completed,500
+C0498,Guest_498,F,25,2025-12-29,13:45:00,Consultation,Dr. Chen,Nurse C,Room 101,FALSE,Walk-in,Booked,500
+C0499,Guest_499,F,25,2025-11-14,14:00:00,Consultation,Dr. Wang,Nurse B,Room 102,TRUE,LINE,No-show,0

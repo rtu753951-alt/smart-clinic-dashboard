@@ -195,6 +195,17 @@ button { font-family: inherit; }
   display: none; /* JS toggles this */
 }
 
+/* 確保 active 狀態下顯示 */
+.page-section.active {
+    display: block;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Active section logic usually handled by JS/CSS classes, assuming JS sets display block */
 .page-section.active-section { /* Fallback if generic class used */
     display: block !important;

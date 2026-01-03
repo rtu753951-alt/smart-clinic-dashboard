@@ -33,7 +33,8 @@ export function initPageController() {
       }
   };
 
-  showPage("overview"); // 預設首頁
+  // 🔽 [Fix] Robust Initial Routing for GitHub Pages
+  handleInitialRoute();
   
   // Attach openChurnRiskViewGlobal to window for HTML inline access
   (window as any).openChurnRiskViewGlobal = openChurnRiskViewGlobal;
@@ -72,6 +73,63 @@ export function initPageController() {
            (window as any).initTasksPage?.();
       }
   };
+}
+
+/**
+ * 處理初始路由與瀏覽器歷史記錄
+ * 解決 GitHub Pages 子路徑 (/repo-name/) 導致的路由解析錯誤
+ */
+function handleInitialRoute() {
+    // 1. 取得當前路徑
+    const path = window.location.pathname;
+    
+    // 2. 移除 BASE_URL (如果你在 vite.config.ts 有設定 base)
+    // 例如: /smart-clinic-dashboard/appointments -> /appointments
+    const baseUrl = import.meta.env.BASE_URL; // e.g., '/smart-clinic-dashboard/'
+    
+    let route = path;
+    if (baseUrl && path.startsWith(baseUrl)) {
+        route = path.slice(baseUrl.length);
+    }
+    
+    // 移除開頭斜線
+    route = route.replace(/^\//, '');
+    
+    console.log(`[Router] Raw Path: ${path}, Base: ${baseUrl}, Parsed Route: ${route}`);
+
+    // 3. 定義允許的 Page ID
+    const validPages = ['overview', 'appointments', 'staff', 'rooms', 'services', 'customers', 'tasks'];
+    
+    // 4. 判斷並導航
+    if (validPages.includes(route)) {
+        console.log(`[Router] Valid route found: ${route}`);
+        showPage(route);
+        // Sync Sidebar
+        document.querySelector(`.nav-links li[data-tab="${route}"]`)?.classList.add('active');
+    } else {
+        console.log(`[Router] Invalid or empty route ('${route}'), defaulting to overview.`);
+        showPage("overview");
+        
+        // 如果是完全錯誤的路徑，建議用 replaceState 修正 URL (Optional)
+        // history.replaceState(null, '', baseUrl); 
+    }
+
+    // 5. 綁定 popstate 以支援瀏覽器上一頁/下一頁 (簡易實作)
+    window.addEventListener('popstate', () => {
+        const newPath = window.location.pathname;
+        let newRoute = newPath;
+        if (baseUrl && newPath.startsWith(baseUrl)) {
+            newRoute = newPath.slice(baseUrl.length).replace(/^\//, '');
+        }
+        if (validPages.includes(newRoute)) {
+            showPage(newRoute);
+            // Update Sidebar UI
+             document.querySelectorAll(".nav-links li").forEach(li => li.classList.remove('active'));
+             document.querySelector(`.nav-links li[data-tab="${newRoute}"]`)?.classList.add('active');
+        } else {
+            showPage("overview");
+        }
+    });
 }
 
 declare global {

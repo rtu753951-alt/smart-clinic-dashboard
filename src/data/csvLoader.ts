@@ -1,5 +1,16 @@
+import { getAssetPath } from "../utils/pathUtils.js";
+
 export async function loadCSV<T>(path: string): Promise<T[]> {
-  const response = await fetch(path);
+  const fullPath = getAssetPath(path);
+  // console.log(`[CSV Loader] Fetching: ${fullPath} (Base: ${path})`);
+  
+  const response = await fetch(fullPath);
+  
+  if (!response.ok) {
+      console.error(`[CSV Loader] Failed to load ${fullPath}: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to load ${path} (${response.status})`);
+  }
+  
   const csvText = await response.text();
 
   const lines = csvText.trim().split("\n");
