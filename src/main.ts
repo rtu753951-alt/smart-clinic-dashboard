@@ -1,3 +1,11 @@
+// === Import Styles (Unified) ===
+import "../style.css";
+import "../style_global_interactive.css";
+import "../style_kpi_compact.css";
+import "../style_customer_insights.css";
+import "./styles/workload-cards.css";
+import "./styles/launchCover.css";
+
 // === Import 區 ===
 import { initPanelController, bindModalEvents } from "./ui/panelController.js";
 import { initPageController } from "./ui/pageController.js";
@@ -11,6 +19,7 @@ import { initStaffPage } from "./pages/staffPage.js";
 import { initCustomersPage } from "./pages/customersPage.js";
 import { initLaunchCover } from "./pages/launchCoverPage.js";
 import { initTasksPage } from "./pages/tasksPage.js";
+
 
 // === 全域註冊頁面初始化（給 pageController 使用）===
 (window as any).initOverviewPage = initOverviewPage;
