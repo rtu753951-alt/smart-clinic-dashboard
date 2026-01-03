@@ -1,0 +1,4 @@
+equipment_name,equipment_type,room_name,status
+PicoSure皮秒雷射,laser,雷射室,active
+Thermage電波拉皮,rf,RF治療室,active
+Ultherapy超聲刀,rf,RF治療室,active

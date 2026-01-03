@@ -1,0 +1,14 @@
+staff_name,staff_type,specialty,skill_level,certified_services,status
+陳醫師,doctor,美容醫學,senior,Botox|Thread Lift|Thermage|Ultherapy|RF Tightening|Skin Booster|Mesotherapy,active
+李醫師,doctor,皮膚科,senior,Botox|Thread Lift|Ultherapy|Thermage|Skin Booster|Mesotherapy,active
+吳醫師,doctor,皮膚科,mid,Botox|Skin Booster|Mesotherapy|Ultherapy,active
+林醫師,doctor,美容醫學,mid,Thermage|RF Tightening|Ultherapy|Botox,active
+張護理師,nurse,皮秒/針劑,mid,Whitening Drip|IV Injection,active
+劉護理師,nurse,電波/手術,mid,Whitening Drip|Surgical Assist,active
+陳護理師,nurse,術後護理,junior,Whitening Drip,active
+王美療師,therapist,皮秒/皮膚管理,senior,Pico Laser|Laser Toning|Chemical Peel|Hydra Facial,active
+林美療師,therapist,電波/導入,mid,RF Tightening|Hydra Facial|Chemical Peel,active
+葉美療師,therapist,高階保養,junior,Hydra Facial|Chemical Peel,active
+陳美療師,therapist,術後修復,junior,Hydra Facial|Laser Toning,active
+黃諮詢師,consultant,諮詢分析,mid,Consultation,active
+林諮詢師,consultant,客戶關係,mid,Consultation|Follow-up,active

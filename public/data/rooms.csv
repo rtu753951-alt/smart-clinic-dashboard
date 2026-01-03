@@ -1,0 +1,7 @@
+room_name,room_type,status
+診間A,consult,available
+診間B,consult,available
+雷射室,laser,available
+RF治療室,rf,available
+處置室,procedure,available
+點滴室,iv,available
