@@ -1,0 +1,1154 @@
+/* ===================================
+   Launch Cover Page - 終極重構版
+   完全對齊參考圖片的磨砂玻璃質感
+=================================== */
+
+/* ===================================
+   Launch Cover Page - 未來醫療 AI 營運中心風格
+   Future Medical AI Operations Center Theme
+=================================== */
+
+/* ===================================
+   Launch Cover Page - 未來醫療 AI 營運中心風格
+   Future Medical AI Operations Center Theme
+   Background: Real Image
+=================================== */
+
+#launch-cover {
+  /* 主容器：固定視窗，處理捲動 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  /* 確保在各種縮放比下都能正確捲動 */
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+
+  /* 背景圖：鎖定於視窗 */
+  background-image: url("../assets/ai_operations_center_bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  display: flex;
+  align-items: flex-start; /* 讓內容從頂部開始，允許捲動 */
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  background-color: #0f172a; /* 深色底襯 */
+}
+
+/* 背景遮罩層 (Overlay) - 必須設定為 fixed 以匹配 background-attachment: fixed */
+#launch-cover::before {
+  content: "";
+  position: fixed; /* 強制固定，確保不會隨內容捲動而跑位 */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+
+  /* 深色漸層遮罩 */
+  background: radial-gradient(
+    circle at center,
+    rgba(15, 23, 42, 0.7) 0%,
+    rgba(15, 23, 42, 0.85) 60%,
+    rgba(2, 6, 23, 0.95) 100%
+  );
+  z-index: -1; /* 位於內容之下 */
+}
+
+/* 科技濾鏡層 - 同樣固定 */
+#launch-cover::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.1),
+    rgba(30, 58, 138, 0.2)
+  );
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: -1;
+}
+
+#launch-cover.launch-cover-exit {
+  opacity: 0;
+  transform: scale(1.05);
+}
+
+.launch-cover-content {
+  max-width: 1400px;
+  width: 92%;
+  padding: 20px 40px 60px;
+  margin-top: 5vh;
+  margin-bottom: 5vh;
+
+  animation: zoomInUp 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+  z-index: 10;
+  height: auto;
+}
+
+/* 裝飾性 HUD 邊框角落 */
+.launch-cover-content::before,
+.launch-cover-content::after {
+  content: "";
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid rgba(56, 189, 248, 0.3);
+  transition: all 0.5s ease;
+}
+
+.launch-cover-content::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+  border-top-left-radius: 10px;
+}
+
+.launch-cover-content::after {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+  border-bottom-right-radius: 10px;
+}
+
+@keyframes zoomInUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ===================================
+   標題區 - 亮白色（適應深色圖片背景）
+=================================== */
+
+.launch-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  /* 改回亮白色，適應深色圖片背景 */
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 20px; /* Reduced to fit Info Bar */
+  letter-spacing: 4px;
+
+  /* 亮白色漸層 */
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+
+  /* 強烈發光讓標題浮現 */
+  filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5));
+
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+/* 標題下方的裝飾線 - 亮青色 */
+.launch-title::after {
+  content: "";
+  display: block;
+  width: 120px;
+  height: 4px;
+  background: #38bdf8; /* Sky 400 */
+  margin: 20px auto 0;
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+}
+
+/* ===================================
+   資訊列 - 更新時間與視窗
+=================================== */
+.launch-info-bar {
+  font-size: 13px;
+  color: #cbd5e1;
+  opacity: 0.75;
+  text-align: center;
+  letter-spacing: 1.5px;
+  margin-bottom: 60px; /* Gap to Cards */
+  font-weight: 400;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+
+  /* Optional: Subtle background pill or line, but request said simple text */
+}
+
+/* ===================================
+   HUD 玻璃卡片 - 深色背景凸顯文字
+=================================== */
+
+.launch-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  margin-bottom: 80px;
+}
+
+.launch-glass-card {
+  /* 加深卡片背景，讓白色文字浮現 */
+  background: rgba(15, 23, 42, 0.85) !important; /* 不透明度提高 */
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+
+  /* 強烈陰影讓卡片浮起 */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+
+  transition: all 300ms ease;
+  padding: 50px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer; /* Add pointer cursor */
+}
+
+/* Hover 效果 */
+.launch-glass-card:hover {
+  transform: translateY(-8px);
+  background: rgba(
+    15,
+    23,
+    42,
+    0.75
+  ) !important; /* 透明度增加 (Opacity decrease) */
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3); /* Base shadow */
+}
+
+/* Hover Hint Overlay */
+.launch-glass-card::after {
+  content: attr(data-hint);
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: 1px;
+  white-space: nowrap;
+
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none; /* Let click pass through to card */
+}
+
+.launch-glass-card:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 特定卡片 Hover 霓虹光效果 (Radius 50px) */
+
+/* 營收 - Green */
+.card-revenue:hover {
+  box-shadow: 0 0 50px rgba(74, 222, 128, 0.5), 0 30px 60px rgba(0, 0, 0, 0.3);
+  border-color: rgba(74, 222, 128, 0.8) !important;
+}
+
+/* VIP - Blue */
+.card-vip:hover {
+  box-shadow: 0 0 50px rgba(96, 165, 250, 0.5), 0 30px 60px rgba(0, 0, 0, 0.3);
+  border-color: rgba(96, 165, 250, 0.8) !important;
+}
+
+/* 風險 - Orange */
+.card-action:hover {
+  box-shadow: 0 0 50px rgba(251, 191, 36, 0.5), 0 30px 60px rgba(0, 0, 0, 0.3);
+  border-color: rgba(251, 191, 36, 0.8) !important;
+}
+
+/* ===================================
+   卡片數據 - 高對比配色
+=================================== */
+
+.card-icon {
+  font-size: 4.5rem;
+  margin-bottom: 25px;
+  /* 增加圖標亮度 */
+  filter: brightness(1.2) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.card-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  /* 標籤改為純白，高對比 */
+  color: #ffffff !important;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+  opacity: 0.9;
+}
+
+/* 移除標籤下方的線條，保持乾淨 */
+.card-label::after {
+  display: none;
+}
+
+.card-value {
+  font-size: 3.8rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  font-family: "Roboto Mono", monospace;
+  /* 增加文字陰影，確保清晰 */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* 個別顏色 - 增亮以對抗深背景 */
+
+/* 營收 */
+.card-revenue .card-value {
+  color: #4ade80; /* Green 400 - 更亮 */
+}
+
+/* VIP */
+.card-vip .card-value {
+  color: #60a5fa; /* Blue 400 */
+}
+
+/* 風險 */
+.card-action .card-value {
+  color: #fbbf24; /* Amber 400 */
+}
+
+/* ===================================
+   進入按鈕 (Centered Main Action)
+=================================== */
+
+.launch-enter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 480px;
+  margin: 40px auto 30px; /* Top Bottom Auto */
+  padding: 22px 44px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  z-index: 100; /* Ensure above reminder shadows */
+
+  /* 發光效果 */
+  box-shadow: 0 4px 24px rgba(59, 130, 246, 0.5),
+    0 0 50px rgba(59, 130, 246, 0.25);
+}
+
+.launch-enter-btn::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.3) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+.launch-enter-btn:hover::before {
+  opacity: 1;
+}
+
+.launch-enter-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.6),
+    0 0 70px rgba(59, 130, 246, 0.35);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.launch-enter-btn:active {
+  transform: translateY(-2px);
+}
+
+.launch-enter-btn i {
+  transition: transform 400ms ease;
+}
+
+.launch-enter-btn:hover i {
+  transform: translateX(8px);
+}
+
+/* ===================================
+   載入狀態
+=================================== */
+
+.launch-status {
+  text-align: center;
+  padding: 30px;
+}
+
+.launch-status p {
+  font-size: 1.05rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* ===================================
+   Skeleton 載入動畫
+=================================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+  border-radius: 10px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-text {
+  height: 28px;
+  width: 100%;
+}
+
+.skeleton-large {
+  height: 56px;
+  width: 85%;
+}
+
+.skeleton-medium {
+  height: 40px;
+  width: 65%;
+}
+
+.skeleton-small {
+  height: 24px;
+  width: 45%;
+}
+
+/* ===================================
+   錯誤狀態
+=================================== */
+
+.launch-error {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.2) 0%,
+    rgba(220, 38, 38, 0.1) 100%
+  );
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+.error-icon {
+  font-size: 3.5rem;
+  color: #f87171;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.error-message {
+  text-align: center;
+}
+
+.error-message p {
+  font-size: 1.2rem;
+  color: #f8fafc;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.error-message small {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+}
+
+.launch-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.metric-placeholder {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #475569;
+  text-align: center;
+  margin: 50px 0;
+}
+
+.launch-enter-btn-offline {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  box-shadow: 0 4px 24px rgba(100, 116, 139, 0.4),
+    0 0 50px rgba(100, 116, 139, 0.2);
+}
+
+.launch-enter-btn-offline:hover {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+}
+
+/* ===================================
+   響應式設計
+=================================== */
+
+@media (max-width: 1200px) {
+  .launch-cards-grid {
+    gap: 28px;
+  }
+
+  .launch-glass-card {
+    padding: 38px 28px;
+    min-height: 260px;
+  }
+
+  .card-value {
+    font-size: 3.4rem;
+  }
+
+  .card-icon {
+    font-size: 4.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .launch-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    max-width: 520px;
+    margin: 0 auto 60px;
+  }
+
+  .launch-title {
+    font-size: 2.8rem;
+    margin-bottom: 60px;
+  }
+
+  .card-value {
+    font-size: 3.6rem;
+  }
+
+  .launch-glass-card {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .launch-title {
+    font-size: 2.2rem;
+    margin-bottom: 50px;
+    letter-spacing: 2px;
+  }
+
+  .card-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+  }
+
+  .card-value {
+    font-size: 3rem;
+  }
+
+  .launch-enter-btn {
+    font-size: 1.1rem;
+    padding: 20px 36px;
+  }
+}
+
+/* ===================================
+   Cards Entrance Animation (Staggered Pop-in)
+=================================== */
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.launch-glass-card {
+  /* Animation: Name | Duration | Timing-Function | Delay (default 0) | Iteration | Direction | Fill-Mode */
+  /* Note: Fill-mode 'backwards' ensures opacity:0 is applied during the delay period */
+  animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+
+  /* Performance & Rendering optimizations */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translateZ(0); /* Trigger GPU acceleration */
+  -webkit-font-smoothing: subpixel-antialiased;
+}
+
+/* Staggered Delays for Sequential Entrance */
+.card-revenue {
+  animation-delay: 0.1s;
+}
+
+.card-vip {
+  animation-delay: 0.25s;
+}
+
+/* === Task Reminder Card (Forced High Contrast Glass - Final Fix) === */
+.launch-reminders-area {
+  width: 100%;
+  /* Align with the grid above which uses gap of 40px and 3 columns */
+  /* The grid handles its own width, this should just fill container but better constrained */
+  /* Use margin auto if you want it centered limited width, or just 100% of parent */
+
+  margin-top: 10px; /* Reduced since Button has bottom margin */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(59, 130, 246, 0.3); /* Softer Blue Accent */
+
+  position: relative;
+  z-index: 1; /* Below Button */
+}
+
+/* Specificity Boost */
+.launch-glass-card.card-reminder {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px 32px !important;
+
+  /* Forced Deep Dark Glass for Contrast against text */
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.5) !important;
+
+  gap: 20px;
+  cursor: default;
+  border-radius: 16px !important;
+}
+
+.card-reminder:hover {
+  background: rgba(15, 23, 42, 1) !important;
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  box-shadow: 0 0 35px rgba(56, 189, 248, 0.15) !important;
+}
+
+.reminder-icon {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  border-radius: 50%;
+  background: rgba(251, 191, 36, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #fbbf24;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.4));
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.reminder-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Force Text Colors */
+.reminder-title {
+  color: #ffffff !important;
+  font-family: "Inter", sans-serif;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.reminder-desc {
+  color: #94a3b8 !important; /* Slate-400 for contrast on dark bg */
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.reminder-action-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  border-radius: 24px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+  white-space: nowrap;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  opacity: 1 !important;
+}
+
+.reminder-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+}
+
+/* ===================================
+   Red Pulse Animation for High Risk Cards
+=================================== */
+@keyframes pulse-red {
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    border-color: #ef4444;
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.8);
+    border-color: #dc2626;
+  }
+}
+
+.card-high-risk {
+  animation: pulse-red 2s infinite;
+}
+
+/* ===================================
+   Compact High-Risk Alert Bar
+   緊湊型高風險警示列
+=================================== */
+.launch-risk-alert-bar {
+  width: 100%;
+  margin-top: 50px; /* 與主按鈕保持距離 */
+  padding: 18px 28px;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(20px);
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  animation: pulse-red 2s infinite;
+
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  transition: all 0.3s ease;
+}
+
+.launch-risk-alert-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.7);
+}
+
+.risk-alert-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: #ef4444;
+  filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.6));
+}
+
+.risk-alert-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.risk-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.risk-badge {
+  color: #ef4444;
+  font-weight: 900;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+.risk-count {
+  color: #fecaca;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.risk-alert-desc {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.risk-alert-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.risk-alert-btn {
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.risk-alert-btn-primary {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.risk-alert-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.risk-alert-btn-secondary {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.risk-alert-btn-secondary:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .launch-risk-alert-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 20px;
+  }
+
+  .risk-alert-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .risk-alert-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ===================================
+   Other Reminders Link
+   其他提醒連結
+=================================== */
+.other-reminders-link {
+  color: #60a5fa;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  transition: all 0.2s;
+}
+
+.other-reminders-link:hover {
+  color: #93c5fd;
+  text-decoration-style: solid;
+}
+
+/* ===================================
+   Notification Badge (Red Dot)
+   通知計數標籤
+=================================== */
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+  animation: pulse-badge 2s infinite;
+  z-index: 10;
+}
+
+@keyframes pulse-badge {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.8);
+  }
+}
+
+/* Ensure button has relative positioning for badge */
+#btnNotif {
+  position: relative;
+}
+
+/* ===================================
+   Launch Task Preview Section
+   即時任務預覽區域 (Grid Layout)
+=================================== */
+.launch-task-preview-section {
+  width: 100%;
+  margin-top: 50px; /* More spacing from main button */
+  margin-bottom: 30px;
+}
+
+.task-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: #e2e8f0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.task-preview-header i {
+  color: #60a5fa;
+  font-size: 1.2rem;
+}
+
+.task-count {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Grid Layout for Cards */
+.task-preview-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 Columns */
+  gap: 16px;
+}
+
+.launch-task-card {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 16px; /* Reduced padding */
+  border: 2px solid rgba(56, 189, 248, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.launch-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.task-card-risk {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+  animation: pulse-red 2s infinite;
+}
+
+.task-card-normal {
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.task-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px; /* Reduced margin */
+}
+
+.task-card-icon {
+  width: 32px; /* Smaller icon */
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.icon-risk {
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.icon-normal {
+  background: rgba(251, 191, 36, 0.15);
+  border: 2px solid rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+.task-card-title {
+  flex: 1;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem; /* Slightly smaller text */
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.risk-tag {
+  display: inline-block;
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.task-card-desc {
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-left: 42px; /* Adjusted alignment */
+  margin-bottom: 6px;
+  /* Limit lines if needed, but keeping full for now */
+}
+
+.task-card-meta {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-left: 42px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-card-meta i {
+  color: #60a5fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .task-preview-cards {
+    grid-template-columns: 1fr; /* Stack on mobile */
+    gap: 12px;
+  }
+
+  .launch-task-card {
+    padding: 16px;
+  }
+
+  .task-card-desc,
+  .task-card-meta {
+    margin-left: 0;
+    margin-top: 8px;
+  }
+}
+/* ===================================
+   Forced High Risk Notification Styles
+   (Global Overlay or Dropdown)
+=================================== */
+.notif-icon-wrapper.urgent {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* 確保側邊欄/下拉通知中的圖標顯色 */
+.notif-icon-wrapper.urgent i {
+  color: #ef4444 !important;
+}
+
+/* 確保側邊欄/下拉通知中的標題顯色 */
+.notification-item.unread .notif-title {
+  /* 這裡可以選擇是否要讓標題也變紅，或維持原色但有圖標標示 */
+  font-weight: 700;
+}
+
+/* Launch Card Risk Border Force */
+.launch-task-card.task-card-risk {
+  border: 1px solid #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2),
+    inset 0 0 20px rgba(239, 68, 68, 0.05) !important;
+}
+
+.task-card-icon.icon-risk {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+.task-card-icon.icon-risk i {
+  color: #ef4444 !important;
+}

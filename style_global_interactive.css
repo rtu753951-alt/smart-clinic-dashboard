@@ -1,0 +1,563 @@
+/* ========================================
+   全域互動樣式
+   Global Interactive Styles
+======================================== */
+
+/* 所有可點擊彈窗的元素 - 游標變成手指頭 */
+.js-open-modal {
+  cursor: pointer !important;
+}
+
+/* Hover 效果提示 */
+.js-open-modal:hover {
+  opacity: 0.95;
+  transition: opacity 0.2s ease;
+}
+
+/* ========================================
+   Navigation Dropdowns
+======================================== */
+
+
+/* Ensure Notification Button is clickable and on top */
+#btnNotif {
+    position: relative;
+    z-index: 10001; /* Higher than dropdown (9999) if needed, or matched/managed */
+    cursor: pointer;
+}
+
+/* Notification Dropdown - Enhanced */
+.notification-dropdown {
+    position: fixed;
+    top: 60px;
+    right: 80px; 
+    width: 380px; /* Wider for rich content */
+    background: rgba(15, 23, 42, 0.85); /* Slate 900 + Open */
+    backdrop-filter: blur(12px); /* Frosted Glass */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notification-dropdown.active {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+
+.notification-header {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #f8fafc;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notif-section-header {
+    padding: 8px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.notif-clear-btn {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.notif-clear-btn:hover {
+    color: #cbd5e1;
+}
+
+.notification-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 16px;
+    transition: background 0.2s;
+    position: relative;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.notification-item.unread::before {
+    content: '';
+    position: absolute;
+    top: 22px;
+    left: 8px;
+    width: 6px;
+    height: 6px;
+    background: #3b82f6; /* Blue dot */
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+.notif-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+.notif-icon-wrapper.urgent {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444; 
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.notif-icon-wrapper.success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.notif-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.notif-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.4;
+}
+
+.notif-desc {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.notif-meta {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notif-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.btn-xs {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: transparent;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-xs:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #cbd5e1;
+}
+
+.btn-xs.primary {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
+}
+
+.btn-xs.primary:hover {
+    background: rgba(59, 130, 246, 0.3);
+}
+
+/* ========================================
+   Settings Drawer (Unified Sidebar)
+======================================== */
+
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Dimmed backdrop */
+    backdrop-filter: blur(2px);
+    z-index: 2000;
+    display: none; /* Toggle via class */
+    justify-content: flex-end; /* Align right for drawer */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.settings-modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+/* Drawer Style */
+.settings-modal {
+    background: #0f172a; /* Slate 900 */
+    width: 400px;
+    max-width: 90vw;
+    height: 100%;
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%); /* Slide out to right */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-modal-overlay.active .settings-modal {
+    transform: translateX(0); /* Slide in */
+}
+
+.settings-header {
+    padding: 20px 24px;
+    background: rgba(30, 41, 59, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+.close-settings {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-settings:hover {
+    color: #f1f5f9;
+}
+
+.settings-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Sections */
+.settings-section-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    margin-bottom: 16px;
+    margin-top: 10px;
+    font-weight: 700;
+}
+
+.settings-section-title:first-child {
+    margin-top: 0;
+}
+
+.setting-group {
+    margin-bottom: 24px;
+}
+
+.setting-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #cbd5e1;
+}
+
+.setting-input, .setting-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #f1f5f9;
+    background: #1e293b;
+    transition: border-color 0.2s;
+}
+
+.setting-input:focus, .setting-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.setting-helper {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+.settings-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 10px 0 20px;
+}
+
+/* Buttons */
+.settings-footer {
+    padding: 20px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 41, 59, 0.3);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s;
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: #cbd5e1;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================
+   Tasks Page Styles
+======================================== */
+.tasks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.task-card {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.task-card.done {
+    opacity: 0.5;
+    background: rgba(15, 23, 42, 0.4) !important;
+    border-color: transparent;
+}
+
+.task-card.done .task-title {
+    text-decoration: line-through;
+    color: #64748b !important;
+}
+
+.task-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #FFFFFF !important;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+.task-desc {
+    font-size: 0.9rem;
+    color: #94A3B8 !important;
+    line-height: 1.5;
+    color: #94A3B8 !important;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.task-header {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.task-status-icon {
+    font-size: 1.2rem;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.task-card.done .task-status-icon {
+    color: #10b981;
+}
+
+.task-info {
+    flex: 1;
+}
+
+.task-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    gap: 12px;
+}
+
+.task-delete-btn {
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: #64748b;
+}
+
+.task-card:hover .task-delete-btn {
+    opacity: 1;
+}
+
+.task-delete-btn:hover {
+    color: #ef4444;
+}
+
+.task-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.task-nav-btn {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.task-complete-btn {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+}
+
+/* Fallback for icon button helper if not exists or specific */
+/*.btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #cbd5e1;
+    transition: color 0.2s;
+}
+.btn-icon:hover {
+    color: #fff;
+}*/
+
+/* ========================================
+   Top Navbar Enhancements (Manual Overrides)
+======================================== */
+.btn-icon {
+    position: relative; /* Anchor for badge */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-icon:hover {
+    opacity: 0.8 !important;
+    transform: scale(1.1);
+    color: #38bdf8 !important; /* Sky Blue Highlight */
+}
+
+/* Notification Badge Fix */
+.notif-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    background: #ef4444; /* Red 500 */
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #0f172a; /* Same as bg to create 'cutout' effect */
+    z-index: 20; /* Ensure above icon */
+    pointer-events: none; /* Click-through */
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}

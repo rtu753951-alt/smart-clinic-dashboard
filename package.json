@@ -1,0 +1,15 @@
+{
+  "name": "clinic-dashboard-ai",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "devDependencies": {
+    "@types/chart.js": "^2.9.41",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1"
+  }
+}

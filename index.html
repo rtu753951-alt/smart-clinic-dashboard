@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Clinic Dashboard | 智慧診所營運儀表板</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.3.0/dist/chartjs-chart-matrix.min.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style_global_interactive.css" />
+    <link rel="stylesheet" href="style_kpi_compact.css" />
+    <link rel="stylesheet" href="style_customer_insights.css" />
+    <link rel="stylesheet" href="src/styles/workload-cards.css" />
+    <link rel="stylesheet" href="src/styles/launchCover.css" />
+  </head>
+  <body>
+    <!-- 啟動封面頁 -->
+    <div id="launch-cover">
+      <!-- 內容由 launchCoverPage.ts 動態生成 -->
+    </div>
+
+    <!-- 主應用容器（初始隱藏）-->
+    <div class="app-container" style="display: none">
+      <!-- Sidebar Navigation -->
+      <nav class="sidebar">
+        <div class="logo">
+          <i class="fa-solid fa-heart-pulse"></i>
+          <span>Smart Clinic</span>
+        </div>
+
+        <ul class="nav-links">
+          <li class="active" data-tab="overview">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>營運概要</span>
+          </li>
+          <li data-tab="appointments">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>預約分析</span>
+          </li>
+          <li data-tab="staff">
+            <i class="fa-solid fa-user-doctor"></i>
+            <span>人力分析</span>
+          </li>
+          <li data-tab="rooms">
+            <i class="fa-solid fa-door-open"></i>
+            <span>診間設備</span>
+          </li>
+          <li data-tab="services">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>療程營收</span>
+          </li>
+          <li data-tab="customers">
+            <i class="fa-solid fa-users"></i>
+            <span>顧客洞察</span>
+          </li>
+          <li data-tab="tasks">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>營運待辦</span>
+          </li>
+        </ul>
+
+        <!-- NEW: System Status Footer -->
+        <div class="sidebar-footer">
+          <div class="system-status">
+            <div class="status-item">
+              <span class="label">資料版本</span>
+              <span class="value" id="sys-data-version">--</span>
+            </div>
+
+            <div class="status-item">
+              <span class="label">AI 模式</span>
+              <span class="value" id="sys-ai-mode">--</span>
+            </div>
+
+            <div class="status-item">
+              <span class="label">系統狀態</span>
+              <span class="value" id="sys-system-health">正常</span>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <header class="top-bar">
+          <h1 id="pageTitle">營運概要 Overview</h1>
+          <div class="controls">
+            <div class="date-range">
+              <i class="fa-regular fa-calendar"></i>
+              <span id="currentDateRange">Today</span>
+            </div>
+            <!-- 🔽 新增：全站月份選擇器 -->
+            <select id="global-month-selector" class="month-select"></select>
+
+            <button class="btn-icon" id="btnNotif" title="查看通知" aria-label="查看通知">
+              <i class="fa-solid fa-bell"></i>
+            </button>
+
+            <button class="btn-icon" id="btnSettings" title="系統設定" aria-label="系統設定">
+              <i class="fa-solid fa-gear"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- 1. Overview Page -->
+        <section
+          id="overview"
+          class="page-section"
+          data-init="initOverviewPage"
+        >
+          <!-- KPI 狀態列（Compact Layout） -->
+          <div class="kpi-status-bar">
+            <!-- 今日預約 -->
+            <div class="kpi-item js-open-modal" data-modal="kpi-today" title="今日預約總數（系統今日）">
+              <i class="fa-solid fa-calendar kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-total">--</span>
+                <span class="kpi-label">今日預約</span>
+              </div>
+            </div>
+
+            <!-- 今日到診率 -->
+            <div class="kpi-item js-open-modal" data-modal="kpi-show-rate" title="今日到診率（completed + checked_in）">
+              <i class="fa-solid fa-user-check kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-show-rate">0%</span>
+                <span class="kpi-label">到診率</span>
+              </div>
+            </div>
+
+            <!-- 醫師出勤 -->
+            <div class="kpi-item js-open-modal" data-modal="kpi-doc" title="醫師出勤人數（status = active）">
+              <i class="fa-solid fa-user-md kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-doc-count">--</span>
+                <span class="kpi-label">醫師</span>
+              </div>
+            </div>
+
+            <!-- 護理/美療 -->
+            <div
+              class="kpi-item js-open-modal"
+              data-modal="kpi-nurse"
+              title="護理/美療人數（nurse + therapist, status = active）"
+            >
+              <i class="fa-solid fa-user-nurse kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-nurse-count">--</span>
+                <span class="kpi-label">護理/美療</span>
+              </div>
+            </div>
+
+            <!-- 諮詢師 -->
+            <div class="kpi-item js-open-modal" data-modal="kpi-consultant" title="諮詢師人數（status = active）">
+              <i class="fa-solid fa-user-tie kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-consultant-count">--</span>
+                <span class="kpi-label">諮詢師</span>
+              </div>
+            </div>
+
+            <!-- 診間使用率 -->
+            <div class="kpi-item" title="診間使用率（本月平均）">
+              <i class="fa-solid fa-door-closed kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-room-main">--%</span>
+                <span class="kpi-label">診間</span>
+              </div>
+            </div>
+
+            <!-- 設備使用率 -->
+            <div class="kpi-item" title="設備使用率（本月平均）">
+              <i class="fa-solid fa-bolt kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-equip-main">--%</span>
+                <span class="kpi-label">設備</span>
+              </div>
+            </div>
+          </div>
+          <!-- ===================== END KPI ===================== -->
+
+          <!-- ===== Dashboard Main Area ===== -->
+          <section class="overview-dashboard">
+            <!-- ========================================== -->
+            <!-- SECTION 2: Business Performance Summary -->
+            <!-- ========================================== -->
+            <div class="business-summary-section">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i
+                    class="fa-solid fa-chart-line"
+                    style="margin-right: 8px; color: var(--accent-color)"
+                  ></i>
+                  經營成效摘要
+                </h2>
+                <small style="color: var(--text-muted); font-size: 0.85rem"
+                  >Business Performance Summary</small
+                >
+              </div>
+
+              <div class="business-metrics-grid">
+                <!-- 💰 Today's Revenue Status -->
+                <article
+                  class="metric-card js-open-modal"
+                  data-modal="revenue-today"
+                >
+                  <div class="metric-header">
+                    <div
+                      class="metric-icon"
+                      style="
+                        background: linear-gradient(
+                          135deg,
+                          #10b981 0%,
+                          #059669 100%
+                        );
+                      "
+                    >
+                      <i class="fa-solid fa-dollar-sign"></i>
+                    </div>
+                    <div class="metric-title-group">
+                      <h3>今日營收狀態</h3>
+                      <small>Today's Revenue</small>
+                    </div>
+                  </div>
+                  <div class="metric-body" id="revenue-status-content">
+                    <!-- Dynamically generated -->
+                    <p style="text-align: center; color: var(--text-muted)">
+                      載入中...
+                    </p>
+                  </div>
+                  <div class="card-hint">查看詳細資料 →</div>
+                </article>
+
+                <!-- 📊 Monthly Revenue Total -->
+                <article
+                  class="metric-card js-open-modal"
+                  data-modal="revenue-monthly"
+                >
+                  <div class="metric-header">
+                    <div
+                      class="metric-icon"
+                      style="
+                        background: linear-gradient(
+                          135deg,
+                          #3b82f6 0%,
+                          #2563eb 100%
+                        );
+                      "
+                    >
+                      <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div class="metric-title-group">
+                      <h3>本月營收</h3>
+                      <small>Monthly Revenue</small>
+                    </div>
+                  </div>
+                  <div class="metric-body" id="monthly-revenue-content">
+                    <!-- Dynamically generated -->
+                    <p style="text-align: center; color: var(--text-muted)">
+                      載入中...
+                    </p>
+                  </div>
+                  <div class="card-hint">查看詳細資料 →</div>
+                </article>
+
+                <!-- 🔄 Monthly Return Visit Rate -->
+                <article
+                  class="metric-card js-open-modal"
+                  data-modal="return-visit"
+                >
+                  <div class="metric-header">
+                    <div
+                      class="metric-icon"
+                      style="
+                        background: linear-gradient(
+                          135deg,
+                          #8b5cf6 0%,
+                          #7c3aed 100%
+                        );
+                      "
+                    >
+                      <i class="fa-solid fa-rotate"></i>
+                    </div>
+                    <div class="metric-title-group">
+                      <h3>本月顧客回診率</h3>
+                      <small>Return Visit Rate</small>
+                    </div>
+                  </div>
+                  <div class="metric-body" id="return-visit-content">
+                    <!-- Dynamically generated -->
+                    <p style="text-align: center; color: var(--text-muted)">
+                      載入中...
+                    </p>
+                  </div>
+                  <div class="card-hint">查看詳細資料 →</div>
+                </article>
+              </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- SECTION 3: Operations Distribution Analysis -->
+            <!-- ========================================== -->
+            <div class="operations-analysis-section">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i
+                    class="fa-solid fa-chart-pie"
+                    style="margin-right: 8px; color: var(--accent-color)"
+                  ></i>
+                  營運分佈分析
+                </h2>
+                <small style="color: var(--text-muted); font-size: 0.85rem"
+                  >Operations Distribution</small
+                >
+              </div>
+
+              <div class="overview-grid overview-main-grid">
+                <!-- 👨‍⚕️ Doctor Top 3 -->
+                <article
+                  class="overview-card js-open-modal"
+                  data-modal="doctor"
+                >
+                  <header>
+                    <h3>👨‍⚕️ 醫師 Top 3 (本月)</h3>
+                    <small
+                      style="
+                        color: var(--text-muted);
+                        font-weight: normal;
+                        font-size: 0.85rem;
+                      "
+                    >
+                      * 僅計算 completed 預約
+                    </small>
+                  </header>
+                  <div class="card-body" id="dash-doctor-top3">
+                    <!-- Dynamically generated -->
+                  </div>
+                </article>
+
+                <!-- 🔥 Treatment Top 3 -->
+                <article
+                  class="overview-card js-open-modal"
+                  data-modal="treatment"
+                >
+                  <header>
+                    <h3>🔥 熱門療程 Top 3 (本月)</h3>
+                    <small
+                      style="
+                        color: var(--text-muted);
+                        font-weight: normal;
+                        font-size: 0.85rem;
+                      "
+                    >
+                      * 僅計算 completed 預約
+                    </small>
+                  </header>
+                  <div class="card-body" id="dash-treatment-top3">
+                    <!-- Dynamically generated -->
+                  </div>
+                </article>
+
+                <!-- 🏥 Room Usage Summary -->
+                <article class="overview-card js-open-modal" data-modal="room">
+                  <header>
+                    <h3>🏥 診間使用率 (本月)</h3>
+                    <small
+                      style="
+                        color: var(--text-muted);
+                        font-weight: normal;
+                        font-size: 0.85rem;
+                      "
+                    >
+                      * 根據實際療程時長計算
+                    </small>
+                  </header>
+                  <div class="card-body">
+                    <div id="dash-room-usage" class="room-usage-grid">
+                      <!-- Dynamically generated -->
+                    </div>
+                  </div>
+                </article>
+
+                <!-- ⚡ Equipment Usage Summary -->
+                <article class="overview-card js-open-modal" data-modal="equip">
+                  <header>
+                    <h3>⚡ 設備使用率 (本月)</h3>
+                  </header>
+                  <div class="card-body">
+                    <ul class="usage-list" id="dash-equip-usage">
+                      <li>
+                        PicoSure 皮秒雷射：<span id="ov-equip-PicoSure皮秒雷射"
+                          >--%</span
+                        >
+                      </li>
+                      <li>
+                        Thermage 電波拉皮：<span id="ov-equip-Thermage電波拉皮"
+                          >--%</span
+                        >
+                      </li>
+                    </ul>
+                  </div>
+                </article>
+              </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- SECTION 4: AI Insights Zone -->
+            <!-- ========================================== -->
+            <div class="ai-insights-section">
+              <div class="section-header">
+                <h2 class="section-title">
+                  <i
+                    class="fa-solid fa-brain"
+                    style="margin-right: 8px; color: var(--accent-color)"
+                  ></i>
+                  AI 洞察分析
+                </h2>
+                <small style="color: var(--text-muted); font-size: 0.85rem"
+                  >AI Insights</small
+                >
+              </div>
+
+              <div class="ai-overview-zone">
+                <article class="overview-card js-open-modal" data-modal="alert">
+                  <header><h3>🚨 AI 風險預警（摘要）</h3></header>
+
+                  <ul id="ai-alert-summary" class="ai-list-short">
+                    <li>載入中...</li>
+                  </ul>
+
+                  <div class="card-hint">查看詳細資料 →</div>
+                </article>
+
+                <article
+                  class="overview-card js-open-modal"
+                  data-modal="modal-ai"
+                >
+                  <header><h3>📊 AI 趨勢摘要（摘要）</h3></header>
+
+                  <ul id="ai-trend-summary" class="ai-list-short">
+                    <li>載入中...</li>
+                  </ul>
+
+                  <div class="card-hint">查看詳細資料 →</div>
+                </article>
+              </div>
+
+              <!-- 未來趨勢雷達 -->
+              <div
+                style="
+                  margin-top: 24px;
+                  padding: 20px;
+                  background: rgba(255, 255, 255, 0.02);
+                  border-radius: 12px;
+                  border: 1px solid rgba(180, 220, 255, 0.15);
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: baseline;
+                    margin-bottom: 16px;
+                  "
+                >
+                  <h3
+                    style="
+                      font-size: 1rem;
+                      font-weight: 600;
+                      color: var(--text-heading);
+                      margin: 0;
+                    "
+                  >
+                    <i
+                      class="fa-solid fa-radar"
+                      style="margin-right: 8px; color: #8b5cf6"
+                    ></i>
+                    🔮 未來趨勢雷達
+                  </h3>
+                  <small style="font-size: 0.75rem; color: var(--text-muted)"
+                    >資料來源：未來 14–30 天預約（預估）</small
+                  >
+                </div>
+
+                <ul
+                  id="future-trends-radar"
+                  style="
+                    margin: 0;
+                    padding-left: 20px;
+                    color: var(--text-body);
+                    line-height: 2;
+                    font-size: 0.9rem;
+                  "
+                >
+                  <li>載入中...</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </section>
+        <!-- 2. Appointments Page -->
+        <section
+          id="appointments"
+          class="page-section"
+          data-page="appointments"
+          data-init="initAppointmentsPage"
+        >
+          <!-- Full Width Trend Chart -->
+          <div class="card" style="margin-bottom: 1.5rem">
+            <div class="card-header"><h2>預約量走勢 (7/30/90天)</h2></div>
+            <div class="trend-range-selector">
+              <button data-range="7">7天</button>
+              <button data-range="30" class="active">30天</button>
+              <button data-range="90">90天</button>
+
+              <!-- 旺季影響滑桿控制 -->
+              <div
+                style="
+                  display: inline-flex;
+                  align-items: center;
+                  margin-left: 20px;
+                  gap: 10px;
+                  border-left: 1px solid #ddd;
+                  padding-left: 20px;
+                "
+              >
+                <label
+                  for="seasonalSlider"
+                  style="font-size: 0.9rem; color: #666; font-weight: normal"
+                >
+                  旺季影響:
+                  <span
+                    id="seasonalValue"
+                    style="color: var(--primary-color); font-weight: bold"
+                    >+20%</span
+                  >
+                </label>
+                <input
+                  type="range"
+                  id="seasonalSlider"
+                  min="-0.3"
+                  max="0.6"
+                  step="0.05"
+                  value="0.2"
+                  style="width: 120px; cursor: pointer"
+                />
+                <span style="font-size: 0.75rem; color: #999; margin-left: 8px"
+                  >即時模擬市場熱度對未來預約量的影響</span
+                >
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="apptTrendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- 3 Bottom Charts in Grid -->
+          <div class="summary-grid">
+            <div class="card">
+              <div class="card-header"><h2>到診率 vs No-show</h2></div>
+              <div class="chart-container small">
+                <canvas id="apptShowRateChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h2>預約時段分布</h2></div>
+              <div class="chart-container small">
+                <canvas id="apptTimeDistChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><h2>預約品質：高價值 vs 高風險</h2></div>
+              <div class="chart-container small">
+                <canvas id="bookingQualityChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Suggestions for Appointments -->
+          <div class="ai-section">
+            <div class="ai-header">
+              <i class="fa-solid fa-robot"></i>
+              <h2>AI 預約行為分析建議</h2>
+            </div>
+            <div class="ai-cards-container" id="appt-ai-suggestions-container">
+              <!-- AI Cards injected by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Staff Page -->
+        <section id="staff" class="page-section" data-init="initStaffPage">
+          <!-- A. Scheduling Calendar (Removed) -->
+
+          <!-- ==========================================
+               Layer 0: 原因層｜SOP 基準 vs 實際人力負荷 (Cause)
+               目的：揭示「看不見的負載」對營運的影響
+               * 新增圖表容器：#staffHiddenLoadChart
+          ========================================== -->
+          <div
+            class="staff-layer staff-layer-cause"
+            style="margin-bottom: 2rem"
+          >
+            <div class="section-header">
+              <h2 class="section-title">
+                <i
+                  class="fa-solid fa-layer-group"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                SOP 基準 vs 實際人力負荷
+              </h2>
+              <div class="card-actions">
+                <button data-hidden-load-mode="week" class="active">
+                  本週
+                </button>
+                <button data-hidden-load-mode="month">本月</button>
+                <button data-hidden-load-mode="future">未來 7 天</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div
+                class="chart-container"
+                style="position: relative; height: 320px; width: 100%"
+              >
+                <canvas id="staffHiddenLoadChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <!-- ==========================================
+               Layer 1: 結果層｜人力負載熱力 (Result)
+               目的：視覺化當下「誰最忙」與「忙碌強度」
+          ========================================== -->
+          <div class="staff-layer staff-layer-result">
+            <div class="section-header">
+              <h2 class="section-title">
+                <i
+                  class="fa-solid fa-chart-simple"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                人力負載熱力與強度
+              </h2>
+              <div class="card-actions">
+                <button data-workload-period="week" class="active">本週</button>
+                <button data-workload-period="next_week">下週</button>
+              </div>
+            </div>
+
+            <!-- Workload Cards (Renamed/Reused) -->
+            <div class="card">
+              <div id="staffWorkloadCards" class="workload-cards-container">
+                <!-- JS Injected Cards -->
+              </div>
+              <div
+                class="card-footer"
+                style="
+                  padding-top: 10px;
+                  border-top: 1px solid var(--border-color);
+                "
+              >
+                <small
+                  style="
+                    color: var(--text-muted);
+                    display: block;
+                    text-align: right;
+                  "
+                >
+                  * 負載率計算基礎：實際服務時長 / (每週 40
+                  小時基準，不依賴排班表)
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==========================================
+               Layer 2: 結構層｜職務匹配度 (Structure)
+               目的：檢查是否「高階低用」或人力錯置
+          ========================================== -->
+          <div
+            class="staff-layer staff-layer-structure"
+            style="margin-top: 2rem"
+          >
+            <div class="section-header">
+              <h2 class="section-title">
+                <i
+                  class="fa-solid fa-layer-group"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                職務與服務項目匹配度
+              </h2>
+            </div>
+
+            <div class="charts-grid-2">
+              <div class="card">
+                <div class="card-header"><h3>職務服務結構分析</h3></div>
+                <div class="chart-container">
+                  <canvas id="staffRoleFitChart"></canvas>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-header"><h3>結構性瓶頸洞察</h3></div>
+                <ul id="staff-structure-insights" class="insight-list">
+                  <li style="color: var(--text-muted); padding: 10px">
+                    載入中...
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==========================================
+               Layer 3: 原因層｜隱性負載與緩衝 (Reason)
+               目的：揭示換床、前置作業等「看不到的時間壓力」
+          ========================================== -->
+          <div class="staff-layer staff-layer-reason" style="margin-top: 2rem">
+            <div class="section-header">
+              <h2 class="section-title">
+                <i
+                  class="fa-solid fa-stopwatch"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                隱性負載與緩衝分析
+              </h2>
+            </div>
+            <div class="card full-width">
+              <div class="card-header">
+                <h3>Buffer 壓力監測</h3>
+                <small style="color: var(--text-muted)"
+                  >* 當實際間隔 < 標準 Buffer 時，標記為「壓縮」</small
+                >
+              </div>
+              <div id="staffBufferAnalysis" style="padding: 15px">
+                <p style="text-align: center; color: var(--text-muted)">
+                  載入中...
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==========================================
+               Layer 4: 決策層｜AI 營運建議 (Decision)
+               目的：提供具體調度行動
+          ========================================== -->
+          <div class="ai-section" style="margin-top: 2rem">
+            <div class="ai-header">
+              <i class="fa-solid fa-robot"></i>
+              <h2>AI 營運優化建議</h2>
+            </div>
+            <div class="ai-cards-container" id="staff-ai-suggestions-container">
+              <!-- AI Cards injected by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. Rooms & Equipment Page -->
+        <section
+          id="rooms"
+          class="page-section"
+          data-page="rooms"
+          data-init="initRoomsPage"
+        >
+          <!-- Top: Room Usage Heatmap (Room × Time Slot) -->
+          <div class="card full-width" style="margin-bottom: 1.5rem">
+            <div class="card-header">
+              <h2>
+                <i
+                  class="fa-solid fa-table-cells"
+                  style="margin-right: 0.5rem"
+                ></i>
+                診間使用率（房間 × 時段）熱力圖
+              </h2>
+            </div>
+            <div id="roomHeatmap" class="heatmap-container"></div>
+          </div>
+
+          <!-- Middle: Equipment Usage (Left) + Operation Log (Right) -->
+          <div class="charts-grid-2">
+            <!-- Left: Equipment Usage Chart -->
+            <div class="card">
+              <div class="card-header">
+                <h2>
+                  <i class="fa-solid fa-bolt" style="margin-right: 0.5rem"></i>
+                  設備使用率
+                </h2>
+              </div>
+              <div class="chart-container">
+                <canvas id="equipUsageChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Right: Operation Log Table -->
+            <div class="card">
+              <div class="card-header">
+                <h2>
+                  <i
+                    class="fa-solid fa-clipboard-list"
+                    style="margin-right: 0.5rem"
+                  ></i>
+                  設備使用記錄(本月)
+                </h2>
+              </div>
+              <div
+                class="table-container"
+                style="max-height: 400px; overflow-y: auto"
+              >
+                <table class="data-table" id="equipLogTable">
+                  <thead>
+                    <tr>
+                      <th>日期</th>
+                      <th>時間</th>
+                      <th>設備名稱</th>
+                      <th>操作人員</th>
+                      <th>時長</th>
+                      <th>狀態</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: AI Suggestions for Rooms & Equipment -->
+          <div class="ai-section">
+            <div class="ai-header">
+              <i class="fa-solid fa-robot"></i>
+              <h2>AI 資源優化建議</h2>
+            </div>
+            <div class="ai-cards-container" id="room-ai-suggestions-container">
+              <!-- AI Cards injected by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. Services Page -->
+        <section
+          id="services"
+          class="page-section"
+          data-page="services"
+          data-init="initServicesPage"
+        >
+          <!-- 🔽 月份切換下拉式選單（必須加這段） -->
+          <div class="month-select-wrapper" style="margin-bottom: 20px">
+            <label
+              for="monthSelect"
+              style="margin-right: 8px; font-weight: bold"
+              >選擇月份：</label
+            >
+            <select id="monthSelect"></select>
+          </div>
+
+          <!-- KPI 區 -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="icon"><i class="fa-solid fa-sack-dollar"></i></div>
+              <div class="info">
+                <h3>本月營收</h3>
+                <p class="value" id="srv-revenue">--</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="icon">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+              </div>
+              <div class="info">
+                <h3>平均客單價 (AOV)</h3>
+                <p class="value" id="srv-aov">--</p>
+              </div>
+            </div>
+
+            <div
+              class="kpi-card"
+              style="position: relative"
+              title="本指標用於提前觀察營收趨勢，非最終結算結果"
+            >
+              <div
+                id="srv-mom-tag"
+                style="
+                  display: none;
+                  position: absolute;
+                  top: 10px;
+                  right: 10px;
+                  background: #f39c12;
+                  color: #fff;
+                  font-size: 0.65rem;
+                  padding: 2px 6px;
+                  border-radius: 4px;
+                "
+              >
+                預估
+              </div>
+              <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+              <div class="info">
+                <h3 id="srv-mom-title">月營收成長率</h3>
+                <small
+                  id="srv-mom-subtitle"
+                  style="color: #888; font-size: 0.75rem"
+                  >MoM Revenue Growth</small
+                >
+                <p class="value" id="srv-mom">--%</p>
+                <div
+                  id="srv-mom-note"
+                  style="
+                    font-size: 0.7rem;
+                    color: #666;
+                    margin-top: 4px;
+                    line-height: 1.2;
+                  "
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 圖表 -->
+          <div class="charts-grid-2">
+            <div class="card">
+              <div class="card-header"><h2>每日營收趨勢</h2></div>
+              <div class="chart-container">
+                <canvas id="srvRevenueChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h2>療程營收結構</h2>
+                <div class="card-actions">
+                  <button id="srv-struct-btn-month" class="active">本月</button>
+                  <button id="srv-struct-btn-all">歷史累積</button>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="srvStructureChart"></canvas>
+              </div>
+              <div
+                id="service-structure-note"
+                style="
+                  font-size: 0.75rem;
+                  color: #888;
+                  text-align: center;
+                  margin-top: 10px;
+                  border-top: 1px solid #eee;
+                  padding-top: 8px;
+                "
+              >
+                本圖表顯示所選月份之已完成療程營收結構（不含取消與未到診）
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Summary -->
+          <div class="ai-section">
+            <div class="ai-header">
+              <i class="fa-solid fa-robot"></i>
+              <h2>AI 療程與營收優化建議</h2>
+            </div>
+
+            <div id="srv-ai-suggestions" class="ai-report-card">
+              AI 建議載入中...
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. Customers Page -->
+        <section
+          id="customers"
+          class="page-section"
+          data-page="customers"
+          data-init="initCustomersPage"
+        >
+          <!-- ... existing customer content ... -->
+          <!-- (Keep existing content inside customers section unmodified, just replacing tag to insert after) -->
+          <!-- Actually, replace_file_content replaces the whole block. I better find where customers section ends and APPEND. -->
+          <!-- I will target the closing </section> of customers and append. -->
+          <!-- Wait, view_file showed customers section starts at 746. I don't know where it ends. -->
+          <!-- Safest is to insert BEFORE the closing </main>. index.html:98 -->
+          <!-- Actually, checking view_file output... </main> is not clearly visible near end of file. -->
+          <!-- Let me use read_url or view_file to find the end of customers section. -->
+
+          <!-- Or I can just insert it before `</main>` of `.main-content`. -->
+          <!-- Let's search for `</main>` -->
+
+          <!-- ========================================
+               Layer 1｜顧客結構快照（Overview）
+               目的：快速理解顧客組成，不提供行動建議
+          ======================================== -->
+          <div class="customer-layer customer-layer-overview">
+            <div class="section-header">
+              <h2 class="section-title">
+                <i
+                  class="fa-solid fa-users"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                顧客結構快照
+              </h2>
+              <small style="color: var(--text-muted); font-size: 0.85rem"
+                >Customer Overview</small
+              >
+            </div>
+
+            <div class="charts-grid-2">
+              <!-- 新客 vs 回診客 -->
+              <div class="card">
+                <div class="card-header"><h3>新客 vs 回診客</h3></div>
+                <div class="chart-container small">
+                  <canvas id="custNewOldChart"></canvas>
+                </div>
+              </div>
+
+              <!-- 顧客價值分群 (RFM) -->
+              <div class="card">
+                <div class="card-header"><h3>顧客價值分群 (RFM)</h3></div>
+                <div class="chart-container small">
+                  <canvas id="custRFMChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================
+               Layer 2｜顧客風險與價值（Insights）
+               目的：找出需要被關注的顧客群
+          ======================================== -->
+          <div class="customer-layer customer-layer-insights">
+            <div class="section-header">
+              <h2 class="section-title">
+                <i
+                  class="fa-solid fa-chart-line"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                顧客風險與價值
+              </h2>
+              <small style="color: var(--text-muted); font-size: 0.85rem"
+                >Insights & Risks</small
+              >
+            </div>
+
+            <!-- 回診率趨勢 & AI 流失風險摘要 (Side-by-Side) -->
+            <div class="charts-grid-2">
+              <!-- Left: Return Rate Chart -->
+              <div class="card">
+                <div class="card-header"><h3>回診率趨勢</h3></div>
+                <div class="chart-container small">
+                  <canvas id="custReturnRateChart"></canvas>
+                </div>
+                <!-- JS will append updateReturnRateInfo here -->
+              </div>
+
+              <!-- Right: AI Churn Risk Summary -->
+              <div class="card">
+                <div class="card-header">
+                  <h3>
+                    <i
+                      class="fa-solid fa-triangle-exclamation"
+                      style="margin-right: 0.5rem; color: var(--danger-color)"
+                    ></i>
+                    AI 流失風險摘要
+                  </h3>
+                </div>
+                <div class="card-body">
+                  <div class="risk-summary-grid">
+                    <div class="risk-summary-card risk-high">
+                      <div class="risk-icon">🔴</div>
+                      <div class="risk-content">
+                        <div class="risk-label">高風險</div>
+                        <div class="risk-count" id="churn-high-count">--</div>
+                      </div>
+                    </div>
+                    <div class="risk-summary-card risk-medium">
+                      <div class="risk-icon">🟡</div>
+                      <div class="risk-content">
+                        <div class="risk-label">中風險</div>
+                        <div class="risk-count" id="churn-medium-count">--</div>
+                      </div>
+                    </div>
+                    <div class="risk-summary-card risk-low">
+                      <div class="risk-icon">🟢</div>
+                      <div class="risk-content">
+                        <div class="risk-label">低風險</div>
+                        <div class="risk-count" id="churn-low-count">--</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Hidden container for any legacy JS injection compatibility -->
+                  <div
+                    id="ai-churn-report-container"
+                    style="display: none"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ========================================
+               Layer 3｜行動建議（Actions）
+               目的：提供下一步方向，而非分析
+          ======================================== -->
+          <div
+            class="customer-layer customer-layer-actions"
+            style="
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              margin-top: 2rem !important;
+              margin-bottom: 2rem !important;
+              padding: 20px !important;
+              position: relative !important;
+              z-index: 100 !important;
+              background: rgba(255, 255, 255, 0.02) !important;
+              border-radius: 8px !important;
+            "
+          >
+            <div class="section-header" style="margin-bottom: 20px !important">
+              <h2
+                class="section-title"
+                style="
+                  display: block !important;
+                  visibility: visible !important;
+                "
+              >
+                <i
+                  class="fa-solid fa-lightbulb"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                行動建議
+              </h2>
+              <small style="color: var(--text-muted); font-size: 0.85rem"
+                >Recommended Actions</small
+              >
+            </div>
+
+            <!-- AI 顧客經營建議 -->
+            <div
+              class="ai-section"
+              style="display: block !important; visibility: visible !important"
+            >
+              <div
+                class="ai-header"
+                style="
+                  display: block !important;
+                  margin-bottom: 15px !important;
+                "
+              >
+                <i class="fa-solid fa-robot"></i>
+                <h3>AI 顧客經營建議</h3>
+              </div>
+              <div
+                class="ai-cards-container"
+                id="customer-ai-suggestions-container"
+                style="
+                  display: block !important;
+                  visibility: visible !important;
+                  opacity: 1 !important;
+                  min-height: 80px !important;
+                  position: relative !important;
+                  z-index: 10 !important;
+                "
+              >
+                <!-- AI Cards injected by JS -->
+                <div
+                  style="
+                    padding: 20px;
+                    text-align: center;
+                    color: var(--text-muted);
+                  "
+                >
+                  載入中...
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. Tasks Page -->
+        <section
+          id="tasks"
+          class="page-section"
+          data-page="tasks"
+          data-init="initTasksPage"
+        >
+          <div
+            class="section-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div>
+              <h2 class="section-title">
+                <i
+                  class="fa-solid fa-clipboard-list"
+                  style="margin-right: 8px; color: var(--accent-color)"
+                ></i>
+                營運待辦
+              </h2>
+              <small style="color: var(--text-muted); font-size: 0.85rem"
+                >Operational Tasks</small
+              >
+            </div>
+            <div style="display: flex; gap: 10px">
+              <button
+                id="btn-export-tasks"
+                style="
+                  background: rgba(59, 130, 246, 0.1);
+                  color: #93c5fd;
+                  border: 1px solid rgba(59, 130, 246, 0.3);
+                  padding: 8px 16px;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  font-size: 0.9rem;
+                  font-weight: 500;
+                  transition: all 0.2s;
+                "
+              >
+                <i class="fa-solid fa-file-export"></i> 匯出 JSON
+              </button>
+              <button
+                id="btn-manual-add-task"
+                style="
+                  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                  color: white;
+                  border: none;
+                  padding: 8px 16px;
+                  border-radius: 8px;
+                  cursor: pointer;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  font-size: 0.9rem;
+                  font-weight: 500;
+                  transition: transform 0.1s;
+                  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+                "
+              >
+                <i class="fa-solid fa-plus"></i> 手動新增任務
+              </button>
+            </div>
+          </div>
+
+          <div id="tasks-container" style="padding: 20px 0">
+            <!-- Rendered by TasksPage.ts -->
+          </div>
+
+          <!-- Manual Task Modal -->
+          <div id="manual-task-modal" class="modal">
+            <div
+              class="modal-content"
+              style="
+                background: #0f172a;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                width: 500px;
+                max-width: 90vw;
+              "
+            >
+              <span class="modal-close" id="manual-task-close">&times;</span>
+              <div
+                class="modal-header"
+                style="
+                  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                  padding-bottom: 15px;
+                  margin-bottom: 20px;
+                "
+              >
+                <h3 style="color: white; margin: 0">新增營運待辦任務</h3>
+              </div>
+              <div
+                class="modal-body"
+                style="display: flex; flex-direction: column; gap: 15px"
+              >
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <label
+                      style="
+                        display: block;
+                        color: #cbd5e1;
+                        font-size: 0.9rem;
+                      "
+                      >任務標題</label
+                    >
+                    <button 
+                        id="btn-refresh-task-ai" 
+                        title="強制重新診斷"
+                        style="
+                            background: transparent; 
+                            border: none; 
+                            color: var(--accent-color); 
+                            cursor: pointer; 
+                            font-size: 0.9rem;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            transition: background 0.2s;
+                        "
+                        onmouseover="this.style.background='rgba(59,130,246,0.1)'"
+                        onmouseout="this.style.background='transparent'"
+                    >
+                        <i class="fa-solid fa-sync"></i> 重新診斷
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    id="manual-task-title"
+                    placeholder="例如：籌備週年慶活動"
+                    style="
+                      width: 100%;
+                      padding: 10px;
+                      background: #1e293b;
+                      border: 1px solid rgba(255, 255, 255, 0.1);
+                      color: white;
+                      border-radius: 6px;
+                    "
+                  />
+                  <!-- AI Result Container -->
+                  <div id="task-ai-result-panel" style="display: none; margin-top: 10px;"></div>
+                </div>
+                <div>
+                  <label
+                    style="
+                      display: block;
+                      color: #cbd5e1;
+                      margin-bottom: 5px;
+                      font-size: 0.9rem;
+                    "
+                    >執行內容</label
+                  >
+                  <textarea
+                    id="manual-task-desc"
+                    rows="3"
+                    placeholder="請輸入具體執行細節..."
+                    style="
+                      width: 100%;
+                      padding: 10px;
+                      background: #1e293b;
+                      border: 1px solid rgba(255, 255, 255, 0.1);
+                      color: white;
+                      border-radius: 6px;
+                    "
+                  ></textarea>
+                </div>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 15px;
+                  "
+                >
+                  <div>
+                    <label
+                      style="
+                        display: block;
+                        color: #cbd5e1;
+                        margin-bottom: 5px;
+                        font-size: 0.9rem;
+                      "
+                      >截止日期</label
+                    >
+                    <input
+                      type="date"
+                      id="manual-task-date"
+                      style="
+                        width: 100%;
+                        padding: 10px;
+                        background: #1e293b;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        color: white;
+                        border-radius: 6px;
+                      "
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style="
+                        display: block;
+                        color: #cbd5e1;
+                        margin-bottom: 5px;
+                        font-size: 0.9rem;
+                      "
+                      >優先級</label
+                    >
+                    <select
+                      id="manual-task-priority"
+                      style="
+                        width: 100%;
+                        padding: 10px;
+                        background: #1e293b;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        color: white;
+                        border-radius: 6px;
+                      "
+                    >
+                      <option value="high">🔥 緊急</option>
+                      <option value="normal" selected>一般</option>
+                      <option value="low">低</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Reminder Settings -->
+                <div>
+                  <label
+                    style="
+                      display: block;
+                      color: #cbd5e1;
+                      margin-bottom: 8px;
+                      font-size: 0.9rem;
+                    "
+                    >提醒設定 (活動前)</label
+                  >
+                  <div
+                    class="reminder-options"
+                    style="display: flex; gap: 10px; flex-wrap: wrap"
+                  >
+                    <label
+                      style="
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: rgba(255, 255, 255, 0.05);
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        font-size: 0.85rem;
+                        color: #cbd5e1;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        name="reminder"
+                        value="30"
+                        style="accent-color: var(--accent-color)"
+                      />
+                      30天
+                    </label>
+                    <label
+                      style="
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: rgba(255, 255, 255, 0.05);
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        font-size: 0.85rem;
+                        color: #cbd5e1;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        name="reminder"
+                        value="14"
+                        style="accent-color: var(--accent-color)"
+                      />
+                      14天
+                    </label>
+                    <label
+                      style="
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: rgba(255, 255, 255, 0.05);
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        font-size: 0.85rem;
+                        color: #cbd5e1;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        name="reminder"
+                        value="7"
+                        checked
+                        style="accent-color: var(--accent-color)"
+                      />
+                      7天
+                    </label>
+                    <label
+                      style="
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        background: rgba(255, 255, 255, 0.05);
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        font-size: 0.85rem;
+                        color: #cbd5e1;
+                      "
+                    >
+                      <input
+                        type="checkbox"
+                        name="reminder"
+                        value="1"
+                        style="accent-color: var(--accent-color)"
+                      />
+                      1天
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  id="btn-save-manual-task"
+                  style="
+                    margin-top: 10px;
+                    background: linear-gradient(
+                      135deg,
+                      #3b82f6 0%,
+                      #2563eb 100%
+                    );
+                    color: white;
+                    border: none;
+                    padding: 12px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    width: 100%;
+                  "
+                >
+                  立即建立任務
+                </button>
+                <button
+                  id="btn-delete-manual-task"
+                  style="
+                    display: none;
+                    margin-top: 0px;
+                    background: transparent;
+                    color: #ef4444;
+                    border: 1px solid rgba(239, 68, 68, 0.3);
+                    padding: 10px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    width: 100%;
+                    transition: all 0.2s;
+                  "
+                >
+                  <i class="fa-solid fa-trash"></i> 刪除此任務
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- 🔔 Notification Panel -->
+    <div id="notificationPanel" class="side-panel">
+      <h2>通知中心</h2>
+      <div id="notif-system"></div>
+      <div id="notif-ai"></div>
+      <div id="notif-tasks"></div>
+    </div>
+
+    <!-- ⚙️ Settings Panel -->
+    <div id="settingsPanel" class="side-panel">
+      <h2>系統設定</h2>
+
+      <div class="settings-block">
+        <h3>資料來源</h3>
+        <button id="btn-import-data">匯入 CSV</button>
+        <button id="btn-refresh-data">重新載入資料</button>
+      </div>
+
+      <div class="settings-block">
+        <h3>AI 設定</h3>
+        <label>AI 連網服務金鑰 (Google Gemini)</label>
+        <input
+          type="password"
+          id="ai-service-key"
+          placeholder="輸入 API Key..."
+          style="
+            margin-bottom: 12px;
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-color);
+          "
+        />
+
+        <label>AI 分析敏感度</label>
+        <select id="ai-sensitivity">
+          <option value="low">低</option>
+          <option value="medium" selected>中</option>
+          <option value="high">高</option>
+        </select>
+
+        <label>AI 語氣</label>
+        <select id="ai-tone">
+          <option value="pro">專業</option>
+          <option value="gentle">溫和</option>
+          <option value="alert">告警式</option>
+        </select>
+      </div>
+
+      <div class="settings-block">
+        <h3>介面偏好</h3>
+        <label>主題模式</label>
+        <select id="theme-mode">
+          <option value="light">亮色</option>
+          <option value="dark">暗色</option>
+          <option value="auto" selected>自動</option>
+        </select>
+
+        <label>預設首頁</label>
+        <select id="default-page">
+          <option value="overview">營運概要</option>
+          <option value="appointments">預約分析</option>
+          <option value="staff">人力分析</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 🔻 AI 風險預警（完整內容，給彈窗用，會被 JS 複製） -->
+    <div id="ai-alert-detail" style="display: none">
+      <h3>本週 AI 風險預警完整內容</h3>
+      <ul>
+        <li>📉 到診率低於 60%</li>
+        <li>⚠ 診間 B 使用率異常降低</li>
+        <li>🔥 醫師 C 施作量下降 8%</li>
+      </ul>
+    </div>
+
+    <!-- 🔻 AI 趨勢分析（模態） -->
+    <div class="modal" id="modal-ai" style="display: none">
+      <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <div id="ai-full-report">
+          <h3>AI 趨勢完整分析內容</h3>
+          <p>（此區塊將由 JS 自動填入完整 AI 分析報告）</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Dashboard Modal（通用彈窗） ===== -->
+    <div class="modal-backdrop" id="dashboard-modal" hidden>
+      <div class="modal-dialog">
+        <header class="modal-header">
+          <h3 id="modal-title">詳細內容</h3>
+          <button class="modal-close" aria-label="close">&times;</button>
+        </header>
+
+        <div class="modal-body" id="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- ==== 診間使用率 詳細資料（隱藏） ==== -->
+    <div id="room-usage-detail" style="display: none">
+      <ul>
+        <li>診間 A：--%</li>
+        <li>診間 B：--%</li>
+        <li>雷射室：--%</li>
+        <li>RF治療室：--%</li>
+      </ul>
+    </div>
+
+    <!-- ==== 設備使用率 詳細資料（隱藏） ==== -->
+    <div id="equip-usage-detail" style="display: none">
+      <ul>
+        <li>PicoSure 皮秒雷射：--%</li>
+        <li>Thermage 電波拉皮：--%</li>
+      </ul>
+    </div>
+
+    <!-- ==== 今日營收狀態 詳細資料（隱藏） ==== -->
+    <div id="revenue-today-detail" style="display: none">
+      <!-- Dynamically generated by JS -->
+    </div>
+
+    <!-- ==== 本月營收 詳細資料（隱藏） ==== -->
+    <div id="revenue-monthly-detail" style="display: none">
+      <!-- Dynamically generated by JS -->
+    </div>
+
+    <!-- ==== 本月回診率 詳細資料（隱藏） ==== -->
+    <div id="return-visit-detail" style="display: none">
+      <!-- Dynamically generated by JS -->
+    </div>
+
+    <!-- JS -->
+    <!-- 第 0 階段：外部工具 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <!-- 第 1 階段：核心邏輯（全部 module） -->
+    <script type="module" src="dist/logic/trendEngine.js"></script>
+    <script type="module" src="dist/logic/kpiEngine.js"></script>
+    <script type="module" src="dist/logic/aiManager.js"></script>
+
+    <!-- 第 2 階段：頁面模組（全部 module） -->
+    <script type="module" src="dist/pages/roomsPage.js"></script>
+    <script type="module" src="dist/pages/overviewPage.js"></script>
+    <script type="module" src="dist/pages/servicesPage.js"></script>
+    <script type="module" src="dist/pages/staffPage.js"></script>
+    <script type="module" src="dist/pages/appointmentsPage.js"></script>
+    <script type="module" src="dist/pages/customersPage.js"></script>
+
+    <!-- 第 3 階段：主程式入口（一定最後） -->
+    <script type="module" src="dist/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,325 @@
+/* ==========================================
+   人力負載壓力分析 - 卡片式顯示
+   ========================================== */
+
+.workload-cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.workload-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.workload-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 頂部裝飾條 */
+.workload-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--card-accent-color);
+  opacity: 0.8;
+}
+
+/* 職務標題區 */
+.workload-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.workload-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: var(--card-accent-color);
+  box-shadow: 0 4px 12px var(--card-glow-color);
+}
+
+.workload-card-title {
+  flex: 1;
+}
+
+.workload-card-role {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin-bottom: 4px;
+}
+
+.workload-card-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* 數據區 */
+.workload-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.workload-stat {
+  text-align: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.workload-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--card-accent-color);
+  margin-bottom: 4px;
+}
+
+.workload-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* 進度條區 */
+.workload-progress-section {
+  margin-bottom: 16px;
+}
+
+.workload-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.workload-progress-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.workload-progress-percentage {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--card-accent-color);
+  text-shadow: 0 2px 8px var(--card-glow-color);
+}
+
+.workload-progress-bar-container {
+  height: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.workload-progress-bar {
+  height: 100%;
+  background: var(--card-accent-color);
+  border-radius: 10px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  box-shadow: 0 0 20px var(--card-glow-color),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+/* 閃爍動畫 */
+.workload-progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* 狀態指示器 */
+.workload-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.workload-status-low {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.workload-status-medium {
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.workload-status-high {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.workload-status-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* 職務專屬顏色 */
+.workload-card[data-role="doctor"] {
+  --card-accent-color: #3b82f6;
+  --card-glow-color: rgba(59, 130, 246, 0.4);
+}
+
+.workload-card[data-role="consultant"] {
+  --card-accent-color: #8b5cf6;
+  --card-glow-color: rgba(139, 92, 246, 0.4);
+}
+
+.workload-card[data-role="nurse"] {
+  --card-accent-color: #10b981;
+  --card-glow-color: rgba(16, 185, 129, 0.4);
+}
+
+.workload-card[data-role="therapist"] {
+  --card-accent-color: #ec4899;
+  --card-glow-color: rgba(236, 72, 153, 0.4);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .workload-cards-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .workload-card {
+    padding: 20px;
+  }
+
+  .workload-progress-percentage {
+    font-size: 1.5rem;
+  }
+}
+
+/* ==========================================
+   AI Suggestion Cards
+   ========================================== */
+.ai-card {
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 4px solid #ccc;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ai-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.ai-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: var(--text-heading, #e2e8f0);
+}
+
+.ai-card-body {
+  font-size: 0.9rem;
+  color: var(--text-body, #94a3b8);
+  line-height: 1.5;
+}
+
+.ai-card-body ul {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+.ai-card.warning {
+  background: rgba(245, 158, 11, 0.1); /* Amber tint */
+  border-left-color: #f59e0b;
+}
+.ai-card.warning .ai-card-title {
+  color: #f59e0b;
+}
+
+.ai-card.danger {
+  background: rgba(239, 68, 68, 0.1); /* Red tint */
+  border-left-color: #ef4444;
+}
+.ai-card.danger .ai-card-title {
+  color: #ef4444;
+}
+
+.ai-card.info {
+  background: rgba(59, 130, 246, 0.1); /* Blue tint */
+  border-left-color: #3b82f6;
+}
+.ai-card.info .ai-card-title {
+  color: #3b82f6;
+}
+
+.ai-card.success {
+  background: rgba(16, 185, 129, 0.1); /* Green tint */
+  border-left-color: #10b981;
+}
+.ai-card.success .ai-card-title {
+  color: #10b981;
+}
+

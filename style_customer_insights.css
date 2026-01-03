@@ -1,0 +1,110 @@
+/* ========================================
+   顧客洞察頁面樣式
+   Customer Insights Page Styles
+======================================== */
+
+/* Layer 分隔 */
+.customer-layer {
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(180, 220, 255, 0.15);
+}
+
+.customer-layer:last-child {
+  border-bottom: none;
+}
+
+/* 風險摘要卡片網格 */
+.risk-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.risk-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px solid rgba(180, 220, 255, 0.15);
+  transition: all 0.2s ease;
+}
+
+.risk-summary-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.risk-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.risk-content {
+  flex: 1;
+}
+
+.risk-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.risk-count {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1;
+}
+
+/* 風險等級顏色 */
+.risk-high .risk-count {
+  color: #ef4444;
+}
+
+.risk-medium .risk-count {
+  color: #f59e0b;
+}
+
+.risk-low .risk-count {
+  color: #10b981;
+}
+
+/* 按鈕樣式 */
+.btn-secondary {
+  padding: 10px 20px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--primary-blue);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .risk-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .customer-layer {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+  }
+}

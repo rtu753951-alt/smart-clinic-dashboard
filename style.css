@@ -1,0 +1,315 @@
+/* ========================================
+   Smart Clinic Dashboard - Main Styles
+   核心樣式表 (Reconstructed)
+   ======================================== */
+
+:root {
+  /* Colors - Dark Theme (Slate/Blue) */
+  --primary-color: #3b82f6;       /* Blue 500 */
+  --primary-hover: #2563eb;       /* Blue 600 */
+  --accent-color: #f59e0b;        /* Amber 500 */
+  --danger-color: #ef4444;        /* Red 500 */
+  --success-color: #10b981;       /* Emerald 500 */
+  --warning-color: #f59e0b;       /* Amber 500 */
+
+  /* Text Colors */
+  --text-main: #f8fafc;           /* Slate 50 */
+  --text-heading: #f1f5f9;        /* Slate 100 */
+  --text-body: #cbd5e1;           /* Slate 300 */
+  --text-muted: #94a3b8;          /* Slate 400 */
+
+  /* Backgrounds */
+  --bg-body: #0f172a;             /* Slate 900 */
+  --bg-sidebar: #1e293b;          /* Slate 800 */
+  --bg-card: rgba(30, 41, 59, 0.5); /* Semi-transparent Slate 800 */
+  --bg-hover: rgba(255, 255, 255, 0.05);
+
+  /* Borders */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+}
+
+/* ========================================
+   Base Reset
+   基礎重置
+   ======================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  background-color: var(--bg-body);
+  color: var(--text-body);
+  line-height: 1.6;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+button { font-family: inherit; }
+
+/* ========================================
+   Layout Components
+   佈局組件
+   ======================================== */
+
+/* App Container */
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden; /* Main scroll handles internal */
+}
+
+/* Sidebar Navigation */
+.sidebar {
+  width: 260px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 20px 0;
+  transition: width 0.3s ease;
+}
+
+.sidebar .logo {
+  padding: 0 24px 24px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar .logo i {
+  color: var(--danger-color);
+}
+
+.nav-links {
+  flex: 1;
+  padding: 20px 16px;
+  overflow-y: auto;
+}
+
+.nav-links li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.nav-links li:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.nav-links li.active {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent);
+  color: var(--primary-color);
+  border-left: 3px solid var(--primary-color);
+}
+
+.sidebar-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+}
+
+.system-status .status-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.top-bar {
+  height: 70px;
+  padding: 0 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+.top-bar h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-heading);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-sidebar);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.month-select {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* Page Section */
+.page-section {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+  display: none; /* JS toggles this */
+}
+
+/* Active section logic usually handled by JS/CSS classes, assuming JS sets display block */
+.page-section.active-section { /* Fallback if generic class used */
+    display: block !important;
+}
+/* Or ID based via JS inline style */
+
+/* ========================================
+   Grid / Card Systems
+   網格與卡片系統
+   ======================================== */
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.charts-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .charts-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card, .overview-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover, .overview-card:hover {
+    /* Optional hover effect */
+}
+
+.card-header, header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h2, header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-heading);
+  margin: 0;
+}
+
+.card-body {
+  flex: 1;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+/* ========================================
+   Chart Containers
+   圖表容器
+   ======================================== */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 300px; /* Default height */
+}
+
+.chart-container.small {
+  height: 250px;
+}
+
+/* ========================================
+   Utility & Specifics
+   工具樣式與特定組件
+   ======================================== */
+.card-hint {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    margin-top: 12px;
+    text-align: right;
+    cursor: pointer;
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.card-hint:hover {
+    opacity: 1;
+    text-decoration: underline;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-body);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-sidebar);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
