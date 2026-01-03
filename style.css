@@ -197,7 +197,7 @@ button { font-family: inherit; }
 
 /* 確保 active 狀態下顯示 */
 .page-section.active {
-    display: block;
+    display: block !important;
     animation: fadeIn 0.4s ease-out;
 }
 
