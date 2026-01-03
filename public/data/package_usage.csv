@@ -1,0 +1,17 @@
+customer_id,customer_name,service_name,total_sessions,used_sessions,remaining_sessions,last_used_date
+CUS001,王女士,Pico Laser,8,5,3,2025-11-05
+CUS002,李女士,Laser Toning,6,4,2,2025-11-03
+CUS003,陳女士,Skin Booster,5,3,2,2025-11-02
+CUS004,張女士,Thermage,2,1,1,2025-11-04
+CUS005,劉女士,Pico Laser,10,7,3,2025-11-06
+CUS006,林女士,Whitening Drip,8,5,3,2025-10-28
+CUS007,黃女士,Laser Toning,6,6,0,2025-11-01
+CUS008,周女士,Skin Booster,4,2,2,2025-10-25
+CUS009,吳女士,Pico Laser,8,3,5,2025-10-20
+CUS010,何女士,Thermage,2,2,0,2025-11-07
+CUS011,徐女士,Whitening Drip,6,4,2,2025-10-30
+CUS012,曾女士,Laser Toning,10,8,2,2025-11-02
+CUS013,鄭女士,Skin Booster,5,4,1,2025-11-04
+CUS014,馬女士,Pico Laser,6,2,4,2025-10-15
+CUS015,葉女士,Whitening Drip,10,6,4,2025-11-06
+CUS016,許女士,Laser Toning,8,5,3,2025-11-01

@@ -1,0 +1,16 @@
+service_name,category,price,duration,buffer_time,executor_role,intensity_level,transferable
+Pico Laser,laser,7500,30,10,therapist,medium,yes
+Botox,inject,12000,15,5,doctor,high,no
+Thermage,rf,72000,45,15,doctor,high,no
+Consultation,consult,600,30,5,consultant,low,yes
+Skin Booster,inject,15000,30,10,doctor,medium,limited
+Laser Toning,laser,4500,25,10,therapist,medium,yes
+RF Tightening,rf,48000,50,10,doctor,high,no
+Whitening Drip,drip,2500,30,5,nurse,low,yes
+Microdermabrasion,laser,3200,20,10,therapist,low,yes
+Thread Lift,inject,35000,40,10,doctor,high,no
+Ultherapy,rf,65000,60,15,doctor,high,no
+Chemical Peel,laser,3800,25,10,therapist,medium,yes
+Hydra Facial,laser,4200,30,10,therapist,low,yes
+Mesotherapy,inject,10500,25,10,doctor,medium,limited
+
