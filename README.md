@@ -174,4 +174,13 @@ print(f"✅ 已生成 {len(df)} 筆模擬資料，請下載 {filename} 並匯入
 
 ---
 
+## License
+
+This project is licensed under **CC BY-NC 4.0**.
+
+- Learning and non-commercial use is welcome.
+- Commercial use or redistribution as a product is not allowed without permission.
+  
+---
+
 © 2026 Smart Clinic Dashboard. All Rights Reserved.
