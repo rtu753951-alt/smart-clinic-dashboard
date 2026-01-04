@@ -14,6 +14,12 @@
 系統核心採用 Google Gemini API 與現代化前端視覺化技術，能即時分析大量預約與營收數據，並針對行銷文案與經營策略提供具備「專業／友善幽默」雙重語氣的 AI 營運洞察摘要。
 
 ---
+### 🚀 掃描即刻體驗
+請掃描下方 QR Code 或 [點擊此處直接造訪網頁](https://rtu753951-alt.github.io/smart-clinic-dashboard/)
+
+![Project QR Code](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://rtu753951-alt.github.io/smart-clinic-dashboard/)
+
+---
 
 ## ✨ Key Features (核心功能亮點)
 
