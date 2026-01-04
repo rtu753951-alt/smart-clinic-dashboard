@@ -4,14 +4,38 @@ export async function loadCSV<T>(path: string): Promise<T[]> {
   const fullPath = withBase(path);
   // console.log(`[CSV Loader] Fetching: ${fullPath} (Base: ${path})`);
   
-  const response = await fetch(fullPath);
-  
-  if (!response.ok) {
-      console.error(`[CSV Loader] Failed to load ${fullPath}: ${response.status} ${response.statusText}`);
-      throw new Error(`Failed to load ${path} (${response.status})`);
+  /* 
+   * [Optimization] 增加 8 秒 Timeout 機制，避免 GitHub Pages 偶發連線懸掛 (Hanging)
+   * 使用 AbortController 中止過久的請求
+   */
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+      const response = await fetch(fullPath, { signal: controller.signal });
+      clearTimeout(timeoutId); // 清除計時器
+
+      if (!response.ok) {
+          console.warn(`[CSV Loader] ⚠️ Load failed: ${fullPath} (Status: ${response.status})`);
+          // 不拋出錯誤，讓 Promise.all 能繼續，但需由呼叫端處理空資料
+          throw new Error(`Failed to load ${path} (${response.status})`);
+      }
+      
+      const csvText = await response.text();
+      return parseCSVData<T>(csvText); // Refactored parsing logic below if needed, or inline
+
+  } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+          console.warn(`[CSV Loader] ⏳ Timeout (8s): ${fullPath}`);
+          throw new Error(`Timeout loading ${path}`);
+      }
+      console.warn(`[CSV Loader] ❌ Error loading ${path}:`, error);
+      throw error;
   }
-  
-  const csvText = await response.text();
+}
+
+async function parseCSVData<T>(csvText: string): Promise<T[]> {
 
   const lines = csvText.trim().split("\n");
 

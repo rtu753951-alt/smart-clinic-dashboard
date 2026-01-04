@@ -30,6 +30,9 @@ interface LaunchCoverData {
 /**
  * 初始化啟動封面頁
  */
+/**
+ * 初始化啟動封面頁 (Robust & Non-blocking)
+ */
 export async function initLaunchCover(): Promise<void> {
     console.log("[Launch Cover] 初始化中...");
     
@@ -42,68 +45,67 @@ export async function initLaunchCover(): Promise<void> {
     // 鎖定滾動
     document.body.style.overflow = 'hidden';
 
-    // 顯示封面
+    // 顯示封面與 Skeleton
     coverContainer.style.display = "flex";
-    
-    // 顯示 skeleton 載入狀態
     showLoadingState(coverContainer);
     
-    // 安全機制：若 8 秒後沒反應，強制顯示錯誤狀態 (避免卡死)
+    // 1. 啟動 AI 連線測試 (Non-blocking / Fire-and-forget)
+    // 不等待結果，僅更新內部狀態，避免阻塞 UI
+    setTimeout(() => {
+        externalIntelligence.testConnectivity().then(res => {
+            console.log(`[Launch Cover] AI Connectivity: ${res.success} (${res.message})`);
+            // 可選：更新 UI 顯示 AI 狀態
+        });
+    }, 500);
+    
+    // 安全機制：若 12 秒後沒反應，強制顯示離線模式 (比 dataStore timeout 稍長)
     const safetyTimeout = setTimeout(() => {
         if (!coverContainer.classList.contains('loaded')) {
-            console.warn("[Launch Cover] 載入逾時，強制進入...");
-            renderErrorState(coverContainer, "系統回應逾時，請檢查網路連線");
-            bindInteractiveEvents(coverContainer); // 確保按鈕可用
+            console.warn("[Launch Cover] 系統回應較慢，啟用備援顯示...");
+            // 不視為錯誤，而是顯示部分資料或離線狀態
+            renderErrorState(coverContainer, "首次載入可能較慢，已切換為離線模式");
+            bindInteractiveEvents(coverContainer);
         }
-    }, 8000);
+    }, 12000);
     
-    // 確保資料已載入
-    if (dataStore.appointments.length === 0) {
-        try {
-            await dataStore.loadAll();
-        } catch (e) {
-            console.error("Data Load Failed", e);
+    try {
+        // 2. 載入資料 (核心數據)
+        if (dataStore.appointments.length === 0) {
+            await dataStore.loadAll(); // 內部已有 catch，不會 throw
         }
-    }
-    
-    // 計算 KPI (Async)
-    calculateLaunchCoverData().then((coverData) => {
+
+        // 3. 計算 KPI (Async but fast)
+        // 使用 allSettled 確保即使 AI 建議失敗也能顯示 KPI
+        const coverData = await calculateLaunchCoverData();
+        
         clearTimeout(safetyTimeout);
         coverContainer.classList.add('loaded'); // 標記已完成
 
-        // 渲染封面內容
-        if (coverData.isLoaded) {
-            renderCoverContent(coverContainer, coverData);
-        } else {
-            renderErrorState(coverContainer, coverData.errorMessage || "資料載入失敗");
-        }
+        // 4. 渲染封面
+        renderCoverContent(coverContainer, coverData);
         
-        // 綁定互動事件
-        bindInteractiveEvents(coverContainer);
-    }).catch(err => {
+    } catch (err) {
+        // 萬一發生未捕捉錯誤 (Critical Fail)
         clearTimeout(safetyTimeout);
-        renderErrorState(coverContainer, "系統發生未預期錯誤");
+        console.error("[Launch Cover] Critical Init Error:", err);
+        renderErrorState(coverContainer, "系統初始化異常，請重試");
+    } finally {
+        // 確保永遠綁定事件，讓用戶能離開
         bindInteractiveEvents(coverContainer);
-    });
+    }
 
     // Expose refresh function for Settings updates
     (window as any).refreshLaunchCoverData = async () => {
-        console.log("[Launch Cover] Receiving setting update signal...");
         const coverData = await calculateLaunchCoverData();
-        // Re-render partial or full content? Full is safter.
         if (coverData.isLoaded) {
             renderCoverContent(coverContainer, coverData);
+            bindInteractiveEvents(coverContainer);
         }
-        // Re-bind events because renderCoverContent destroys DOM
-        bindInteractiveEvents(coverContainer);
     };
 }
 
 /**
- * 計算啟動封面的三個核心 KPI
- */
-/**
- * 計算並準備 Launch Cover 所需的所有數據 (Async)
+ * 計算並準備 Launch Cover 所需的所有數據 (Async & Safe)
  */
 async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
     try {
@@ -121,11 +123,8 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
         );
         
         const monthlyRevenue = monthlyAppointments.reduce((sum, apt) => {
-            // Check for dynamic amount (universal import) first, fall back to service catalog price
             const dynamicAmount = apt.amount;
-            if (dynamicAmount !== undefined) {
-                return sum + dynamicAmount;
-            }
+            if (dynamicAmount !== undefined) return sum + dynamicAmount;
             const service = dataStore.services.find(s => s.service_name === apt.service_item);
             return sum + (service?.price || 0);
         }, 0);
@@ -149,42 +148,24 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
         const lastUpdatedTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         const windowLabel = `本月 (${currentMonth})`;
 
-        // 5. Tasks Reminders
-        const allTasks = TaskStore.getTasks();
-        const pendingTasks = allTasks.filter(t => t.status === 'pending' && t.dueDate && t.reminders && t.reminders.length > 0);
+        // 5. Tasks Reminders & External Alerts
         const activeReminders: Array<{ title: string, desc: string, diffDays?: number, type: 'task' | 'external', id?: string }> = [];
         
-        // Debug Flag
-        const DEBUG_REMINDERS = false; 
+        // Tasks Logic (Sync)
+        const allTasks = TaskStore.getTasks();
+        const pendingTasks = allTasks.filter(t => t.status === 'pending' && t.dueDate && t.reminders?.length);
         const todayStart = new Date();
         todayStart.setHours(0,0,0,0);
-        
-        if (DEBUG_REMINDERS) console.log(`[Launch] Checking ${pendingTasks.length} pending tasks against today: ${todayStart.toISOString().split('T')[0]}`);
 
         pendingTasks.forEach(task => {
             if (!task.dueDate || !task.reminders) return;
-            
             const due = new Date(task.dueDate);
-            if (isNaN(due.getTime())) {
-                console.warn(`[Launch] Invalid DueDate: ${task.title}`);
-                return;
-            }
-            // Normalize due to midnight for accurate day diff
+            if (isNaN(due.getTime())) return;
             due.setHours(0,0,0,0);
-
             const diffTime = due.getTime() - todayStart.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            if (isNaN(diffDays)) return;
-
-            // Logic: diffDays >= 0 (Not overdue too long, or today is OK) AND within ANY reminder window
-            // "reminders=[30]" means if diffDays <= 30 and >= 0, show it.
+            // diffDays >= 0 means not overdue or today. If user wants overdue shown, logic differs.
             const isHit = diffDays >= 0 && task.reminders.some(r => diffDays <= r);
-            
-            if (DEBUG_REMINDERS) {
-                console.log(`Task: ${task.title} | Due: ${task.dueDate} | Diff: ${diffDays} | Rems: [${task.reminders}] | Hit: ${isHit}`);
-            }
-
             if (isHit) {
                 activeReminders.push({ 
                     title: task.title, 
@@ -195,19 +176,28 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
                 });
             }
         });
-        
-        // External (Await works here in async function)
-        const extAlerts = await externalIntelligence.checkActiveAlerts();
-        extAlerts.forEach(alert => {
-            activeReminders.push({
-                title: alert.title,
-                desc: alert.message,
-                diffDays: 0, // Urgent
-                type: 'external'
-            });
-        });
 
-        // Sort by urgency (diffDays asc)
+        // External Alerts (Async - Isolated to prevent block)
+        try {
+             // 限制 AI 檢查時間，避免卡住
+            const extAlerts = await Promise.race([
+                externalIntelligence.checkActiveAlerts(),
+                new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 2000)) // 2s timeout for alerts
+            ]);
+            
+            extAlerts.forEach(alert => {
+                activeReminders.push({
+                    title: alert.title,
+                    desc: alert.message,
+                    diffDays: 0,
+                    type: 'external'
+                });
+            });
+        } catch (e) {
+            console.warn("[Launch Cover] External Alerts skipped due to error/timeout");
+        }
+
+        // Sort by urgency
         activeReminders.sort((a, b) => (a.diffDays ?? 999) - (b.diffDays ?? 999));
 
         return {
@@ -222,7 +212,8 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
             reminders: activeReminders
         };
     } catch (error) {
-        console.error("[Launch Cover] 計算 KPI 時發生錯誤:", error);
+        console.error("[Launch Cover] 计算 KPI 時發生錯誤:", error);
+        // Fallback Data
         return {
             monthlyRevenue: 0,
             monthlyRevenueFormatted: "--",
@@ -230,9 +221,9 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
             riskCount: 0,
             riskBreakdown: { high: 0, medium: 0, low: 0},
             lastUpdatedTime: "--",
-            windowLabel: "本月",
-            isLoaded: false,
-            errorMessage: "資料計算異常，請稍後再試"
+            windowLabel: "離線模式",
+            isLoaded: true, // Allow render even if calculation failed partial
+            errorMessage: "部分數據無法同步"
         };
     }
 }

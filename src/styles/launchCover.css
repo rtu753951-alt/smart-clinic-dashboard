@@ -28,11 +28,22 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 
-  /* 背景圖：鎖定於視窗 */
-  background-image: url("../assets/ai_operations_center_bg.jpg");
+  /* 背景圖：WebP 優先，JPG Fallback */
+  background-image: url("../assets/ai_operations_center_bg.jpg"); /* Fallback for older browsers */
+  background-image: -webkit-image-set(
+    url("../assets/ai_operations_center_bg.webp") 1x,
+    url("../assets/ai_operations_center_bg.jpg") 1x
+  );
+  background-image: image-set(
+    url("../assets/ai_operations_center_bg.webp") type("image/webp"),
+    url("../assets/ai_operations_center_bg.jpg") type("image/jpeg")
+  );
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  
+  /* Desktop Only: Fixed Background */
   background-attachment: fixed;
 
   display: flex;
@@ -43,6 +54,13 @@
   transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
   background-color: #0f172a; /* 深色底襯 */
+}
+
+/* Mobile Enhancement: Disable fixed background to prevent jitter/performance issues */
+@media (max-width: 768px) {
+  #launch-cover {
+    background-attachment: scroll;
+  }
 }
 
 /* 背景遮罩層 (Overlay) - 必須設定為 fixed 以匹配 background-attachment: fixed */

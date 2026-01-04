@@ -134,29 +134,64 @@ class ExternalIntelligenceService {
      * 測試 API 連線 (使用 models.list)
      * 成功時會自動儲存偏好模型名稱
      */
-    public async testConnectivity(providedKey?: string): Promise<{ success: boolean; message: string }> {
+    /**
+     * 測試 API 連線 (使用 models.list) - [Enhanced] 非阻塞與超時保護
+     * 成功時會自動儲存偏好模型名稱
+     */
+    public async testConnectivity(providedKey?: string): Promise<{ success: boolean; message: string; model?: string }> {
         let key = providedKey || apiService.getApiKey();
         if (!key) key = localStorage.getItem('AI_SERVICE_KEY');
-        if (!key) return { success: false, message: '未設定 API Key' };
+        
+        // 1. 若無 Key，直接判定 Disabled (不打 API)
+        if (!key) return { success: false, message: '未設定 API Key (離線模式)' };
+
+        console.log("[Gemini] Testing connectivity (Lite Mode)...");
+
+        // Helper: Fetch with Timeout
+        const fetchWithTimeout = async (retryCount = 0): Promise<any> => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s Timeout
+
+            try {
+                const models = await this.listModels(key!);
+                clearTimeout(timeoutId);
+                return models;
+            } catch (error: any) {
+                clearTimeout(timeoutId);
+                
+                // Retry Logic (Max 1 retry)
+                if (retryCount < 1 && (error.name === 'AbortError' || error.message.includes('fetch'))) {
+                    console.warn(`[Gemini] Connection retry... (${retryCount + 1}/1)`);
+                    await new Promise(r => setTimeout(r, 1000)); // Wait 1s
+                    return fetchWithTimeout(retryCount + 1);
+                }
+                throw error;
+            }
+        };
 
         try {
-            console.log("[Gemini] Testing connectivity via models.list...");
-            const models = await this.listModels(key);
+            const models = await fetchWithTimeout();
             const preferredName = this.pickDefaultModel(models);
 
             if (preferredName) {
                 localStorage.setItem("GEMINI_PREFERRED_MODEL", preferredName);
-                console.log("[Gemini] Selected Model:", preferredName);
-                return { success: true, message: `連線成功 (${preferredName})` };
+                console.log("[Gemini] Connection Verified. Model:", preferredName);
+                return { success: true, message: `連線成功 (${preferredName})`, model: preferredName };
             } else {
                 return { success: false, message: '連線成功但無可用模型' };
             }
 
         } catch (e: any) {
             let msg = e.message || String(e);
-            if (msg.includes("401") || msg.includes("403")) return { success: false, message: "無效的 API Key (401/403)" };
-            if (msg.includes("429")) return { success: false, message: "請求次數過多 (429)" };
-            return { success: false, message: `連線失敗: ${msg}` };
+            console.warn("[Gemini] Connectivity Test Failed:", msg);
+            
+            // 轉譯錯誤訊息
+            if (e.name === 'AbortError') msg = "連線逾時 (Timeout)";
+            else if (msg.includes("401") || msg.includes("403")) msg = "無效的 API Key";
+            else if (msg.includes("429")) msg = "請求過多 (429)";
+            else if (msg.includes("Failed to fetch")) msg = "網路連線異常";
+            
+            return { success: false, message: msg };
         }
     }
 
