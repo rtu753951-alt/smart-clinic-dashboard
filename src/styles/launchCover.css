@@ -28,8 +28,21 @@
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 
-  /* 背景圖：WebP 優先，JPG Fallback */
-  background-image: url("../assets/ai_operations_center_bg.jpg"); /* Fallback for older browsers */
+  /* 初始背景：僅使用深色底，圖片延後載入以加速首屏渲染 */
+  background-color: #0f172a;
+
+  /* Flex Layout */
+  display: flex;
+  align-items: flex-start; /* 讓內容從頂部開始，允許捲動 */
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 延遲載入背景圖類別 */
+#launch-cover.bg-loaded {
+  background-image: url("../assets/ai_operations_center_bg.jpg"); /* Fallback */
   background-image: -webkit-image-set(
     url("../assets/ai_operations_center_bg.webp") 1x,
     url("../assets/ai_operations_center_bg.jpg") 1x
@@ -38,28 +51,20 @@
     url("../assets/ai_operations_center_bg.webp") type("image/webp"),
     url("../assets/ai_operations_center_bg.jpg") type("image/jpeg")
   );
-
+  
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   
-  /* Desktop Only: Fixed Background */
-  background-attachment: fixed;
-
-  display: flex;
-  align-items: flex-start; /* 讓內容從頂部開始，允許捲動 */
-  justify-content: center;
-  z-index: 9999;
-  opacity: 1;
-  transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  background-color: #0f172a; /* 深色底襯 */
+  /* 預設 scroll，避免手機卡頓 */
+  background-attachment: scroll;
 }
 
-/* Mobile Enhancement: Disable fixed background */
-@media (max-width: 768px) {
-  #launch-cover {
-    background-attachment: scroll;
+/* Desktop Only Enhancement: Fixed Background */
+/* 僅在桌機且支援精細指標時啟用 fixed，提升效能 */
+@media (min-width: 1024px) and (pointer: fine) {
+  #launch-cover.bg-loaded {
+    background-attachment: fixed;
   }
 }
 

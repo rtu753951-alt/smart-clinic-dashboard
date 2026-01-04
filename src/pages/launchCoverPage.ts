@@ -48,8 +48,16 @@ export async function initLaunchCover(): Promise<void> {
     // 顯示封面與 Skeleton
     coverContainer.style.display = "flex";
     showLoadingState(coverContainer);
+
+    // [效能優化] 讓瀏覽器有機會先繪製 Skeleton (Yield to main thread)
+    await new Promise(r => requestAnimationFrame(r));
     
-    // 1. 啟動 AI 連線測試 (Non-blocking / Fire-and-forget)
+    // 1. 啟動背景圖片延遲載入 (200ms 後，不阻塞首屏)
+    setTimeout(() => {
+        coverContainer.classList.add('bg-loaded');
+    }, 200);
+
+    // 2. 啟動 AI 連線測試 (Non-blocking / Fire-and-forget)
     // 不等待結果，僅更新內部狀態，避免阻塞 UI
     setTimeout(() => {
         externalIntelligence.testConnectivity().then(res => {
@@ -69,9 +77,17 @@ export async function initLaunchCover(): Promise<void> {
     }, 12000);
     
     try {
-        // 2. 載入資料 (核心數據)
+        // 3. 載入資料 (核心數據)
+        // 使用 microtask yield 確保 UI 不會凍結
         if (dataStore.appointments.length === 0) {
             await dataStore.loadAll(); // 內部已有 catch，不會 throw
+        }
+
+        // 4. 重大檢查：若載入後仍無資料，視為離線/失敗
+        if (dataStore.appointments.length === 0) {
+           console.warn("[Launch Cover] Data load completed but empty. Triggering offline mode.");
+           renderErrorState(coverContainer, "無法載入營運數據");
+           return; 
         }
 
         // 3. 計算 KPI (Async but fast)
@@ -491,7 +507,8 @@ function renderCoverContent(container: HTMLElement, data: LaunchCoverData): void
 function renderErrorState(container: HTMLElement, errorMessage: string): void {
     container.innerHTML = `
         <div class="launch-cover-content">
-            <h1 class="launch-title">2026 醫美經營智慧大腦｜啟動中心</h1>
+        <div class="launch-cover-content">
+            <h1 class="launch-title">醫美經營智慧大腦｜啟動中心</h1>
             
             <div class="launch-grid">
                 <!-- 左側：亮點區 -->
