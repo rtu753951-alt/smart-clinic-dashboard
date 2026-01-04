@@ -16,7 +16,9 @@
 
 ---
 ### 🚀 掃描即刻體驗
-請掃描下方 QR Code 或 [點擊此處直接造訪網頁](https://rtu753951-alt.github.io/smart-clinic-dashboard/)
+
+- Live Demo：[點擊此處直接造訪網頁](https://rtu753951-alt.github.io/smart-clinic-dashboard/)
+- Mobile：掃描下方 QR Code（或點上面連結）
 
 ![Project QR Code](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://rtu753951-alt.github.io/smart-clinic-dashboard/)
 
