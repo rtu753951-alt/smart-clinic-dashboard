@@ -5,7 +5,8 @@
 > [!IMPORTANT]
 > **⚠️ 重要聲明**：本系統不提供任何醫療診斷或治療建議，其 AI 分析結果僅供營運效率評估與行銷文案合規參考。
 
-![License](https://img.shields.io/badge/license-CC_BY--NC_4.0-blue.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC_BY--NC_4.0-blue.svg)
 ![Build Status](https://github.com/rtu753951-alt/smart-clinic-dashboard/actions/workflows/deploy.yml/badge.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/AI-Active-green.svg)
