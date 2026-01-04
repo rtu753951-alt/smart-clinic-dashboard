@@ -1,16 +1,16 @@
 /* ========================================
-   ¥ş°ì¡G©Ò¦³¥iÂIÀ»¼uµ¡ªº¤¸¯À
+   ï¿½ï¿½ï¿½ï¿½Gï¿½Ò¦ï¿½ï¿½iï¿½Iï¿½ï¿½ï¿½uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 ======================================== */
 .js-open-modal {
   cursor: pointer !important;
 }
 /* ========================================
-   è³½å??«ç?ç§‘æ?é¢¨ï?Cyber Medical Techï¼?
-   ?ˆæœ¬ A - ?½å?ç§‘æ???
+   è³½ï¿½??ï¿½ï¿½?ç§‘ï¿½?é¢¨ï¿½?Cyber Medical Techï¿½?
+   ?ï¿½æœ¬ A - ?ï¿½ï¿½?ç§‘ï¿½???
 ======================================== */
 
 :root {
-  /* ?«ç?ç§‘æ??²ç³» */
+  /* ?ï¿½ï¿½?ç§‘ï¿½??ï¿½ç³» */
   --primary-blue: #3ba8ff;
   --neon-blue: #4fd3ff;
   --ice-blue: #dff7ff;
@@ -19,17 +19,17 @@
   --warning-orange: #ffb86b;
   --error-red: #ff6a6a;
 
-  /* ?Œæ™¯?‡å¡??*/
+  /* ?ï¿½æ™¯?ï¿½å¡??*/
   --bg-main: #f8faff;
   --card-bg: rgba(255, 255, 255, 0.75);
   --card-border: rgba(180, 220, 255, 0.6);
 
-  /* ?‡å? */
+  /* ?ï¿½ï¿½? */
   --text-main: #0f1c2e;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
 
-  /* ?°å½±?‡æ???*/
+  /* ?ï¿½å½±?ï¿½ï¿½???*/
   --shadow-card: 0 4px 12px rgba(0, 80, 140, 0.08),
     inset 0 0 12px rgba(90, 200, 255, 0.15);
   --shadow-card-hover: 0 6px 18px rgba(0, 80, 140, 0.15),
@@ -37,10 +37,10 @@
   --shadow-modal: 0 8px 30px rgba(0, 100, 180, 0.25),
     inset 0 0 20px rgba(100, 220, 255, 0.35);
 
-  /* å­—é? */
+  /* å­—ï¿½? */
   --font-sans: "Inter", "Noto Sans TC", sans-serif;
 
-  /* ?“è? */
+  /* ?ï¿½ï¿½? */
   --radius-sm: 12px;
   --radius-md: 16px;
   --radius-lg: 18px;
@@ -48,7 +48,7 @@
 }
 
 /* ========================================
-   ?¨å?æ¨??
+   ?ï¿½ï¿½?ï¿½??
 ======================================== */
 
 * {
@@ -68,7 +68,7 @@ body {
   letter-spacing: 0.01em;
 }
 
-/* ç§‘æ?ç¶²æ ¼?Œæ™¯ */
+/* ç§‘ï¿½?ç¶²æ ¼?ï¿½æ™¯ */
 body::before {
   content: "";
   position: fixed;
@@ -83,7 +83,7 @@ body::before {
   z-index: 0;
 }
 
-/* è§’è½?‰æ? */
+/* è§’è½?ï¿½ï¿½? */
 body::after {
   content: "";
   position: fixed;
@@ -113,7 +113,7 @@ body::after {
 }
 
 /* ========================================
-   Sidebar - ç§‘æ?é¢¨å???
+   Sidebar - ç§‘ï¿½?é¢¨ï¿½???
 ======================================== */
 
 .sidebar {
@@ -168,7 +168,7 @@ body::after {
   overflow: hidden;
 }
 
-/* ç§‘æ?ç·šæ??‡ç¤º??*/
+/* ç§‘ï¿½?ç·šï¿½??ï¿½ç¤º??*/
 .nav-links li::before {
   content: "";
   position: absolute;
@@ -254,7 +254,7 @@ body::after {
   position: relative;
 }
 
-/* ?ªå?ç¾©æ»¾?•æ? */
+/* ?ï¿½ï¿½?ç¾©æ»¾?ï¿½ï¿½? */
 .main-content::-webkit-scrollbar {
   width: 8px;
 }
@@ -393,7 +393,7 @@ body::after {
 }
 
 /* ========================================
-   KPI Cards - ç§‘æ??ˆè??ˆæ?
+   KPI Cards - ç§‘ï¿½??ï¿½ï¿½??ï¿½ï¿½?
 ======================================== */
 
 .kpi-strip {
@@ -434,7 +434,7 @@ body::after {
   overflow: hidden;
 }
 
-/* ç§‘æ??‰ç??ˆæ? */
+/* ç§‘ï¿½??ï¿½ï¿½??ï¿½ï¿½? */
 .kpi-card::before {
   content: "";
   position: absolute;
@@ -495,7 +495,7 @@ body::after {
   animation: pulseGlow 2.5s infinite ease-in-out;
 }
 
-/* ç§‘æ??ˆè??•ç•« */
+/* ç§‘ï¿½??ï¿½ï¿½??ï¿½ç•« */
 @keyframes pulseGlow {
   0% {
     text-shadow: 0 0 0px var(--neon-blue);
@@ -532,7 +532,7 @@ body::after {
 }
 
 /* ========================================
-   Cards - ?šç”¨?¡ç?æ¨??
+   Cards - ?ï¿½ç”¨?ï¿½ï¿½?ï¿½??
 ======================================== */
 
 .card {
@@ -641,7 +641,7 @@ body::after {
   overflow: hidden;
 }
 
-/* ç§‘æ??‰ç?è·Ÿéš¨?ˆæ? */
+/* Sci-fi hover glow (cursor-follow style) */
 .overview-card::after {
   content: "";
   position: absolute;
@@ -659,9 +659,11 @@ body::after {
 }
 
 
-  cursor: pointer;
+/* è®“å¯é»æ“Šçš„å¡ç‰‡/å€å¡Šé¡¯ç¤ºæ‰‹æŒ‡ */
+.overview-card-js-open-modal {
   cursor: pointer;
 }
+
 
 .overview-card.js-open-modal:hover {
   transform: translateY(-2px);
@@ -713,7 +715,7 @@ body::after {
   color: var(--primary-blue);
 }
 
-/* AI ?—è¡¨æ¨?? */
+/* AI ?ï¿½è¡¨ï¿½?? */
 .ai-list-short {
   list-style: none;
   padding: 0 1rem 1rem;
@@ -731,7 +733,7 @@ body::after {
 }
 
 .ai-list-short li::before {
-  content: "??;
+  content: "â€¢";
   color: var(--neon-blue);
   font-weight: bold;
   flex-shrink: 0;
@@ -950,7 +952,7 @@ body::after {
 }
 
 /* ========================================
-   Modal - è³½å?ç§‘æ?å½ˆç?
+   Modal - è³½ï¿½?ç§‘ï¿½?å½ˆï¿½?
 ======================================== */
 
 .modal-backdrop {
@@ -986,7 +988,7 @@ body::after {
   overflow: hidden;
 }
 
-/* ?‚éƒ¨ç§‘æ?ç·šæ? */
+/* ?ï¿½éƒ¨ç§‘ï¿½?ç·šï¿½? */
 .modal-dialog::before {
   content: "";
   position: absolute;
@@ -1070,7 +1072,7 @@ body::after {
   border-radius: 3px;
 }
 
-/* ?Šç? Modal ?¼å®¹ */
+/* ?ï¿½ï¿½? Modal ?ï¿½å®¹ */
 .modal {
   display: none;
   position: fixed;
@@ -1257,7 +1259,7 @@ body::after {
   color: var(--error-red);
 }
 
-/* ç§‘æ??†é?ç·?*/
+/* ç§‘ï¿½??ï¿½ï¿½?ï¿½?*/
 .tech-divider {
   height: 1px;
   background: linear-gradient(
@@ -1304,7 +1306,7 @@ body::after {
     border-color: #4a90e2;
 }
 
-/* ===== AI ?¡ç?å®¹å™¨ ===== */
+/* ===== AI ?ï¿½ï¿½?å®¹å™¨ ===== */
 .ai-cards-container {
   display: flex;
   flex-wrap: wrap;
@@ -1313,7 +1315,7 @@ body::after {
 }
 
 
-/* ===== AI ?®å¼µ?¡ç? ===== */
+/* ===== AI ?ï¿½å¼µ?ï¿½ï¿½? ===== */
 .ai-card {
   flex: 1 1 calc(33% - 1rem);
   min-width: 260px;
@@ -1329,20 +1331,20 @@ body::after {
   transition: transform .25s ease, box-shadow .25s ease;
 }
 
-/* Hover ?ˆæ?ï¼ˆç??€?Ÿï? */
+/* Hover ?ï¿½ï¿½?ï¼ˆï¿½??ï¿½?ï¿½ï¿½? */
 .ai-card:hover {
   transform: translateY(-6px);
   box-shadow: 0 12px 24px rgba(0,0,0,0.16);
   border-color: rgba(120,130,255,0.4);
 }
 
-/* icon ?€??*/
+/* icon ?ï¿½??*/
 .ai-icon {
   font-size: 24px;
   margin-top: 2px;
 }
 
-/* ?‡æœ¬ */
+/* ?ï¿½æœ¬ */
 .ai-text {
   font-size: 15px;
   line-height: 1.4;
@@ -1350,7 +1352,7 @@ body::after {
 }
 /* ========================================
    New Overview Page Structure Styles
-   ç¶“ç??æ??˜è? & ?Ÿé??†ä??†æ? & AI æ´å?
+   ç¶“ï¿½??ï¿½ï¿½??ï¿½ï¿½? & ?ï¿½ï¿½??ï¿½ï¿½??ï¿½ï¿½? & AI æ´ï¿½?
 ======================================== */
 
 /* Section Headers */
@@ -1536,5 +1538,13 @@ body::after {
   }
 }
 
+/* ç•¶è¢å¹•å¯¬åº¦å°æ–¼ 768px æ™‚ï¼ˆæ¶µè“‹å¤§éƒ¨åˆ†æ‰‹æ©Ÿèˆ‡å°å‹å¹³æ¿ï¼‰ */
+@media (max-width: 768px) {
+    /* ç›´æ¥éš±è—ç³»çµ±ç‹€æ…‹é¢æ¿ */
+    .system-status-box { 
+        display: none !important; 
+    }
 
+    /* å¦‚æœé‚„æœ‰å…¶ä»–æƒ³åœ¨æ‰‹æ©Ÿä¸Šéš±è—çš„å°å€å¡Šï¼Œä¹Ÿå¯ä»¥åŠ åœ¨é€™è£¡ */
+}
 
