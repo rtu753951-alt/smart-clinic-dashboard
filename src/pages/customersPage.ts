@@ -1130,7 +1130,65 @@ function setupRFMModal(canvas: HTMLCanvasElement, dataList: any[], today: Date) 
             openRFMBubbleModal(dataList);
         });
     }
+}// [Refined] Smart Scroll Logic for Desktop/Mobile
+function applyRFMBubbleScrollFallback() {
+  const modal = document.getElementById('rfm-bubble-modal');
+  if (!modal) return;
+
+  const area = modal.querySelector('.rfm-scroll-area') as HTMLElement | null;
+  const controls = modal.querySelector('.rfm-controls') as HTMLElement | null;
+  const chartScroll = modal.querySelector('.rfm-chart-scroll') as HTMLElement | null;
+  const chartInner = modal.querySelector('.rfm-chart-inner') as HTMLElement | null;
+
+  if (!area || !chartScroll) return;
+
+  const isDesktop = window.matchMedia("(min-width: 769px)").matches;
+  
+  if (isDesktop) {
+      // Desktop: Prioritize full view. Only scroll if height is critically low.
+      const areaH = area.getBoundingClientRect().height;
+      const controlsH = controls ? controls.getBoundingClientRect().height : 0;
+      const availableH = areaH - controlsH - 48; // -48 for padding/safety
+
+      // If available height is less than 500px, enable scroll to save legibility
+      // Otherwise, force hidden to keep it clean.
+      const criticalHeight = 500; 
+      
+      const needScroll = availableH < criticalHeight;
+      
+      chartScroll.style.overflow = needScroll ? 'auto' : 'hidden';
+      // Reset mobile styles
+      (chartScroll.style as any).touchAction = 'auto';
+      
+      // Ensure inner chart accepts 100% of available space if huge, or fixed min if scrolling
+      if (chartInner) {
+         if (needScroll) {
+             chartInner.style.minHeight = '620px'; // Lock a good viewing height
+             chartInner.style.height = '620px';
+         } else {
+             chartInner.style.minHeight = '100%'; // Fill available
+             chartInner.style.height = '100%'; 
+         }
+      }
+
+  } else {
+      // Mobile: Use existing fallback logic based on comparison
+      const areaH = area.getBoundingClientRect().height;
+      const controlsH = controls ? controls.getBoundingClientRect().height : 0;
+      const available = Math.max(0, areaH - controlsH);
+
+      const required = chartInner
+        ? Math.max(520, chartInner.getBoundingClientRect().height) // Mobile min 520
+        : 520;
+
+      const needScroll = available < required;
+
+      chartScroll.style.overflow = needScroll ? 'auto' : 'hidden';
+      chartScroll.style.setProperty('-webkit-overflow-scrolling', 'touch');
+      chartScroll.style.touchAction = needScroll ? 'pan-x pan-y' : 'auto';
+  }
 }
+
 
 function openRFMBubbleModal(dataList: any[]) {
     // 1. Calculate Quantiles (Global for this dataset context) to keep quadrants fixed
@@ -1146,8 +1204,14 @@ function openRFMBubbleModal(dataList: any[]) {
     const q80_f = fValues[Math.floor(fValues.length * 0.8)] || 3;
     const q80_m = mValues[Math.floor(mValues.length * 0.8)] || 20000;
 
+    // [New] Calculate Global Max for Fixed Axes
+    // Add 10% padding to max values so points aren't on the edge
+    const maxF = (fValues[fValues.length - 1] || 10) * 1.1; 
+    const maxM = (mValues[mValues.length - 1] || 100000) * 1.1;
+
     // Detect Mobile
     const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const isLandscape = window.matchMedia("(max-width: 932px) and (orientation: landscape)").matches;
     const mobileScale = isMobile ? 0.6 : 1;
 
     // 2. Create Modal Elements
@@ -1160,15 +1224,89 @@ function openRFMBubbleModal(dataList: any[]) {
         // [Mobile Fix] 增加 overflow-y: auto 與 -webkit-overflow-scrolling 用於內容滾動
         modal.innerHTML = `
             <style>
-                /* Scrollbar Styles for RFM Modal */
                 .rfm-scroll-area::-webkit-scrollbar { width: 8px; height: 8px; }
                 .rfm-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
                 .rfm-scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+                
+                .rfm-chart-scroll {
+                   overflow: hidden; /* ✅ 預設不滾，交給 JS 判斷要不要開 */
+                   touch-action: auto;
+                   overscroll-behavior: contain;
+                   flex: 1;
+                   position: relative;
+                   border-radius: 12px;
+                   background: #1e293b;
+                   border: 1px solid rgba(255,255,255,0.05);
+                   }
+
+
+                @media (max-width: 768px) {
+                   .rfm-chart-inner {
+                       min-width: 900px;
+                       min-height: 520px;
+                   }
+                }
+                
+                /* Landscape Handling */
+                @media (max-width: 932px) and (orientation: landscape) {
+                   .rfm-controls { padding-right: 20px; }
+                   .rfm-chart-scroll { min-height: 60dvh; } 
+                   .rfm-title { font-size: 1.2rem !important; }
+                   .rfm-legend { font-size: 0.8rem !important; }
+                   #rfm-filter-group { flex-wrap: wrap; }
+                }
+                
+                /* Desktop Height Fix */
+                @media (min-width: 769px) {
+                    .rfm-scroll-area {
+                        width: min(1400px, 96vw) !important;
+                        max-height: 92vh !important;
+                        overflow: hidden !important; /* No scroll on desktop */
+                    }
+                    .rfm-chart-scroll {
+                        min-height: 640px !important; /* Fixed large height */
+                        overflow: hidden !important; 
+                    }
+                    .rfm-chart-inner {
+                        min-width: 100% !important;
+                        min-height: 100% !important;
+                    }
+                    /* Reduce control padding to save space */
+                    .rfm-controls { margin-bottom: 12px; }
+                }
+                /* Desktop baseline */
+                @media (min-width: 769px) {
+                    .rfm-scroll-area{
+                        width: min(1400px, 96vw) !important;
+                        height: 90vh !important; /* Fixed high height for full view */
+                        max-height: 900px !important;
+                        overflow: hidden !important;
+                        display: flex !important;
+                        flex-direction: column !important; 
+                        padding-bottom: 20px !important;
+                    }
+
+                    .rfm-chart-scroll{
+                        flex: 1;
+                        width: 100%;
+                        overflow: hidden; /* JS will toggle if needed */
+                        position: relative;
+                    }
+
+                    .rfm-chart-inner{
+                        width: 100% !important;
+                        height: 100% !important; /* Fill parent by default */
+                        min-height: 0 !important; /* Reset, JS handles critical min-height */
+                    }
+
+                    .rfm-controls { margin-bottom: 12px; }
+                }
+
             </style>
             <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter: blur(8px);">
                 <div class="rfm-scroll-area" style="
                     width: 90vw; 
-                    height: 90vh; 
+                    max-height: 90dvh; 
                     background: #0f172a; 
                     border-radius: 16px; 
                     padding: 24px; 
@@ -1182,29 +1320,23 @@ function openRFMBubbleModal(dataList: any[]) {
                 ">
                     <button id="close-rfm-modal" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:#fff; font-size:1.2rem; cursor:pointer; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:all 0.2s; z-index: 20;">&times;</button>
                     
-                    <div style="display:flex; flex-direction: ${isMobile ? 'column' : 'row'}; justify-content:space-between; align-items: ${isMobile ? 'flex-start' : 'flex-end'}; margin-bottom:24px; padding-right: ${isMobile ? '0' : '50px'}; gap: ${isMobile ? '15px' : '0'};">
+                    <div class="rfm-controls" style="display:flex; flex-direction: ${isMobile ? 'column' : 'row'}; justify-content:space-between; align-items: ${isMobile ? 'flex-start' : 'flex-end'}; margin-bottom:16px; padding-right: ${isMobile ? '0' : '50px'}; gap: ${isMobile ? '10px' : '0'}; flex-shrink: 0;">
                         <div>
-                            <h3 style="margin:0 0 8px 0; color:#f8fafc; font-size: ${isMobile ? '1.5rem' : '1.75rem'}; font-weight: 700; display:flex; align-items:center; gap:12px; letter-spacing: 0.5px;">
+                            <h3 class="rfm-title" style="margin:0 0 8px 0; color:#f8fafc; font-size: ${isMobile ? '1.5rem' : '1.75rem'}; font-weight: 700; display:flex; align-items:center; gap:12px; letter-spacing: 0.5px;">
                                 <i class="fa-solid fa-chart-bubble" style="color: #38bdf8;"></i>
                                 顧客價值分佈 (RFM)
                             </h3>
-                            <div style="color:#94a3b8; font-size: ${isMobile ? '0.85rem' : '0.95rem'}; display: flex; flex-wrap: wrap; align-items: center; gap: ${isMobile ? '10px' : '15px'};">
+                            <div class="rfm-legend" style="color:#94a3b8; font-size: ${isMobile ? '0.85rem' : '0.95rem'}; display: flex; flex-wrap: wrap; align-items: center; gap: ${isMobile ? '10px' : '15px'};">
                                 <span><i class="fa-solid fa-arrow-right-long"></i> X軸：消費頻次 (F)</span>
                                 <span><i class="fa-solid fa-arrow-up-long"></i> Y軸：消費金額 M (NT$)</span>
                                 
-                                <!-- Integrated Recency Legend -->
                                 <div style="display: flex; align-items: center; gap: 8px; margin-left: ${isMobile ? '0' : '10px'}; padding-left: ${isMobile ? '0' : '15px'}; border-left: ${isMobile ? 'none' : '1px solid rgba(255,255,255,0.1)'}; width: ${isMobile ? '100%' : 'auto'};">
                                     <span style="display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-circle"></i> 大小：未訪天數</span>
                                     <div style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
-                                        <!-- 30 Days -->
                                         <div style="width: 10px; height: 10px; border-radius: 50%; background: rgba(148, 163, 184, 0.4); border: 1px solid rgba(255,255,255,0.3);"></div>
                                         <span style="font-size: 0.8rem; opacity: 0.7;">30天</span>
-                                        
-                                        <!-- 90 Days -->
                                         <div style="width: 14px; height: 14px; border-radius: 50%; background: rgba(148, 163, 184, 0.4); border: 1px solid rgba(255,255,255,0.3); margin-left:4px;"></div>
                                         <span style="font-size: 0.8rem; opacity: 0.7;">90天</span>
-                                        
-                                        <!-- 180 Days -->
                                         <div style="width: 18px; height: 18px; border-radius: 50%; background: rgba(148, 163, 184, 0.4); border: 1px solid rgba(255,255,255,0.3); margin-left:4px;"></div>
                                         <span style="font-size: 0.8rem; opacity: 0.7;">180天</span>
                                     </div>
@@ -1212,29 +1344,14 @@ function openRFMBubbleModal(dataList: any[]) {
                             </div>
                         </div>
                         
-                        <!-- Toggle Group Container -->
-                        <div id="rfm-filter-group" style="display:flex; gap:10px; background: rgba(30, 41, 59, 0.5); padding: 6px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap;">
-                            <!-- Buttons injected by JS -->
-                        </div>
+                        <div id="rfm-filter-group" style="display:flex; gap:10px; background: rgba(30, 41, 59, 0.5); padding: 6px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap;"></div>
                     </div>
 
-                    <!-- [Mobile Fix] Chart Wrapper for Horizontal Scroll -->
-                    <div class="rfm-chart-scroll" style="
-                        flex:1; 
-                        position:relative; 
-                        border-radius:12px; 
-                        background: #1e293b; 
-                        border: 1px solid rgba(255,255,255,0.05);
-                        overflow-x: auto; 
-                        overflow-y: hidden;
-                        -webkit-overflow-scrolling: touch;
-                        touch-action: pan-x pan-y;
-                    ">
-                        <div class="chart-inner" style="
+                    <div class="rfm-chart-scroll">
+                        <div class="rfm-chart-inner" style="
                             width: 100%; 
                             height: 100%; 
                             min-height: 420px;
-                            min-width: ${isMobile ? '900px' : '0'};
                         ">
                             <canvas id="rfmModalCanvas" style="display: block; width: 100%; height: 100%;"></canvas>
                         </div>
@@ -1246,8 +1363,30 @@ function openRFMBubbleModal(dataList: any[]) {
         
         const closeBtn = modal.querySelector('#close-rfm-modal');
         closeBtn?.addEventListener('click', () => {
+             // [Fix] Cleanup Chart on Close
+             const chartInstance = Chart.getChart("rfmModalCanvas");
+             if (chartInstance) {
+                 chartInstance.destroy();
+             }
+             const cvs = modal!.querySelector('#rfmModalCanvas');
+             cvs?.removeAttribute('style'); // Reset inline styles
+
+             window.removeEventListener('resize', resizeHandler); // Cleanup listener
              modal!.style.display = 'none';
         });
+
+        // [New] Dynamic Scroll on Window Resize
+        const resizeHandler = () => {
+             // Throttled check could be better, but direct call is responsive
+             requestAnimationFrame(() => {
+                 applyRFMBubbleScrollFallback();
+                 const chartInstance = Chart.getChart("rfmModalCanvas");
+                 if (chartInstance) {
+                     chartInstance.resize();
+                 }
+             });
+        };
+        window.addEventListener('resize', resizeHandler);
         closeBtn?.addEventListener('mouseenter', (e: any) => {
             e.target.style.background = '#ef4444';
             e.target.style.transform = 'rotate(90deg)';
@@ -1337,7 +1476,8 @@ function openRFMBubbleModal(dataList: any[]) {
                 grid: { color: 'rgba(255,255,255,0.08)', tickLength: 10 },
                 ticks: { color:'#e2e8f0', font: { size: isMobile ? 10 : 12, weight: 'bold' } },
                 border: { color: '#64748b' },
-                min: 0 
+                min: 0,
+                max: maxF, // [Fix] Fixed X Axis Range
             },
             y: {
                 title: { display: true, text: '消費金額 M (NT$)', color: '#cbd5e1', font: { size: isMobile ? 12 : 14, weight: 'bold' } },
@@ -1348,28 +1488,36 @@ function openRFMBubbleModal(dataList: any[]) {
                     callback: (v: number) => formatCompactNT(v)
                 },
                 border: { color: '#64748b' },
-                min: 0
+                min: 0,
+                max: maxM, // [Fix] Fixed Y Axis Range
             }
         };
 
-        requestAnimationFrame(() => {
-            createOrUpdateChart("rfmModalCanvas", ctx, {
-                type: 'bubble',
-            data: {
-                datasets: [{
-                    label: '客戶',
-                    data: bubbleData,
-                    backgroundColor: (ctx: any) => ctx.raw?.backgroundColor,
-                    borderColor: (ctx: any) => ctx.raw?.borderColor,
-                    borderWidth: (ctx: any) => ctx.raw?.borderWidth,
-                    hoverRadius: isMobile ? 6 : 10, 
-                    hitRadius: isMobile ? 15 : 6, 
-                    hoverBorderWidth: isMobile ? 2 : 3,
-                    hoverBorderColor: '#fff'
-                }]
-            },
-            plugins: [{
-                id: 'quadrants-bg',
+        // [Fix] Wait for Container Dimensions before creating chart
+        const checkDimension = (count: number) => {
+             const container = modal!.querySelector('.rfm-chart-inner');
+             if (!container) return;
+             
+             const rect = container.getBoundingClientRect();
+             if (rect.height > 0 && rect.width > 0) {
+                 createOrUpdateChart("rfmModalCanvas", ctx, {
+                    type: 'bubble',
+                    data: {
+                        datasets: [{
+                            label: '客戶',
+                            data: bubbleData,
+                            backgroundColor: (ctx: any) => ctx.raw?.backgroundColor,
+                            borderColor: (ctx: any) => ctx.raw?.borderColor,
+                            borderWidth: (ctx: any) => ctx.raw?.borderWidth,
+                            hoverRadius: isMobile ? 6 : 10, 
+                            hitRadius: isMobile ? 14 : 6, 
+                            hoverBorderWidth: isMobile ? 2 : 3,
+                            hoverBorderColor: '#fff'
+                        }]
+                    },
+                    plugins: [{
+                        id: 'quadrants-bg',
+
                 beforeDraw: (chart: any) => {
                     const { ctx, scales: { x, y } } = chart;
                     if (!x || !y) return;
@@ -1402,15 +1550,19 @@ function openRFMBubbleModal(dataList: any[]) {
 
                     // Quadrant Labels (Pill Style High Visibility)
                     const label = (text: string, tx: number, ty: number, color: string, align: 'left'|'right') => {
-                        ctx.font = 'bold 15px "Inter", sans-serif';
+                        // [Mobile Fix] Adjust quadrant labels font size
+                        const labelFontCheck = isMobile ? 'bold 12px "Inter", sans-serif' : 'bold 15px "Inter", sans-serif';
+                        ctx.font = labelFontCheck;
                         ctx.textBaseline = 'middle';
-                        const paddingX = 12;
-                        const paddingY = 6;
-                        const width = ctx.measureText(text).width + (paddingX * 2);
-                        const height = 32;
+                        const paddingX = isMobile ? 8 : 12;
+                        const paddingY = isMobile ? 4 : 6;
+                        const paramWidth = ctx.measureText(text).width + (paddingX * 2);
+                        const paramHeight = isMobile ? 26 : 32;
                         
-                        const bgX = align === 'right' ? tx - width : tx;
-                        const bgY = ty - height/2;
+                        // Prevent label clipping near edges if mobile
+                        const offsetX = align === 'right' ? -paramWidth : 0;
+                        const bgX = tx + offsetX;
+                        const bgY = ty - paramHeight/2;
 
                         // Pill Shadow
                         ctx.shadowColor = 'rgba(0,0,0,0.5)';
@@ -1419,9 +1571,9 @@ function openRFMBubbleModal(dataList: any[]) {
                         ctx.shadowOffsetY = 4;
                         
                         // Pill Bg
-                        ctx.fillStyle = '#1e293b'; // Slate 800
+                        ctx.fillStyle = '#1e293b'; 
                         ctx.beginPath();
-                        ctx.roundRect(bgX, bgY, width, height, 8);
+                        ctx.roundRect(bgX, bgY, paramWidth, paramHeight, 8);
                         ctx.fill();
                         
                         // Reset Shadow
@@ -1434,7 +1586,7 @@ function openRFMBubbleModal(dataList: any[]) {
 
                         // Text
                         ctx.textAlign = 'left'; // Always draw relative to box start
-                        ctx.fillStyle = '#f1f5f9'; // Bright white text
+                        ctx.fillStyle = '#f1f5f9'; 
                         const textX = bgX + paddingX;
                         ctx.fillText(text, textX, ty);
                     };
@@ -1473,7 +1625,21 @@ function openRFMBubbleModal(dataList: any[]) {
                 }
             }
         });
-      });
+
+        // Force Resize
+        const chartInstance = Chart.getChart("rfmModalCanvas");
+        if (chartInstance) {
+            applyRFMBubbleScrollFallback();
+            chartInstance.resize();
+            chartInstance.update('none');
+        }
+             } else {
+                 if (count < 20) requestAnimationFrame(() => checkDimension(count + 1));
+             }
+        };
+
+        // Start polling for dimension
+        checkDimension(0);
     };
 
     // 4. Render Buttons
@@ -1517,6 +1683,16 @@ function openRFMBubbleModal(dataList: any[]) {
             currentFilter = f.id;
             renderChart(f.id);
             updateButtonStates();
+            
+            // Re-check scroll on filter change
+            setTimeout(() => {
+                applyRFMBubbleScrollFallback();
+                const chartInstance = Chart.getChart("rfmModalCanvas");
+                if (chartInstance) { 
+                    chartInstance.resize(); 
+                    chartInstance.update();
+                }
+            }, 50);
         };
 
         filterGroup.appendChild(btn);
@@ -1545,8 +1721,21 @@ function openRFMBubbleModal(dataList: any[]) {
     }
 
     // Initial Render
+    // Initial Render
     updateButtonStates();
     renderChart('all');
+
+    // [New] ResizeObserver to handle dynamic resizing robustly
+    const chartContainer = modal.querySelector('.rfm-chart-inner');
+    if (chartContainer) {
+        const ro = new ResizeObserver(() => {
+            const chartInstance = Chart.getChart("rfmModalCanvas");
+            if (chartInstance) {
+                chartInstance.resize();
+            }
+        });
+        ro.observe(chartContainer);
+    }
 }
 
 function renderRFMLegend(container: HTMLElement | null) {
