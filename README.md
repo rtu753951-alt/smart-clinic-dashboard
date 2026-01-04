@@ -185,10 +185,15 @@ print(f"✅ 已生成 {len(df)} 筆模擬資料，請下載 {filename} 並匯入
 
 ## License
 
-This project is licensed under **CC BY-NC 4.0**.
+### Code
+The source code in this repository is licensed under the **MIT License**.
+
+### Documentation & Assets
+All documentation, diagrams, screenshots, and written content are licensed under  
+**Creative Commons Attribution–NonCommercial 4.0 (CC BY-NC 4.0)**.
 
 - Learning and non-commercial use is welcome.
-- Commercial use or redistribution as a product is not allowed without permission.
+- Commercial use of the documentation or materials is not allowed without permission.
   
 ---
 
