@@ -5,13 +5,23 @@
 > [!IMPORTANT]
 > **⚠️ 重要聲明**：本系統不提供任何醫療診斷或治療建議，其 AI 分析結果僅供營運效率評估與行銷文案合規參考。
 
-![License](https://img.shields.io/badge/license-Private-red.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC_BY--NC_4.0-blue.svg)
+![Build Status](https://github.com/rtu753951-alt/smart-clinic-dashboard/actions/workflows/deploy.yml/badge.svg)
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Status](https://img.shields.io/badge/AI-Active-green.svg)
 
 **這是一個結合 AI 行銷合規檢查與大數據分析的經營管理系統，旨在協助醫美診所經營者監控潛在合規風險並優化營運績效。**
 
 系統核心採用 Google Gemini API 與現代化前端視覺化技術，能即時分析大量預約與營收數據，並針對行銷文案與經營策略提供具備「專業／友善幽默」雙重語氣的 AI 營運洞察摘要。
+
+---
+### 🚀 掃描即刻體驗
+
+- Live Demo：[點擊此處直接造訪網頁](https://rtu753951-alt.github.io/smart-clinic-dashboard/)
+- Mobile：掃描下方 QR Code（或點上面連結）
+
+![Project QR Code](https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://rtu753951-alt.github.io/smart-clinic-dashboard/)
 
 ---
 
@@ -176,10 +186,15 @@ print(f"✅ 已生成 {len(df)} 筆模擬資料，請下載 {filename} 並匯入
 
 ## License
 
-This project is licensed under **CC BY-NC 4.0**.
+### Code
+The source code in this repository is licensed under the **MIT License**.
+
+### Documentation & Assets
+All documentation, diagrams, screenshots, and written content are licensed under  
+**Creative Commons Attribution–NonCommercial 4.0 (CC BY-NC 4.0)**.
 
 - Learning and non-commercial use is welcome.
-- Commercial use or redistribution as a product is not allowed without permission.
+- Commercial use of the documentation or materials is not allowed without permission.
   
 ---
 
