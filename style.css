@@ -1538,13 +1538,50 @@ body::after {
   }
 }
 
-/* 當螢幕寬度小於 768px 時（涵蓋大部分手機與小型平板） */
-@media (max-width: 768px) {
-    /* 直接隱藏系統狀態面板 */
-    .system-status-box { 
-        display: none !important; 
-    }
+/* ===== Mobile layout fix: sidebar becomes top bar ===== */
+@media (max-width: 900px) {
+  /* 1) 左右欄改上下（關鍵） */
+  .app-container {
+    flex-direction: column;
+  }
 
-    /* 如果還有其他想在手機上隱藏的小區塊，也可以加在這裡 */
+  /* 2) Sidebar 變成頂部區塊 */
+  .sidebar {
+    width: 100%;
+    padding: 1rem;
+    border-right: none;
+    border-bottom: 1px solid rgba(160, 210, 255, 0.35);
+    box-shadow: 0 8px 18px rgba(90, 180, 255, 0.10);
+  }
+
+  /* 3) 主內容不要被 sidebar 留邊（有些專案會用 margin-left） */
+  .main-content {
+    padding: 1rem;
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  /* 4) footer 不要靠「撐到最底」那套，回到正常流 */
+  .sidebar-footer {
+    margin-top: 0;
+    padding-top: 0.75rem;
+  }
+
+  /* 5) system-status 改成一排小資訊（不再像卡片佔大塊） */
+  .system-status {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.65rem;
+    background: rgba(223, 247, 255, 0.5);
+    border-radius: 12px;
+  }
+
+  /* 6) 如果 system-status 內部每行是 div/p，讓它變成「小標籤」 */
+  .system-status > * {
+    white-space: nowrap;
+    opacity: 0.9;
+  }
 }
-
