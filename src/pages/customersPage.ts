@@ -1146,6 +1146,10 @@ function openRFMBubbleModal(dataList: any[]) {
     const q80_f = fValues[Math.floor(fValues.length * 0.8)] || 3;
     const q80_m = mValues[Math.floor(mValues.length * 0.8)] || 20000;
 
+    // Detect Mobile
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const mobileScale = isMobile ? 0.6 : 1;
+
     // 2. Create Modal Elements
     let modal = document.getElementById('rfm-bubble-modal');
     
@@ -1153,23 +1157,43 @@ function openRFMBubbleModal(dataList: any[]) {
         modal = document.createElement('div');
         modal.id = 'rfm-bubble-modal';
         // 背景改為深色不透明度高的遮罩，模態視窗本體使用深色 Slate-900 確保對比
+        // [Mobile Fix] 增加 overflow-y: auto 與 -webkit-overflow-scrolling 用於內容滾動
         modal.innerHTML = `
+            <style>
+                /* Scrollbar Styles for RFM Modal */
+                .rfm-scroll-area::-webkit-scrollbar { width: 8px; height: 8px; }
+                .rfm-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+                .rfm-scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+            </style>
             <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; display:flex; justify-content:center; align-items:center; backdrop-filter: blur(8px);">
-                <div style="width: 90vw; height: 90vh; background: #0f172a; border-radius: 16px; padding: 24px; display:flex; flex-direction:column; position:relative; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7); border: 1px solid rgba(255,255,255,0.1);">
-                    <button id="close-rfm-modal" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:#fff; font-size:1.2rem; cursor:pointer; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:all 0.2s;">&times;</button>
+                <div class="rfm-scroll-area" style="
+                    width: 90vw; 
+                    height: 90vh; 
+                    background: #0f172a; 
+                    border-radius: 16px; 
+                    padding: 24px; 
+                    display:flex; 
+                    flex-direction:column; 
+                    position:relative; 
+                    box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7); 
+                    border: 1px solid rgba(255,255,255,0.1);
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                ">
+                    <button id="close-rfm-modal" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:#fff; font-size:1.2rem; cursor:pointer; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:all 0.2s; z-index: 20;">&times;</button>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px; padding-right: 50px;">
+                    <div style="display:flex; flex-direction: ${isMobile ? 'column' : 'row'}; justify-content:space-between; align-items: ${isMobile ? 'flex-start' : 'flex-end'}; margin-bottom:24px; padding-right: ${isMobile ? '0' : '50px'}; gap: ${isMobile ? '15px' : '0'};">
                         <div>
-                            <h3 style="margin:0 0 8px 0; color:#f8fafc; font-size: 1.75rem; font-weight: 700; display:flex; align-items:center; gap:12px; letter-spacing: 0.5px;">
+                            <h3 style="margin:0 0 8px 0; color:#f8fafc; font-size: ${isMobile ? '1.5rem' : '1.75rem'}; font-weight: 700; display:flex; align-items:center; gap:12px; letter-spacing: 0.5px;">
                                 <i class="fa-solid fa-chart-bubble" style="color: #38bdf8;"></i>
                                 顧客價值分佈 (RFM)
                             </h3>
-                            <div style="color:#94a3b8; font-size: 0.95rem; display: flex; align-items: center; gap: 15px;">
+                            <div style="color:#94a3b8; font-size: ${isMobile ? '0.85rem' : '0.95rem'}; display: flex; flex-wrap: wrap; align-items: center; gap: ${isMobile ? '10px' : '15px'};">
                                 <span><i class="fa-solid fa-arrow-right-long"></i> X軸：消費頻次 (F)</span>
                                 <span><i class="fa-solid fa-arrow-up-long"></i> Y軸：消費金額 M (NT$)</span>
                                 
                                 <!-- Integrated Recency Legend -->
-                                <div style="display: flex; align-items: center; gap: 8px; margin-left: 10px; padding-left: 15px; border-left: 1px solid rgba(255,255,255,0.1);">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-left: ${isMobile ? '0' : '10px'}; padding-left: ${isMobile ? '0' : '15px'}; border-left: ${isMobile ? 'none' : '1px solid rgba(255,255,255,0.1)'}; width: ${isMobile ? '100%' : 'auto'};">
                                     <span style="display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-circle"></i> 大小：未訪天數</span>
                                     <div style="display: flex; align-items: center; gap: 6px; margin-left: 8px;">
                                         <!-- 30 Days -->
@@ -1189,13 +1213,31 @@ function openRFMBubbleModal(dataList: any[]) {
                         </div>
                         
                         <!-- Toggle Group Container -->
-                        <div id="rfm-filter-group" style="display:flex; gap:10px; background: rgba(30, 41, 59, 0.5); padding: 6px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div id="rfm-filter-group" style="display:flex; gap:10px; background: rgba(30, 41, 59, 0.5); padding: 6px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap;">
                             <!-- Buttons injected by JS -->
                         </div>
                     </div>
 
-                    <div style="flex:1; position:relative; border-radius:12px; overflow:hidden; background: #1e293b; border: 1px solid rgba(255,255,255,0.05);">
-                        <canvas id="rfmModalCanvas"></canvas>
+                    <!-- [Mobile Fix] Chart Wrapper for Horizontal Scroll -->
+                    <div class="rfm-chart-scroll" style="
+                        flex:1; 
+                        position:relative; 
+                        border-radius:12px; 
+                        background: #1e293b; 
+                        border: 1px solid rgba(255,255,255,0.05);
+                        overflow-x: auto; 
+                        overflow-y: hidden;
+                        -webkit-overflow-scrolling: touch;
+                        touch-action: pan-x pan-y;
+                    ">
+                        <div class="chart-inner" style="
+                            width: 100%; 
+                            height: 100%; 
+                            min-height: 420px;
+                            min-width: ${isMobile ? '900px' : '0'};
+                        ">
+                            <canvas id="rfmModalCanvas" style="display: block; width: 100%; height: 100%;"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1274,7 +1316,8 @@ function openRFMBubbleModal(dataList: any[]) {
             const bgColor = `rgba(${r}, ${g}, ${b}, ${screenOpacity})`;
             const hoverColor = `rgba(${r}, ${g}, ${b}, ${hoverOpacity})`;
             
-            const size = 4 + Math.min(24, (v.days / 180) * 18);
+            const rawSize = 4 + Math.min(24, (v.days / 180) * 18);
+            const size = rawSize * mobileScale;
 
             return {
                 x: Math.max(0, v.f + jitterX),
@@ -1290,18 +1333,18 @@ function openRFMBubbleModal(dataList: any[]) {
 
         const scalesOptions = {
             x: {
-                title: { display: true, text: '回診頻次 (F)', color: '#cbd5e1', font: { size: 14, weight: 'bold' } },
+                title: { display: true, text: '回診頻次 (F)', color: '#cbd5e1', font: { size: isMobile ? 12 : 14, weight: 'bold' } },
                 grid: { color: 'rgba(255,255,255,0.08)', tickLength: 10 },
-                ticks: { color:'#e2e8f0', font: { size: 12, weight: 'bold' } },
+                ticks: { color:'#e2e8f0', font: { size: isMobile ? 10 : 12, weight: 'bold' } },
                 border: { color: '#64748b' },
                 min: 0 
             },
             y: {
-                title: { display: true, text: '消費金額 M (NT$)', color: '#cbd5e1', font: { size: 14, weight: 'bold' } },
+                title: { display: true, text: '消費金額 M (NT$)', color: '#cbd5e1', font: { size: isMobile ? 12 : 14, weight: 'bold' } },
                 grid: { color: 'rgba(255,255,255,0.08)' },
                 ticks: { 
                     color:'#e2e8f0',
-                    font: { size: 12, weight: 'bold' },
+                    font: { size: isMobile ? 10 : 12, weight: 'bold' },
                     callback: (v: number) => formatCompactNT(v)
                 },
                 border: { color: '#64748b' },
@@ -1309,8 +1352,9 @@ function openRFMBubbleModal(dataList: any[]) {
             }
         };
 
-        createOrUpdateChart("rfmModalCanvas", ctx, {
-            type: 'bubble',
+        requestAnimationFrame(() => {
+            createOrUpdateChart("rfmModalCanvas", ctx, {
+                type: 'bubble',
             data: {
                 datasets: [{
                     label: '客戶',
@@ -1318,8 +1362,9 @@ function openRFMBubbleModal(dataList: any[]) {
                     backgroundColor: (ctx: any) => ctx.raw?.backgroundColor,
                     borderColor: (ctx: any) => ctx.raw?.borderColor,
                     borderWidth: (ctx: any) => ctx.raw?.borderWidth,
-                    hoverRadius: 10, // Larger hover
-                    hoverBorderWidth: 3,
+                    hoverRadius: isMobile ? 6 : 10, 
+                    hitRadius: isMobile ? 15 : 6, 
+                    hoverBorderWidth: isMobile ? 2 : 3,
                     hoverBorderColor: '#fff'
                 }]
             },
@@ -1406,19 +1451,18 @@ function openRFMBubbleModal(dataList: any[]) {
                 responsive: true,
                 maintainAspectRatio: false,
                 devicePixelRatio: window.devicePixelRatio || 2, 
-                layout: { padding: 20 },
+                layout: { padding: isMobile ? 10 : 20 },
+                animation: isMobile ? false : { duration: 800 },
                 scales: scalesOptions,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: '#0f172a',
-                        titleColor: '#f1f5f9',
-                        bodyColor: '#cbd5e1',
+                        titleFont: { size: isMobile ? 12 : 14, weight: 'bold' },
+                        bodyFont: { size: isMobile ? 11 : 13 },
+                        padding: isMobile ? 8 : 12,
                         borderWidth: 1,
                         borderColor: 'rgba(255,255,255,0.2)',
-                        padding: 12,
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 13 },
                         callbacks: {
                             label: (ctx: any) => {
                                 const r = ctx.raw._raw;
@@ -1429,6 +1473,7 @@ function openRFMBubbleModal(dataList: any[]) {
                 }
             }
         });
+      });
     };
 
     // 4. Render Buttons

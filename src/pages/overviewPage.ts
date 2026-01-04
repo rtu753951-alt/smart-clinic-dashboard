@@ -21,10 +21,41 @@ import { TaskStore } from "../data/taskStore.js";
 export function initOverviewPage() {
     console.log("initOverviewPage (new modal system)");
 
-    if (!dataStore.appointments.length) {
-        console.warn("Appointments not loaded yet.");
-        return;
+    console.log("initOverviewPage (Progressive Loading Mode)");
+
+    // 1. 檢查核心資料狀態
+    if (!dataStore.isAppointmentsLoaded) {
+        console.log("[Overview] Core data not ready. Showing skeleton and prefetching...");
+        
+        // A. 顯示骨架屏 (Skeleton) 防止白屏
+        renderOverviewSkeleton();
+
+        // B. 觸發背景載入 (Non-blocking)
+        dataStore.prefetchCoreData()
+            .then(async () => {
+                console.log("[Overview] Core data loaded. Refreshing UI...");
+                
+                // C. 資料到位後，讓 UI 有機會喘息再渲染 (避免 Frame Drop)
+                await new Promise(r => requestAnimationFrame(r));
+                
+                // D. 重新初始化頁面 (True Render)
+                initOverviewPage();
+                
+                // E. 通知 Global Month Selector 更新 (因為它依賴 appointments)
+                if ((window as any).updateMonthSelector) {
+                    (window as any).updateMonthSelector();
+                }
+            })
+            .catch(err => {
+                console.error("[Overview] Core data load failed:", err);
+                renderLoadErrorState();
+            });
+            
+        return; // 暫停後續渲染，等待 Callback
     }
+
+    // --- 以下為資料 Ready 後的正常渲染流程 ---
+    console.log("[Overview] Data ready. Rendering Charts & KPIs...");
 
     // 🎯 Section 1: Real-time Operations KPI (永遠使用系統今日，不受月份選單影響)
     updateTodayKPI();
@@ -56,7 +87,61 @@ export function refreshOverviewPageByMonth() {
 /**
  * 更新所有月份相關內容
  */
-function refreshMonthlyContent() {
+
+
+/**
+ * 渲染載入中骨架屏
+ */
+function renderOverviewSkeleton() {
+    // KPI Area Skeleton
+    setText("ov-total", "--");
+    setText("ov-show-rate", "--%");
+    setText("ov-doc-count", "--");
+    setText("ov-nurse-count", "--");
+    setText("ov-consultant-count", "--");
+    
+    // Revenue Cards Skeleton
+    setHTML("revenue-status-content", '<div class="skeleton-text skeleton-medium"></div><div class="skeleton-text skeleton-small"></div>');
+    setHTML("monthly-revenue-content", '<div class="skeleton-text skeleton-medium"></div>');
+    setHTML("return-visit-content", '<div class="skeleton-text skeleton-medium"></div>');
+
+    // Chart Areas Skeleton
+    setHTML("dash-doctor-top3", '<div class="skeleton-block" style="height: 200px;"></div>');
+    setHTML("dash-treatment-top3", '<div class="skeleton-block" style="height: 200px;"></div>');
+    setHTML("dash-room-usage", '<div class="skeleton-block" style="height: 150px;"></div>');
+}
+
+/**
+ * 渲染載入失敗狀態
+ */
+function renderLoadErrorState() {
+    const errorHtml = `
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <i class="fa-solid fa-cloud-bolt" style="font-size: 48px; margin-bottom: 16px; color: #ef4444;"></i>
+            <h3>資料載入失敗</h3>
+            <p>無法同步營運數據，請檢查網路連線。</p>
+            <button onclick="location.reload()" style="margin-top: 20px; padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                <i class="fa-solid fa-rotate-right"></i> 重新載入
+            </button>
+        </div>
+    `;
+    
+    // Replace Main Grid with Error
+    const mainGrid = document.querySelector('.overview-dashboard');
+    if (mainGrid) mainGrid.innerHTML = errorHtml;
+}
+
+// Helper wrappers for logic utils (since we removed direct imports in diff potentially, wait, imports are at top)
+// (Helpers are defined at bottom of file)
+
+/**
+ * 更新所有月份相關內容
+ */
+async function refreshMonthlyContent() {
+    // Dynamic Import Chart.js if needed (for Radar or other charts)
+    // Currently overview mainly uses DOM elements, but Radar needs Chart.js
+    // Let's delay that part slightly
+    
     // Section 2: Business Performance Summary
     updateRevenueStatus();      // Today's revenue status (vs yesterday, vs 7-day avg)
     updateMonthlyRevenue();     // Monthly revenue total
@@ -70,8 +155,11 @@ function refreshMonthlyContent() {
     // Section 4: AI Insights
     updateAISummaryBlocks();
     
-    // Future Trends Radar
-    updateFutureTrendsRadar();
+    // Future Trends Radar (Needs Chart.js)
+    if (document.getElementById('future-trends-radar')) {
+        // Mocking Radar for now or call real one if implemented
+        updateFutureTrendsRadar(); 
+    }
 }
 
 /* ===================== KPI 區 ===================== */

@@ -90,25 +90,38 @@ function setupGlobalMonthSelector() {
     const monthSelector = document.getElementById("global-month-selector") as HTMLSelectElement | null;
     if (!monthSelector) return;
 
-    const months = Array.from(
-        new Set(dataStore.appointments.map(a => a.date.slice(0, 7)))
-    ).sort();
+    // 定義更新邏輯
+    const refreshOptions = () => {
+        // Fallback: If no data, use Current Month
+        let months = Array.from(
+            new Set(dataStore.appointments.map(a => a.date.slice(0, 7)))
+        ).sort();
 
-    // 預設為當前月份（YYYY-MM）
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    window.currentDashboardMonth = months.includes(currentMonth) ? currentMonth : months[months.length - 1];
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        
+        if (months.length === 0) {
+            months = [currentMonth];
+        }
 
-    monthSelector.innerHTML = months
-        .map(m => `<option value="${m}" ${m === window.currentDashboardMonth ? "selected" : ""}>${m}</option>`)
-        .join("");
+        // 預設為當前月份（YYYY-MM）
+        // 若當前月份不在列表中，預設選最後一個 (最新的)
+        if (!window.currentDashboardMonth) {
+             window.currentDashboardMonth = months.includes(currentMonth) ? currentMonth : months[months.length - 1];
+        }
 
-    // 初始設置 window.currentDashboardMonth
-    if (monthSelector.value) {
-        window.currentDashboardMonth = monthSelector.value;
-    }
+        monthSelector.innerHTML = months
+            .map(m => `<option value="${m}" ${m === window.currentDashboardMonth ? "selected" : ""}>${m}</option>`)
+            .join("");
+            
+        // Sync value
+        monthSelector.value = window.currentDashboardMonth || currentMonth;
+    };
 
-    // Event Listener 移至 pageController.ts 統一管理，避免重複觸發
-    // monthSelector.addEventListener("change", () => { ... });
+    // Initial Run
+    refreshOptions();
+
+    // 暴露給外部 (當 Appointments 載入完成後呼叫)
+    (window as any).updateMonthSelector = refreshOptions;
 }
 
 declare global {

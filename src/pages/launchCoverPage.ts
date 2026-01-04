@@ -77,46 +77,60 @@ export async function initLaunchCover(): Promise<void> {
     }, 12000);
     
     try {
-        // 3. 載入資料 (核心數據)
-        // 使用 microtask yield 確保 UI 不會凍結
-        if (dataStore.appointments.length === 0) {
-            await dataStore.loadAll(); // 內部已有 catch，不會 throw
+        // 3. 載入資料 (基礎數據 Bootstrap)
+        // [New Strategy] Load lightweight data first, render UI, then load heavy data
+        if (!dataStore.isBootstrapLoaded) {
+            await dataStore.loadBootstrap();
+        }
+        
+        // Check for Bootstrap Failure
+        if (dataStore.bootstrapError) {
+             throw new Error(dataStore.bootstrapError);
         }
 
-        // 4. 重大檢查：若載入後仍無資料，視為離線/失敗
-        if (dataStore.appointments.length === 0) {
-           console.warn("[Launch Cover] Data load completed but empty. Triggering offline mode.");
-           renderErrorState(coverContainer, "無法載入營運數據");
-           return; 
+        // 4. Trigger Heavy Data Load (Background)
+        // Do NOT await here. Let it load while user views the cover.
+        if (!dataStore.isAppointmentsLoaded) {
+            dataStore.loadAppointments().then(() => {
+                console.log("[Launch Cover] Appointments loaded in background. Refreshing UI...");
+                
+                // 1. Update Global Month Selector (in main.ts)
+                (window as any).updateMonthSelector?.();
+
+                // 2. Only refresh Cover UI if cover is still visible
+                if (coverContainer.style.display !== 'none') {
+                   (window as any).refreshLaunchCoverData(); 
+                }
+            }).catch(e => console.warn("Background load failed:", e));
         }
 
-        // 3. 計算 KPI (Async but fast)
-        // 使用 allSettled 確保即使 AI 建議失敗也能顯示 KPI
+        // 5. 計算 KPI (Partial Data is OK)
         const coverData = await calculateLaunchCoverData();
         
         clearTimeout(safetyTimeout);
         coverContainer.classList.add('loaded'); // 標記已完成
 
-        // 4. 渲染封面
+        // 6. 渲染封面
         renderCoverContent(coverContainer, coverData);
         
     } catch (err) {
         // 萬一發生未捕捉錯誤 (Critical Fail)
         clearTimeout(safetyTimeout);
         console.error("[Launch Cover] Critical Init Error:", err);
-        renderErrorState(coverContainer, "系統初始化異常，請重試");
+        renderErrorState(coverContainer, "無法載入基礎營運數據");
     } finally {
         // 確保永遠綁定事件，讓用戶能離開
         bindInteractiveEvents(coverContainer);
     }
 
-    // Expose refresh function for Settings updates
+    // Expose refresh function
     (window as any).refreshLaunchCoverData = async () => {
+        // Re-calculate with whatever data we have now
         const coverData = await calculateLaunchCoverData();
-        if (coverData.isLoaded) {
-            renderCoverContent(coverContainer, coverData);
-            bindInteractiveEvents(coverContainer);
-        }
+        // Update UI
+        renderCoverContent(coverContainer, coverData);
+        // Re-bind events since we replaced innerHTML
+        bindInteractiveEvents(coverContainer);
     };
 }
 
@@ -145,7 +159,10 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
             return sum + (service?.price || 0);
         }, 0);
         
-        const monthlyRevenueFormatted = formatNTRevenue(monthlyRevenue, 'compact');
+        // Display Loading or Value
+        const monthlyRevenueFormatted = dataStore.isAppointmentsLoaded 
+            ? formatNTRevenue(monthlyRevenue, 'compact')
+            : "同步中...";
         
         // 2. VIP Count
         const vipCount = calculateVIPCount();
@@ -532,6 +549,10 @@ function renderErrorState(container: HTMLElement, errorMessage: string): void {
             <button class="launch-enter-btn launch-enter-btn-offline" id="btn-enter-dashboard">
                 <span>繼續使用離線模式</span>
                 <i class="fa-solid fa-arrow-right"></i>
+            </button>
+            
+            <button class="launch-enter-btn" style="margin-top: 10px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4);" onclick="location.reload()">
+                <span><i class="fa-solid fa-rotate-right"></i> 重試連線</span>
             </button>
         </div>
     `;
