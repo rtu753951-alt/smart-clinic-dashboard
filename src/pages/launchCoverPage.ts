@@ -91,7 +91,7 @@ export async function initLaunchCover(): Promise<void> {
         // 4. Trigger Heavy Data Load (Background)
         // Do NOT await here. Let it load while user views the cover.
         if (!dataStore.isAppointmentsLoaded) {
-            dataStore.loadAppointments().then(() => {
+            dataStore.prefetchCoreData().then(() => {
                 console.log("[Launch Cover] Appointments loaded in background. Refreshing UI...");
                 
                 // 1. Update Global Month Selector (in main.ts)

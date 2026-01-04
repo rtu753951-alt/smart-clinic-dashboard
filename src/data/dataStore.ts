@@ -48,16 +48,7 @@ class DataStore {
    * 用途: 在首頁/Overview 進行背景載入，避免阻塞 UI
    */
   async prefetchCoreData(): Promise<void> {
-      if (this.isAppointmentsLoaded) return;
-      if (this.coreDataPromise) return this.coreDataPromise;
-
-      console.log("[DataStore] Starting Core Data Prefetch...");
-      
-      this.coreDataPromise = this.loadAppointments().finally(() => {
-          this.coreDataPromise = null;
-      });
-
-      return this.coreDataPromise;
+      return this.loadAppointments();
   }
 
   /**
@@ -109,29 +100,40 @@ class DataStore {
     }
   }
 
-  /**
-   * 重型載入（Appointments）：
-   * 專門處理 appointments.csv，這是最卡的部分
-   */
-  async loadAppointments() {
-    if (this.isAppointmentsLoaded) return;
+/**
+ * 重型載入（Appointments）：
+ * 專門處理 appointments.csv，這是最卡的部分
+ */
+async loadAppointments(): Promise<void> {
+  if (this.isAppointmentsLoaded) return;
 
-    console.log("[DataStore] Loading Appointments Data (Heavy)...");
-    try {
-        const rawAppointments = await loadCSV<any>("data/appointments.csv").catch(e => { 
-            console.error("[DataStore] Appointments fetch failed", e); 
-            throw e; 
-        });
-        
-        this.processAppointments(rawAppointments);
-        this.isAppointmentsLoaded = true;
-        console.log(`[DataStore] Appointments Loaded: ${this.appointments.length} records`);
-    } catch (err: any) {
-        console.error("[DataStore] Appointments Failed:", err);
-        this.appointmentError = err?.message || "Appointments load failed";
-        // UI should handle the empty state
-    }
+  if (this.coreDataPromise) {
+    console.log("[DataStore] Appointments loading already in progress, reusing promise.");
+    return this.coreDataPromise;
   }
+
+  console.log("[DataStore] Loading Appointments Data (Heavy)...");
+
+  this.coreDataPromise = (async () => {
+    // ✅ 讓 UI 先 paint，避免 Edge/桌機冷啟動看起來像掛掉（很建議）
+    await new Promise(requestAnimationFrame);
+
+    const rawAppointments = await loadCSV<any>("data/appointments.csv");
+
+    if (!this.isAppointmentsLoaded) {
+      this.processAppointments(rawAppointments);
+      this.isAppointmentsLoaded = true;
+      console.log(`[DataStore] Appointments Loaded: ${this.appointments.length} records`);
+    }
+  })().catch((err: any) => {
+    console.error("[DataStore] Appointments Failed:", err);
+    this.appointmentError = err?.message || "Appointments load failed";
+    this.coreDataPromise = null; // ✅ 失敗清掉，允許重試
+    throw err;                   // ✅ 重要：把錯誤往外丟，讓呼叫端知道失敗
+  });
+
+  return this.coreDataPromise;
+}
 
   // Refactored Process Methods (Moved from loadAll big block)
   private processAppointments(rawAppointments: any[]) {
@@ -332,6 +334,7 @@ class DataStore {
   // Deprecated: Use loadBootstrap + loadAppointments instead
   // Kept for compatibility but optimized to be sequential
   async loadAll() {
+    console.warn("[DataStore] loadAll() is deprecated and should not be called.", new Error().stack);
     await this.loadBootstrap();
     await this.loadAppointments();
     
