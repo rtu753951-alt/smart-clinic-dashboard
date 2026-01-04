@@ -56,7 +56,7 @@
   background-color: #0f172a; /* 深色底襯 */
 }
 
-/* Mobile Enhancement: Disable fixed background to prevent jitter/performance issues */
+/* Mobile Enhancement: Disable fixed background */
 @media (max-width: 768px) {
   #launch-cover {
     background-attachment: scroll;
