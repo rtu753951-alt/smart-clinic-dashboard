@@ -154,14 +154,38 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
         const pendingTasks = allTasks.filter(t => t.status === 'pending' && t.dueDate && t.reminders && t.reminders.length > 0);
         const activeReminders: Array<{ title: string, desc: string, diffDays?: number, type: 'task' | 'external', id?: string }> = [];
         
+        // Debug Flag
+        const DEBUG_REMINDERS = false; 
+        const todayStart = new Date();
+        todayStart.setHours(0,0,0,0);
+        
+        if (DEBUG_REMINDERS) console.log(`[Launch] Checking ${pendingTasks.length} pending tasks against today: ${todayStart.toISOString().split('T')[0]}`);
+
         pendingTasks.forEach(task => {
             if (!task.dueDate || !task.reminders) return;
+            
             const due = new Date(task.dueDate);
-            const nowTime = new Date('2026-01-01').getTime(); // Simulation
-            const diffTime = due.getTime() - nowTime;
+            if (isNaN(due.getTime())) {
+                console.warn(`[Launch] Invalid DueDate: ${task.title}`);
+                return;
+            }
+            // Normalize due to midnight for accurate day diff
+            due.setHours(0,0,0,0);
+
+            const diffTime = due.getTime() - todayStart.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-            if (task.reminders.includes(diffDays)) {
+            if (isNaN(diffDays)) return;
+
+            // Logic: diffDays >= 0 (Not overdue too long, or today is OK) AND within ANY reminder window
+            // "reminders=[30]" means if diffDays <= 30 and >= 0, show it.
+            const isHit = diffDays >= 0 && task.reminders.some(r => diffDays <= r);
+            
+            if (DEBUG_REMINDERS) {
+                console.log(`Task: ${task.title} | Due: ${task.dueDate} | Diff: ${diffDays} | Rems: [${task.reminders}] | Hit: ${isHit}`);
+            }
+
+            if (isHit) {
                 activeReminders.push({ 
                     title: task.title, 
                     desc: '系統建議您儘速檢視任務進度。',
@@ -178,9 +202,13 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
             activeReminders.push({
                 title: alert.title,
                 desc: alert.message,
+                diffDays: 0, // Urgent
                 type: 'external'
             });
         });
+
+        // Sort by urgency (diffDays asc)
+        activeReminders.sort((a, b) => (a.diffDays ?? 999) - (b.diffDays ?? 999));
 
         return {
             monthlyRevenue,
