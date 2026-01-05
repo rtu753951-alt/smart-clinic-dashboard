@@ -14,11 +14,13 @@ export function initStaffPage() {
   const appointments = dataStore.appointments; 
   const monthAppointments = appointments.filter(a => a.date.startsWith(currentMonth));
 
+  let updateHiddenLoadLayer: (mode: 'week' | 'month' | 'future') => void;
+
   // --- Layer 0: Hidden Load Chart (Interactive) ---
   try {
       const buttons = document.querySelectorAll('[data-hidden-load-mode]');
       
-      function updateHiddenLoadLayer(mode: 'week' | 'month' | 'future') {
+      updateHiddenLoadLayer = function(mode: 'week' | 'month' | 'future') {
           const filtered = filterAppointmentsForMode(appointments, mode);
           const timeStructureStats = calculateTimeStructure(filtered);
           renderHiddenLoadChart(timeStructureStats);
@@ -88,6 +90,38 @@ export function initStaffPage() {
   } catch (error) {
       console.error("[StaffPage] Layer 4 init failed:", error);
   }
+  // Sandbox Listener
+  window.addEventListener('sandbox-change', () => {
+      console.log("[StaffPage] Sandbox changed. Refreshing...");
+      
+      const updatedMonthAppts = dataStore.appointments.filter(a => a.date.startsWith((window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7)));
+
+      // 1. Update Layer 0 (Hidden Load)
+      const activeBtn = document.querySelector('[data-hidden-load-mode].active');
+      const mode = activeBtn ? activeBtn.getAttribute('data-hidden-load-mode') as 'week' | 'month' | 'future' : 'week';
+      if (updateHiddenLoadLayer) { 
+          updateHiddenLoadLayer(mode);
+      }
+
+      // 2. Update Layer 1 (Workload Cards)
+      // Re-init cards (calls render inside)
+      initWorkloadCards();
+
+      // 3. Update Layer 2 (Role Fit)
+      const newRoleFitStats = calculateRoleFit(updatedMonthAppts);
+      renderRoleFitChart(newRoleFitStats);
+      renderRoleFitInsights(newRoleFitStats);
+
+      // 4. Update Layer 3 (Buffer)
+      const newBufferStats = calculateBufferAnalysis(updatedMonthAppts);
+      const newMonthStructure = calculateTimeStructure(updatedMonthAppts);
+      renderBufferAnalysis(newBufferStats, newMonthStructure);
+
+      // 5. Update Layer 4 (AI)
+      const newWorkloadData = calculateWorkloadData(dataStore.appointments, 'week');
+      const newAiSuggestions = generateStaffSuggestions(newWorkloadData, newRoleFitStats, newBufferStats);
+      renderAISuggestions(newAiSuggestions);
+  });
 }
 
 // --- Render Helpers ---
@@ -209,7 +243,10 @@ function renderBufferAnalysis(bufferStats: any[], timeStructureStats: any[]) {
                     }).join('')}
                 </tbody>
             </table>
-            <small style="color: #999; display: block; margin-top: 5px;">* Buffer 佔比數據請參考上方顧問報告</small>
+            <small style="color: #666; display: block; margin-top: 5px; font-style: italic;">
+                ＊壓縮率超過 70%會觸發<span style="color:#dc2626; font-weight:bold;">紅色警示</span>；30% 至 70%列為「隱性疲勞風險」＊<br/>
+                * Buffer 佔比數據請參考上方顧問報告
+            </small>
         </div>
     `;
 

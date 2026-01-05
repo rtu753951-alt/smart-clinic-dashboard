@@ -4,6 +4,7 @@
 
 import { updateServiceAISummary, generateServiceSuggestions } from "../logic/aiManager.js";
 import { dataStore } from "../data/dataStore.js";
+import { sandboxStore, SandboxState } from "../features/sandbox/sandboxStore.js";
 
 declare const Chart: any;
 
@@ -89,7 +90,8 @@ function computeRevenue(
   appointments: any[],
   services: any[],
   targetYear: number,
-  targetMonth: number
+  targetMonth: number,
+  sandboxState?: SandboxState
 ) {
   const serviceMap = buildServiceMap(services);
 
@@ -150,9 +152,15 @@ function computeRevenue(
 
     items.forEach((name: string) => {
       const info = serviceMap.get(name);
-      const price = info ? Number(info.price) : 0;
+      let price = info ? Number(info.price) : 0;
       const category = info ? (info.category || "其他") : "其他";
       
+      // Sandbox Growth Simulation
+      if (sandboxState && sandboxState.isActive) {
+          const growth = sandboxState.serviceGrowth[category as keyof typeof sandboxState.serviceGrowth] || 0;
+          price = price * (1 + growth);
+      }
+
       sum += price;
 
       if (!serviceRevenue[name]) serviceRevenue[name] = 0;
@@ -201,6 +209,34 @@ function renderKPI(data: any) {
   if (elRevenue) {
       let html = `${formatCurrency(data.totalRevenue)} <span style="font-size:0.6em; color:#888;">(${data.monthLabel})</span>`;
       
+      // Sandbox Delta UI
+      if (data.revenueDelta && Math.abs(data.revenueDeltaPct) >= 0.1) {
+          const isUp = data.revenueDelta > 0;
+          const color = isUp ? '#ef4444' : '#10b981'; // Red for Up (Revenue), Green for Down (Cost)? 
+          // Usually Revenue Up is Good (Green) or Red (Hot)? 
+          // In Financials: Green is Gain, Red is Loss.
+          // In Workload: Red is Danger (High Load).
+          // For Revenue, let's stick to standard financial colors: Green = Good/Up, Red = Bad/Down?
+          // BUT Dashboard Theme uses Red for "High/Hot".
+          // Let's use arrows: 🔺 (Red/Hot/Up), 🔻 (Green/Cool/Down).
+          // User request: "用 icon 呈現影響結果上升或下降"
+          // Let's match Workload style: 
+          // 🔺 +5% (Red/Focus), 🔻 -5% (Green/Safe?) or just Red/Green based on value.
+          // Revenue: Up = Good = Typically Green. Down = Bad = Red.
+          // Workload: Up = Bad = Red. Down = Good = Green.
+          // CONFLICT. 
+          // Let's check general dashboard theme. "Accent" is Cyan/Blue.
+          // Let's assume standard: Up = Red (Hot/Growth), Down = Green (Cool/Drop).
+          // User prompt for Workload: 🔺 (Red) for Up.
+          // Let's follow that pattern -> 🔺 = Up (Red), 🔻 = Down (Green).
+          
+          const icon = isUp ? '🔺' : '🔻';
+          html += ` <span style="font-size:0.75rem; color:${color}; font-weight:bold; margin-left:8px;">${icon} ${data.revenueDeltaPct.toFixed(1)}%</span>`;
+      } else if (data.revenueDelta !== undefined) {
+          // No significant change
+          html += ` <span style="font-size:0.75rem; color:#94a3b8; margin-left:8px;">⏺</span>`;
+      }
+
       // 如果包含未來預估，加上 (預估) 小字
       if (data.hasFutureContribution) {
           html += ` <span style="font-size:0.75rem; color:#f39c12; font-weight:normal;">(預估)</span>`;
@@ -212,6 +248,8 @@ function renderKPI(data: any) {
   // 2. 客單價
   const elAOV = document.getElementById("srv-aov");
   if (elAOV) {
+      // Also apply delta to AOV? User asked for "Revenue Page". Usually "Revenue" is the main KPI.
+      // Let's just do Revenue KPI for now to avoid clutter unless requested.
       elAOV.textContent = formatCurrency(data.avgOrderValue);
   }
 
@@ -288,26 +326,38 @@ export function refreshServicesPage(targetYM: string) {
   const appts = dataStore.appointments;
   const services = dataStore.services;
 
-  // 1. 計算當月
-  const currentResults = computeRevenue(appts, services, targetYear, targetMonth);
+  // 1. 計算當月 (Simulated)
+  const sbState = sandboxStore.getState();
+  const currentResults = computeRevenue(appts, services, targetYear, targetMonth, sbState.isActive ? sbState : undefined);
+
+  // 1b. 計算當月 (Original - for Delta)
+  const originalResults = computeRevenue(appts, services, targetYear, targetMonth); // No Sandbox State
+
+  // Delta Calculation
+  const revenueDelta = currentResults.totalRevenue - originalResults.totalRevenue;
+  const revenueDeltaPct = originalResults.totalRevenue > 0 ? (revenueDelta / originalResults.totalRevenue) * 100 : 0;
 
   // 2. 計算上個月 (MoM 用)
   // JS Date 自動處理月份回推 (Month 0 - 1 = Previous Year Month 11)
   const prevDate = new Date(targetYear, targetMonth - 1, 1);
   const prevYear = prevDate.getFullYear();
   const prevMonth = prevDate.getMonth();
-  const prevResults = computeRevenue(appts, services, prevYear, prevMonth);
+  const prevResults = computeRevenue(appts, services, prevYear, prevMonth, sbState.isActive ? sbState : undefined); // MoM should usually compare Sim vs Sim or Orig vs Orig? 
+  // Ideally MoM compares "Current Sim" vs "Previous (Historical/Sim)". 
+  // Let's assume Previous is also Simulated if Sandbox is active to show "Trend if this continues", OR "Trend vs Reality".
+  // Conservative approach: Apply Sandbox to previous if we want "Apple to Apple" simulation comparison.
+  // BUT previous month data is usually HISTORICAL (fixed). Applying growth to history might be confusing?
+  // User wants "Impact of Sandbox on Current Revenue".
+  // So Previous can remain as is (Historical).
+  // Check user intent: "Sandbox results... use icon to show up/down". This usually implies Current vs Original Delta.
+  // MoM logic: (Current Sim - Previous Sim/Actual). Let's keep consistency.
 
   // 3. 計算 MoM
   let mom = 0;
   if (prevResults.totalRevenue > 0) {
       mom = ((currentResults.totalRevenue - prevResults.totalRevenue) / prevResults.totalRevenue) * 100;
   } else if (currentResults.totalRevenue > 0) {
-      // 從 0 變有，視為 100% 成長 (First month or previous empty)
       mom = 100; 
-  } else {
-      // 0 -> 0
-      mom = 0; 
   }
 
   const finalData = {
@@ -316,7 +366,9 @@ export function refreshServicesPage(targetYM: string) {
       prevRevenue: prevResults.totalRevenue,
       targetYear,
       targetMonth,
-      dailyTopTreatments: getDailyTopTreatmentMap(appts) // Add this new data
+      dailyTopTreatments: getDailyTopTreatmentMap(appts),
+      revenueDelta,     // New
+      revenueDeltaPct   // New
   };
 
   currentServicesData = finalData; // Cache for toggle

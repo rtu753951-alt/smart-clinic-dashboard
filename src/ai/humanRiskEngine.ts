@@ -12,7 +12,9 @@
  * - 個人利用率偏低風險
  */
 
-import { AppointmentRecord } from "../data/schema";
+import { AppointmentRecord } from "../data/schema.js";
+import { SandboxState } from "../features/sandbox/sandboxStore.js";
+import { calculateBufferAnalysis } from "../logic/staff/staffBufferAnalysis.js";
 
 // ===== 型別定義 =====
 
@@ -21,6 +23,7 @@ export interface HumanRiskInput {
   services: ServiceRecord[];
   staff: StaffRecord[];
   targetMonth: string;
+  sandboxState?: SandboxState;
 }
 
 export interface ServiceRecord {
@@ -113,6 +116,12 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
     const category = service?.category || 'inject';
     const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['inject'];
 
+    // Sandbox Growth
+    let growth = 1;
+    if (input.sandboxState && input.sandboxState.isActive) {
+        growth = 1 + (input.sandboxState.serviceGrowth[category as keyof typeof input.sandboxState.serviceGrowth] || 0);
+    }
+
     if (!staffWorkload[staffName]) {
       staffWorkload[staffName] = {
         staff_name: staffName,
@@ -130,8 +139,8 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
     const involvementRatio = ratios[staffType] || 0;
     
     if (involvementRatio > 0) {
-      staffWorkload[staffName].totalMinutes += totalMinutes * involvementRatio;
-      staffWorkload[staffName].appointmentCount += 1;
+      staffWorkload[staffName].totalMinutes += totalMinutes * involvementRatio * growth;
+      staffWorkload[staffName].appointmentCount += 1 * growth;
     }
   });
 
@@ -214,6 +223,42 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
         metadata,
       });
     }
+  });
+
+  // Calculate Buffer Compression Risks using shared logic
+  const bufferStats = calculateBufferAnalysis(monthData); // Use filtered month data
+
+  bufferStats.forEach(stat => {
+      // 🔴 結構性崩潰風險：壓縮率 > 70%
+      if (stat.compressionRate > 70) {
+          alerts.push({
+              type: "human",
+              level: "critical",
+              icon: "☣️", 
+              staffName: stat.role, 
+              staffType: "mixed",
+              summary: `${stat.role} 結構性崩潰風險`,
+              detail: `模擬顯示服務間隔壓縮率達 ${stat.compressionRate}%（>70%），極度危險`,
+              reason: `平均間隔僅 ${stat.avgGapMinutes} 分鐘，遠低於標準。身心耗竭(Burnout)風險極高。`,
+              suggestion: "立即下修該員工業績目標，或增派 1-2 名助理協助轉場與術後衛教。",
+              metadata: { loadRate: stat.compressionRate } as any
+          });
+      }
+      // 🟠 隱性疲勞風險：壓縮率 > 30%
+      else if (stat.compressionRate > 30) {
+          alerts.push({
+              type: "human",
+              level: "warning",
+              icon: "⏱️",
+              staffName: stat.role,
+              staffType: "mixed",
+              summary: `${stat.role} 隱性疲勞風險`,
+              detail: `服務間隔壓縮率 ${stat.compressionRate}%，高頻切換易導致認知疲勞`,
+              reason: `平均間隔 ${stat.avgGapMinutes} 分鐘。雖工時可能未滿，但心理壓力強度大。`,
+              suggestion: "建議在連續排程中強制插入 10 分鐘緩衝，或安排行政時段。",
+              metadata: { loadRate: stat.compressionRate } as any
+          });
+      }
   });
 
   // 按風險等級排序：critical > warning > low

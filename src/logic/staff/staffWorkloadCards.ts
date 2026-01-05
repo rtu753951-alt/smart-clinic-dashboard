@@ -3,6 +3,8 @@ declare const Chart: any;
 
 import { AppointmentRecord } from "../../data/schema.js";
 import { dataStore } from "../../data/dataStore.js";
+import { sandboxStore } from "../../features/sandbox/sandboxStore.js";
+import { isCertifiedForCategory } from "../../data/skillMap.js";
 
 /**
  * 人力負載壓力分析 - 卡片式顯示
@@ -60,6 +62,7 @@ export interface WorkloadData {
   percentage: number;
   taskCount: number;
   status: 'low' | 'medium' | 'high' | 'critical';
+  delta?: number;
 }
 
 /**
@@ -188,6 +191,9 @@ export function calculateWorkloadData(
   // 1. 建立角色與人員對照
   const staffMap = getStaffRoleMap();
   
+  // Sandbox State
+  const sbState = sandboxStore.getState();
+  
   console.log("🔍 Workload Debug:", {
       mapEntries: staffMap.size,
       totalAppointments: appointments.length,
@@ -196,11 +202,11 @@ export function calculateWorkloadData(
   });
 
   // 準備統計容器
-  const stats: Record<string, { usedMinutes: number; taskCount: number; activeStaffCount: number }> = {
-    doctor: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0 },
-    consultant: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0 },
-    nurse: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0 },
-    therapist: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0 }
+  const stats: Record<string, { usedMinutes: number; taskCount: number; activeStaffCount: number; originalMinutes: number }> = {
+    doctor: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0, originalMinutes: 0 },
+    consultant: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0, originalMinutes: 0 },
+    nurse: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0, originalMinutes: 0 },
+    therapist: { usedMinutes: 0, taskCount: 0, activeStaffCount: 0, originalMinutes: 0 }
   };
 
   // 計算各職務 Active 人數 (分母)
@@ -211,6 +217,15 @@ export function calculateWorkloadData(
           stats[type].activeStaffCount++;
       }
   });
+  
+  // Sandbox Staff Delta Modification
+  if (sbState.isActive) {
+      Object.keys(sbState.staffDeltas).forEach(role => {
+          if (stats[role]) {
+              stats[role].activeStaffCount = Math.max(0, stats[role].activeStaffCount + (sbState.staffDeltas[role as keyof typeof sbState.staffDeltas] || 0));
+          }
+      });
+  }
 
   // 2. 遍歷預約累積數據
   filteredAppointments.forEach(apt => {
@@ -223,6 +238,13 @@ export function calculateWorkloadData(
     // 定義該 Service 的介入比例模型
     const category = service?.category || 'inject'; // default fallback
     const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['inject'];
+    
+
+
+// ... inside loop
+    // Sandbox Growth Factor - Base (conditional application below)
+    const catKey = category as keyof typeof sbState.serviceGrowth;
+    const rawGrowth = sbState.isActive ? (sbState.serviceGrowth[catKey] || 0) : 0;
 
     // --- 統計 Doctor ---
     if (apt.doctor_name && apt.doctor_name !== 'nan') {
@@ -231,8 +253,13 @@ export function calculateWorkloadData(
         if (role === 'doctor' && stats['doctor']) {
              const ratio = ratios.doctor || 0;
              if (ratio > 0) {
-                 stats['doctor'].usedMinutes += totalMinutes * ratio;
-                 stats['doctor'].taskCount++; 
+                 // Check Certification for Growth
+                 const docRec = dataStore.staff.find(s => s.staff_name === docName);
+                 const effectiveGrowth = (docRec && isCertifiedForCategory(docRec, category)) ? (1 + rawGrowth) : 1;
+                 
+                 stats['doctor'].usedMinutes += totalMinutes * ratio * effectiveGrowth;
+                 stats['doctor'].originalMinutes += totalMinutes * ratio; // No Growth
+                 stats['doctor'].taskCount += 1 * effectiveGrowth; 
              }
         }
     }
@@ -244,11 +271,15 @@ export function calculateWorkloadData(
         
         if (role && stats[role]) {
             const ratio = ratios[role] || 0; 
-            // 如果 ratio 為 0 但被指派，可能做雜務，給 0.1
             const effectiveRatio = ratio === 0 ? 0.1 : ratio;
             
-            stats[role].usedMinutes += totalMinutes * effectiveRatio;
-            stats[role].taskCount++;
+            // Check Certification
+            const staffRec = dataStore.staff.find(s => s.staff_name === staffName);
+            const effectiveGrowth = (staffRec && isCertifiedForCategory(staffRec, category)) ? (1 + rawGrowth) : 1;
+
+            stats[role].usedMinutes += totalMinutes * effectiveRatio * effectiveGrowth;
+            stats[role].originalMinutes += totalMinutes * effectiveRatio; // No Growth
+            stats[role].taskCount += 1 * effectiveGrowth;
         }
     }
   });
@@ -258,10 +289,25 @@ export function calculateWorkloadData(
   const result: WorkloadData[] = [];
 
   Object.keys(stats).forEach(role => {
-    const { usedMinutes, taskCount, activeStaffCount } = stats[role];
+    const { usedMinutes, taskCount, activeStaffCount, originalMinutes } = stats[role];
     const capacityHours = activeStaffCount * 8 * totalDays;
     const usedHours = usedMinutes / 60;
     const percentage = capacityHours > 0 ? Math.round((usedHours / capacityHours) * 100) : 0;
+
+    // Calculate Delta (Original vs Simulated)
+    // Original Capacity uses "Base Active Staff" (without Sandbox Deltas)
+    // We assume base is activeStaffCount MINUS sandbox delta
+    let baseStaffCount = activeStaffCount;
+    if (sbState.isActive) {
+         const d = sbState.staffDeltas[role as keyof typeof sbState.staffDeltas] || 0;
+         baseStaffCount = Math.max(1, activeStaffCount - d);
+    }
+    const originalCapacity = baseStaffCount * 8 * totalDays;
+    const originalUsed = originalMinutes / 60;
+    const originalPercentage = originalCapacity > 0 ? Math.round((originalUsed / originalCapacity) * 100) : 0;
+    
+    // Delta = Current (Sim) - Original
+    const delta = percentage - originalPercentage;
 
     result.push({
       role,
@@ -269,7 +315,8 @@ export function calculateWorkloadData(
       totalHours: capacityHours,
       percentage: Math.min(100, percentage),
       taskCount: taskCount,
-      status: getLoadStatus(percentage)
+      status: getLoadStatus(percentage),
+      delta: delta // New Field
     });
   });
 
@@ -285,15 +332,27 @@ function renderWorkloadCard(data: WorkloadData): string {
   const roleIcon = ROLE_ICONS[data.role] || '👤';
   const statusText = getStatusText(data.status);
 
+  // Delta Icon Logic
+  let deltaHtml = '';
+  if (data.delta !== undefined && Math.abs(data.delta) >= 1) { // 1% threshold
+       if (data.delta > 0) {
+           deltaHtml = `<span style="font-size: 0.9em; margin-left:8px; color:#ef4444;">🔺 ${data.delta}%</span>`;
+       } else {
+           deltaHtml = `<span style="font-size: 0.9em; margin-left:8px; color:#10b981;">🔻 ${Math.abs(data.delta)}%</span>`; // Green for reduction
+       }
+  } else if (data.delta !== undefined) {
+       deltaHtml = `<span style="font-size: 0.9em; margin-left:8px; color:#94a3b8;">⏺</span>`; // No sig change
+  }
+
   return `
     <div class="workload-card" data-role="${data.role}">
       <div class="workload-card-header">
         <div class="workload-card-icon">${roleIcon}</div>
         <div class="workload-card-title">
-          <div class="workload-card-role">${roleName}</div>
-          <div class="workload-card-subtitle">Workload Analysis</div>
+            ${roleName} ${deltaHtml}
         </div>
       </div>
+      <div class="workload-card-subtitle">Workload Analysis</div>
 
       <div class="workload-card-stats">
         <div class="workload-stat">

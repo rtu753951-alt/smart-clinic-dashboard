@@ -1,6 +1,8 @@
 // ✅ 只需要這兩個 import
 import { AppointmentRecord, CustomerRecord } from "../data/schema";
 import { calculateTrends, TrendResult } from "./trendEngine.js";
+import { dataStore } from "../data/dataStore.js";
+import { sandboxStore } from "../features/sandbox/sandboxStore.js";
 
 // ⛔ 這種千萬不要留在 aiManager.ts 裡：
 // import { AIReportInput, AIReportOutput } from "../logic/aiManager";
@@ -416,30 +418,73 @@ export function generateStaffSuggestions(
     if (workloadList && workloadList.length > 0) {
         const sorted = [...workloadList].sort((a, b) => b.percentage - a.percentage);
         const highest = sorted[0];
+        const isSim = sandboxStore.getState().isActive;
         
-        if (highest.percentage > 90) {
+        if (highest.percentage > 80) {
+            let specificAdvice = "";
+            let title = highest.percentage > 90 ? "極高負載警示" : "高負載注意";
+            let colorClass = highest.percentage > 90 ? "warning" : "warning"; // Both using warning style yellow/orange usually, user asked for Red for Compression > 70. Load > 90 is critical too.
+            // Maintain existing styling logic or enhance? Existing used 'warning' for >90.
+            
+            // Skill-Aware Logic (Sandbox only)
+            if (isSim) {
+                 const sbState = sandboxStore.getState();
+                 // Find category with highest growth
+                 let maxGrowth = 0;
+                 let topCat = "";
+                 
+                 Object.entries(sbState.serviceGrowth).forEach(([cat, val]) => {
+                     if (val > maxGrowth) {
+                         maxGrowth = val;
+                         topCat = cat;
+                     }
+                 });
+
+                 if (maxGrowth > 0.1 && topCat) { // Significant growth
+                      // Find driver service in this category (using global dataStore for context)
+                      const month = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
+                      const relevantAppts = dataStore.appointments.filter(a => 
+                          a.date.startsWith(month) && a.status === 'completed'
+                      );
+                      
+                      // Count services in this category
+                      const svcCounts: Record<string, number> = {};
+                      relevantAppts.forEach(a => {
+                          const sInfo = dataStore.services.find(s => s.service_name === a.service_item);
+                          if (sInfo && (sInfo.category === topCat || (topCat==='inject' && ['Botox','Thread Lift'].includes(a.service_item)))) { // Loose match for demo
+                               svcCounts[a.service_item] = (svcCounts[a.service_item] || 0) + 1;
+                          }
+                      });
+                      
+                      const topSvcName = Object.entries(svcCounts).sort((a,b)=>b[1]-a[1])[0]?.[0];
+                      const topSvcInfo = dataStore.services.find(s => s.service_name === topSvcName);
+                      
+                      const requiredSkill = (topSvcInfo?.intensity === 'high' || topSvcInfo?.intensity === 'senior') ? '資深' : '';
+                      const certName = topSvcName || topCat;
+
+                      specificAdvice = `
+                          <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc; font-size:0.9em; color:#d97706;">
+                              <strong>💡 精準招聘建議：</strong><br/>
+                              模擬顯示 ${topCat} 類需求激增（${Math.round(maxGrowth*100)}%），且主要由 <strong>${certName}</strong> 驅動。<br/>
+                              建議優先增補具備 <strong>${certName} 認證</strong> 之 <strong>${requiredSkill}${highest.role === 'doctor' ? '醫師' : '人員'}</strong>。
+                          </div>
+                      `;
+                 }
+            }
+
             suggestions.push(`
-                <div class="ai-card warning">
-                    <div class="ai-card-title"><i class="fa-solid fa-triangle-exclamation"></i> 極高負載警示</div>
+                <div class="ai-card ${colorClass}">
+                    <div class="ai-card-title"><i class="fa-solid fa-triangle-exclamation"></i> ${title}</div>
                     <div class="ai-card-body">
-                        <strong>${highest.role}</strong> 負載率達 ${highest.percentage}%，已達臨界點。
+                        <strong>${highest.role}</strong> 負載率達 ${highest.percentage}%${highest.percentage > 90 ? '，已達臨界點' : ' 偏高'}。
                         <ul>
-                            <li>建議立即暫停新增本週預約。</li>
-                            <li>檢查是否有非必要會議或行政事務可暫緩。</li>
+                            <li>建議主動關懷疲勞狀況。</li>
+                            <li>考慮由其他職級支援非核心業務。</li>
                         </ul>
+                        ${specificAdvice}
                     </div>
                 </div>
             `);
-        } else if (highest.percentage > 80) {
-             suggestions.push(`
-                <div class="ai-card warning">
-                    <div class="ai-card-title"><i class="fa-solid fa-circle-exclamation"></i> 高負載注意</div>
-                    <div class="ai-card-body">
-                        <strong>${highest.role}</strong> 負載率 ${highest.percentage}% 偏高。
-                        建議主動關懷疲勞狀況，並考慮由其他職級支援。
-                    </div>
-                </div>
-             `);
         }
     }
 
@@ -461,8 +506,28 @@ export function generateStaffSuggestions(
 
     // 3. Analyze Buffer (Layer 3)
     if (bufferStats && bufferStats.length > 0) {
+        const sbState = sandboxStore.getState();
+        const isSim = sbState.isActive;
+        
+        // Critical Threshold for Sandbox
+        const criticalList = bufferStats.filter(b => b.compressionRate > 70);
         const pressed = bufferStats.find(b => b.compressionRate > 30);
-        if (pressed) {
+
+        if (isSim && criticalList.length > 0) {
+             const names = criticalList.map(item => item.role.split('(')[0].trim()).join('、');
+             suggestions.push(`
+                <div class="ai-card danger" style="border-left: 5px solid #ef4444; background: #fef2f2;">
+                    <div class="ai-card-title" style="color: #b91c1c;">
+                        <i class="fa-solid fa-radiation"></i> [模擬警示] 結構性崩潰風險
+                    </div>
+                    <div class="ai-card-body" style="color: #991b1b;">
+                        模擬顯示 <strong>${names}</strong> 的壓縮率已突破 70%（極度危險）。
+                        <br/>此強度下，人員將在 2 週內出現嚴重身心耗竭 (Burnout)，請務必下修目標或增補人力。
+                    </div>
+                </div>
+             `);
+        } else if (pressed) {
+             // Standard Warning (>30%)
              suggestions.push(`
                 <div class="ai-card danger">
                     <div class="ai-card-title"><i class="fa-solid fa-stopwatch-20"></i> 隱性疲勞風險</div>

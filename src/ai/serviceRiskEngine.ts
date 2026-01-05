@@ -20,6 +20,7 @@
 
 import { AppointmentRecord } from "../data/schema.js";
 import { INVOLVEMENT_RATIOS } from "../logic/staff/staffWorkloadCards.js";
+import { SandboxState } from "../features/sandbox/sandboxStore.js";
 
 // ===== 型別定義 =====
 
@@ -28,6 +29,7 @@ export interface ServiceRiskInput {
   services: ServiceRecord[];
   staff: StaffRecord[];
   targetMonth: string;
+  sandboxState?: SandboxState;
 }
 
 export interface ServiceRecord {
@@ -212,7 +214,11 @@ export function analyzeServiceRisks(input: ServiceRiskInput): ServiceRiskOutput 
       return true;
     });
     
-    const eligibleStaffCount = eligibleStaff.length;
+    const delta = (input.sandboxState && input.sandboxState.isActive) 
+        ? (input.sandboxState.staffDeltas[executorRole as keyof typeof input.sandboxState.staffDeltas] || 0)
+        : 0;
+        
+    const eligibleStaffCount = Math.max(0, eligibleStaff.length + delta);
 
     // 分析技能等級分布
     const skillLevels = eligibleStaff.map((s: any) => s.skill_level || "unknown");

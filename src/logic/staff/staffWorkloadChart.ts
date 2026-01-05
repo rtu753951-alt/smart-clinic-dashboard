@@ -3,6 +3,7 @@ declare const Chart: any;
 
 import { AppointmentRecord } from "../../data/schema.js";
 import { dataStore } from "../../data/dataStore.js";
+import { sandboxStore } from "../../features/sandbox/sandboxStore.js";
 
 /**
  * 人力負載壓力分析圖表
@@ -108,6 +109,9 @@ export function calculateStaffWorkloadData(
     therapist: { usedMinutes: 0 }
   };
 
+  // 取得 Sandbox 狀態
+  const sbState = sandboxStore.getState();
+
   // 計算等效工時
   filteredAppointments.forEach(apt => {
     const service = dataStore.services.find(s => s.service_name === apt.service_item);
@@ -117,36 +121,39 @@ export function calculateStaffWorkloadData(
     const totalMinutes = duration + buffer;
 
     // 取得療程類別以決定介入比例
-    const category = service?.category || 'inject';
+    const category = service?.category || 'inject'; // Default assumption
     const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['inject'];
+    
+    // Sandbox Growth Factor
+    const growthFactor = sbState.isActive ? (1 + (sbState.serviceGrowth[category as keyof typeof sbState.serviceGrowth] || 0)) : 1;
 
     const primaryRole = (service?.executor_role || apt.staff_role) as string;
 
-    // 應用介入比例計算等效工時
+    // 應用介入比例計算等效工時 (乘上成長率)
     // 醫師等效工時
     const doctorRatio = ratios.doctor || 0;
     if (doctorRatio > 0) {
-      stats['doctor'].usedMinutes += totalMinutes * doctorRatio;
+      stats['doctor'].usedMinutes += totalMinutes * doctorRatio * growthFactor;
     }
 
     // 諮詢師等效工時
     const consultantRatio = ratios.consultant || 0;
     if (consultantRatio > 0) {
-      stats['consultant'].usedMinutes += totalMinutes * consultantRatio;
+      stats['consultant'].usedMinutes += totalMinutes * consultantRatio * growthFactor;
     }
 
     // 美療師等效工時
     if (primaryRole === 'therapist' || category === 'laser') {
-      stats['therapist'].usedMinutes += totalMinutes;
+      stats['therapist'].usedMinutes += totalMinutes * growthFactor;
     }
 
     // 護理師等效工時
     if (primaryRole === 'nurse' || category === 'drip') {
-      stats['nurse'].usedMinutes += totalMinutes;
+      stats['nurse'].usedMinutes += totalMinutes * growthFactor;
     } else if (primaryRole === 'doctor') {
-      stats['nurse'].usedMinutes += totalMinutes * 0.25;
+      stats['nurse'].usedMinutes += totalMinutes * 0.25 * growthFactor;
     } else if (primaryRole === 'therapist') {
-      stats['nurse'].usedMinutes += totalMinutes * 0.15;
+      stats['nurse'].usedMinutes += totalMinutes * 0.15 * growthFactor;
     }
   });
 
@@ -157,7 +164,13 @@ export function calculateStaffWorkloadData(
   const result: WorkloadData[] = [];
 
   Object.keys(stats).forEach(role => {
-    const count = staffCounts[role] || 0;
+    // Sandbox Staff Delta
+    let count = staffCounts[role] || 0;
+    if (sbState.isActive) {
+        count += (sbState.staffDeltas[role as keyof typeof sbState.staffDeltas] || 0);
+    }
+    // 防止人數變負數
+    count = Math.max(0, count);
     
     // 總工時 = 職務總人數 × 8小時/天 × 7天/週 × 週數
     // 計算該月有幾週（簡化：假設每月4週）

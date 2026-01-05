@@ -10,6 +10,7 @@
 import { analyzeHumanRisks, HumanRiskInput, HumanRiskAlert } from "./humanRiskEngine.js";
 import { analyzeServiceRisks, ServiceRiskInput, ServiceRiskAlert } from "./serviceRiskEngine.js";
 import { AppointmentRecord } from "../data/schema.js";
+import { SandboxState } from "../features/sandbox/sandboxStore.js";
 
 // ===== 型別定義 =====
 
@@ -18,6 +19,7 @@ export interface RiskAlertInput {
   services: any[];
   staff: any[];
   targetMonth: string;
+  sandboxState?: SandboxState;
 }
 
 export interface RiskAlert {
@@ -45,6 +47,7 @@ export function generateRiskAlerts(input: RiskAlertInput): RiskAlertOutput {
     services: input.services,
     staff: input.staff,
     targetMonth: input.targetMonth,
+    sandboxState: input.sandboxState,
   };
   const humanRisks = analyzeHumanRisks(humanRiskInput);
 
@@ -54,6 +57,7 @@ export function generateRiskAlerts(input: RiskAlertInput): RiskAlertOutput {
     services: input.services,
     staff: input.staff,
     targetMonth: input.targetMonth,
+    sandboxState: input.sandboxState,
   };
   const serviceRisks = analyzeServiceRisks(serviceRiskInput);
 

@@ -193,7 +193,8 @@ async loadAppointments(): Promise<void> {
         price: Number(raw.price) || 0,
         duration: Number(raw.duration) || 0,
         buffer_time: Number(raw.buffer_time) || 0,
-        executor_role
+        executor_role,
+        intensity: String(raw.intensity_level ?? "").trim() // Auto-mapped
       };
     });
   }

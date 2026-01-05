@@ -5,6 +5,8 @@ import { apiService } from "../services/ApiService.js";
 import { TaskStore } from "../data/taskStore.js";
 import { formatCompactNT } from "../utils/currencyFormatter.js";
 import { parseCSVLine } from "../data/csvLoader.js";
+import { SandboxControlPanel } from "../features/sandbox/SandboxControlPanel.js";
+import { sandboxStore } from "../features/sandbox/sandboxStore.js";
 
 
 
@@ -101,6 +103,20 @@ function bindSidebarNavigation() {
       li.classList.add("active");
     });
   });
+
+  // Bind Sandbox Toggle
+  const sandboxToggle = document.getElementById('toggle-sandbox');
+  if (sandboxToggle) {
+      sandboxToggle.addEventListener('click', () => {
+          const panel = new SandboxControlPanel();
+          panel.init();
+          sandboxStore.activateSandbox();
+          
+          // Visual Feedback
+          sandboxToggle.classList.add('active');
+          sandboxToggle.style.background = 'rgba(59, 130, 246, 0.2)';
+      });
+  }
 }
 
 /* ===========================

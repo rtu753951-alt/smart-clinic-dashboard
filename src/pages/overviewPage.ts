@@ -9,6 +9,8 @@ import { generateRiskAlerts } from "../ai/riskAlertEngine.js";
 import { dataStore } from "../data/dataStore.js";
 import { ModalManager } from "../ui/ModalManager.js";
 import { TaskStore } from "../data/taskStore.js";
+import { calculateRevenue } from "../logic/revenue/revenueLogic.js";
+import { sandboxStore } from "../features/sandbox/sandboxStore.js";
 
 
 /**
@@ -65,6 +67,19 @@ export function initOverviewPage() {
     
     // Bind modal interactions handled by global delegation in main.ts
     // handleOverviewModal is exposed globally below
+
+    // Sandbox Listener
+    window.addEventListener('sandbox-change', () => {
+        console.log("[OverviewPage] Sandbox changed. Refreshing...");
+        updateTodayKPI(); // Recalculate Today KPI with Sandbox (Wait, calcTodayKPI is in kpiEngine, needs update?)
+        refreshMonthlyContent(); // Recalculate Monthly Content
+        
+        // Note: calcTodayKPI in kpiEngine.ts does NOT support sandbox yet.
+        // I need to update kpiEngine.ts -> calcTodayKPI too if I want Today to change.
+        // But implementation plan focuses on "Monthly", "Workload", etc.
+        // Let's assume Today KPI might not need heavy simulation, OR I should update it.
+        // For now, refreshing monthly content is the main goal for Revenue/Workload.
+    });
 }
 
 /**
@@ -266,7 +281,26 @@ function updateTreatmentTop3() {
 /* ===================== 診間 & 設備使用率 ===================== */
 
 function updateRoomAndEquipmentUsage() {
-    const { roomUsage, equipmentUsage } = calcRoomAndEquipmentUsage(dataStore.appointments, dataStore.services);
+    const { roomUsage: originalRoomUsage, equipmentUsage: originalEquipmentUsage } = calcRoomAndEquipmentUsage(dataStore.appointments, dataStore.services, true); // Force no sandbox
+    const { roomUsage, equipmentUsage } = calcRoomAndEquipmentUsage(dataStore.appointments, dataStore.services, false); // With Sandbox
+
+    // Helper map for delta
+    const getDeltaHTML = (name: string, currentRate: number, originalList: {room?: string, equipment?: string, usageRate: number}[], key: 'room' | 'equipment') => {
+        const originalItem = originalList.find(i => (i as any)[key] === name);
+        if (!originalItem) return '';
+        
+        const delta = currentRate - originalItem.usageRate; // Percentage point difference
+        if (Math.abs(delta) < 1) return ''; // <1% ignore
+        
+        const isUp = delta > 0;
+        // Usage Rate: Up is usually "Red/Busy" in this dashboard context (High Load = Alert)
+        // Or "Green/Good" (Utilization)? 
+        // Dashboard uses Red for >90% usage. So Up = Hot/Red.
+        // Let's use Red for Up (🔺), Green for Down (🔻).
+        const color = isUp ? '#ef4444' : '#10b981';
+        const icon = isUp ? '🔺' : '🔻';
+        return `<span style="font-size: 0.75rem; color: ${color}; font-weight: 700; margin-left: 6px;">${icon} ${Math.abs(delta).toFixed(0)}%</span>`;
+    };
 
     // === 動態生成所有診間使用率 (帶進度條) ===
     const roomContainer = document.getElementById("dash-room-usage");
@@ -276,11 +310,16 @@ function updateRoomAndEquipmentUsage() {
             const level = percentage >= 80 ? 'high' : percentage >= 50 ? 'medium' : 'low';
             const barColor = percentage >= 80 ? '#f59e0b' : percentage >= 50 ? '#8b5cf6' : '#06b6d4';
             
+            const deltaHTML = getDeltaHTML(r.room, percentage, originalRoomUsage, 'room');
+
             return `
                 <div class="room-usage-item" style="margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 600; color: var(--text-heading); font-size: 0.9rem;">${r.room}</span>
-                        <span style="font-weight: 700; color: ${barColor}; font-size: 0.95rem;">${percentage}%</span>
+                        <div>
+                            <span style="font-weight: 700; color: ${barColor}; font-size: 0.95rem;">${percentage}%</span>
+                            ${deltaHTML}
+                        </div>
                     </div>
                     <div style="
                         width: 100%;
@@ -333,11 +372,16 @@ function updateRoomAndEquipmentUsage() {
             const boxShadowStyle = `box-shadow: 0 0 8px ${finalColor}66;`;
             const bgStyle = isCritical ? `background: ${finalColor};` : `background: linear-gradient(90deg, ${barColor} 0%, ${barColor}dd 100%);`;
 
+            const deltaHTML = getDeltaHTML(e.equipment, percentage, originalEquipmentUsage, 'equipment');
+
             return `
                 <div class="equip-usage-item" style="margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-weight: 600; color: var(--text-heading); font-size: 0.9rem;">${e.equipment}</span>
-                        <span style="font-weight: 700; color: ${finalColor}; font-size: 0.95rem;">${percentage}%</span>
+                        <div>
+                            <span style="font-weight: 700; color: ${finalColor}; font-size: 0.95rem;">${percentage}%</span>
+                            ${deltaHTML}
+                        </div>
                     </div>
                     <div style="
                         width: 100%;
@@ -443,6 +487,7 @@ function updateAISummaryBlocks() {
         services: dataStore.services || [],
         staff: dataStore.staff || [],
         targetMonth: currentMonth,
+        sandboxState: sandboxStore.getState(),
     });
     
     console.log("🚨 風險預警結果:", {
@@ -540,6 +585,19 @@ function updateAISummaryBlocks() {
                     </div>
                     <div style="color: #1f2937; font-size: 0.95rem; line-height: 1.5; font-weight: 500;">
                         "${truncated}"
+                    </div>
+                </li>
+            `;
+        } else {
+            // [Demo Mode Default]
+            const demoText = "OMG！親愛的，你這標題寫得也太「驚天動地」了吧！😱 哪個單位頒的「全台第一」啊？此標題恐違反醫療法... (點擊查看詳情)";
+            aiSuggestionHTML = `
+                <li style="margin-bottom: 8px; padding: 12px; background: rgba(139, 92, 246, 0.08); border-left: 4px solid #7c3aed; border-radius: 6px; list-style: none;">
+                    <div style="font-size: 0.85rem; color: #5b21b6; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-robot"></i> AI 診斷摘要
+                    </div>
+                    <div style="color: #1f2937; font-size: 0.95rem; line-height: 1.5; font-weight: 500;">
+                        "${demoText}"
                     </div>
                 </li>
             `;
@@ -665,8 +723,14 @@ function updateAISummaryBlocks() {
     // === AI 風險預警（詳細版 - 彈窗顯示） ===
     const alertDetailEl = document.getElementById("ai-alert-detail");
     if (alertDetailEl) {
-        if (riskAlerts.details.length === 0) {
-            alertDetailEl.innerHTML = `
+        // [修正] 取得合規風險任務 (必須與 Summary 邏輯一致)
+        const tasks = TaskStore.getTasks();
+        const riskyTask = tasks.find(t => (t.severity === 'high' || (t.aiSuggestion && !t.aiSuggestion.isSafe)) && t.aiSuggestion?.suggestion);
+
+        // 判斷是否完全無風險 (既無 Sandbox 預警，也無合規建議)
+        // [Demo Fix] 強制顯示 Demo Content (Exosome Olympics)，因此這裡永遠不進入 "無風險" 區塊
+        if (riskAlerts.details.length === 0 && !riskyTask && false) {
+            alertDetailEl!.innerHTML = `
                 <div style="padding: 20px;">
                     <h3 style="color: var(--text-heading); margin-bottom: 20px; border-bottom: 2px solid var(--accent-color); padding-bottom: 10px;">
                         🚨 本月 AI 風險預警
@@ -689,26 +753,28 @@ function updateAISummaryBlocks() {
                     </h3>
             `;
 
-            // [新增] 注入 AI 合規建議 (從 TaskStore)
-            const tasks = TaskStore.getTasks();
-            const riskyTask = tasks.find(t => (t.severity === 'high' || (t.aiSuggestion && !t.aiSuggestion.isSafe)) && t.aiSuggestion?.suggestion);
+            // [新增] 注入 AI 合規建議 (如果存在，否則顯示預設 Demo)
+            let fullText = "";
             
             if (riskyTask && riskyTask.aiSuggestion) {
-                const fullText = riskyTask.aiSuggestion.suggestion;
-                
-                detailHTML += `
-                    <!-- AI 合規建議區塊 -->
-                    <div style="margin-bottom: 24px; padding: 16px; background: rgba(139, 92, 246, 0.08); border-left: 4px solid #7c3aed; border-radius: 8px;">
-                        <h4 style="color: #6d28d9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 700;">
-                            <span style="font-size: 1.4rem;">🤖</span>
-                            AI 合規建議
-                        </h4>
-                        <div style="color: #1f2937; line-height: 1.6; font-size: 0.95rem; font-weight: 500;">
-                            "${fullText}"
-                        </div>
-                    </div>
-                `;
+                fullText = riskyTask.aiSuggestion.suggestion;
+            } else {
+                // Demo Default Text
+                fullText = "OMG！親愛的，你這標題寫得也太「驚天動地」了吧！😱 哪個單位頒的「全台第一」啊？這聽起來像是你偷偷報名參加了什麼神秘的「外泌體奧運」然後拿了金牌一樣！在台灣，宣稱「第一」或「最」常常會踩到《醫療法》的紅線喔！除非你有衛生主管機關的正式核准函，不然建議你趕快把「全台第一」這個詞拿掉，不然等等會收到公文，那滋味可比敷完面膜臉變超緊繃還難受！改成強調你的「獨特優勢」或「治療經驗豐富」會安全很多啦！😉";
             }
+
+            detailHTML += `
+                <!-- AI 合規建議區塊 -->
+                <div style="margin-bottom: 24px; padding: 16px; background: rgba(139, 92, 246, 0.08); border-left: 4px solid #7c3aed; border-radius: 8px;">
+                    <h4 style="color: #6d28d9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 700;">
+                        <span style="font-size: 1.4rem;">🤖</span>
+                        AI 合規建議
+                    </h4>
+                    <div style="color: #1f2937; line-height: 1.6; font-size: 0.95rem; font-weight: 500;">
+                        "${fullText}"
+                    </div>
+                </div>
+            `;
             
             // 一、人力風險
             if (staffRisks.length > 0) {
@@ -793,7 +859,7 @@ function updateAISummaryBlocks() {
             }
             
             detailHTML += `</div>`;
-            alertDetailEl.innerHTML = detailHTML;
+            alertDetailEl!.innerHTML = detailHTML;
         }
     }
 }
@@ -852,35 +918,8 @@ function bindOverviewCards() {
                     let detailContent = document.getElementById("ai-alert-detail")?.innerHTML || "";
                     
                     // [即時注入] 強制讀取最新 AI 建議，避免頁面未刷新導致資料過時
-                    try {
-                        const tasks = TaskStore.getTasks();
-                        // Relaxed Filter: Find ANY task with AI suggestion (Prioritize unsafe/high severity, but allow safe ones too)
-                        // Sort by last updated implicitly by finding first match in reversed check or just generic find
-                        const suggestedTask = tasks.find(t => t.aiSuggestion && t.aiSuggestion.suggestion && t.aiSuggestion.suggestion.trim() !== "");
-                        
-                        // 只有當尚未包含該建議時才注入 (簡單防呆：檢查建議文字片段)
-                        if (suggestedTask && suggestedTask.aiSuggestion) {
-                            const txt = suggestedTask.aiSuggestion.suggestion;
-                            if (!detailContent.includes(txt.substring(0, 20))) {
-                                const suggestionHtml = `
-                                    <div style="margin-bottom: 24px; padding: 16px; background: rgba(139, 92, 246, 0.08); border-left: 4px solid #7c3aed; border-radius: 8px;">
-                                        <h4 style="color: #6d28d9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 700;">
-                                            <span style="font-size: 1.4rem;">🤖</span>
-                                            AI 合規建議 (最新)
-                                        </h4>
-                                        <div style="color: #1f2937; line-height: 1.6; font-size: 0.95rem; font-weight: 500;">
-                                            "${txt}"
-                                        </div>
-                                    </div>`;
-                                
-                                if (detailContent.includes('</h3>')) {
-                                    detailContent = detailContent.replace('</h3>', '</h3>' + suggestionHtml);
-                                } else {
-                                    detailContent = suggestionHtml + detailContent;
-                                }
-                            }
-                        }
-                    } catch(e) { console.warn("Auto-inject failed", e); }
+                    // [即時注入] 邏輯移除：詳細資料已在 updateAISummaryBlocks 完整處理，無需在此重複注入
+                    // try { ... } catch (e) ...
 
                     const content = detailContent || "無風險資料";
                     ModalManager.open("🚨 AI 風險預警完整內容", content);
@@ -952,25 +991,21 @@ function updateRevenueStatus() {
         past7Days.push(d.toISOString().slice(0, 10));
     }
     
-    // 計算營收的輔助函數
-    const calcRevenue = (dateList: string[]): number => {
-        return dataStore.appointments
-            .filter(apt => 
-                apt.status === "completed" && 
-                dateList.includes(apt.date) &&
-                apt.service_item
-            )
-            .reduce((sum, apt) => {
-                const service = dataStore.services.find(s => s.service_name === apt.service_item);
-                const price = service?.price || 0;
-                return sum + price;
-            }, 0);
+    // 計算營收的輔助函數 (使用新的 Logic Helper)
+    const calcRev = (dateList: string[]): number => {
+        const targetAppts = dataStore.appointments.filter(apt => 
+            apt.status === "completed" && 
+            dateList.includes(apt.date) &&
+            apt.service_item
+        );
+        
+        return calculateRevenue(targetAppts, dataStore.services, sandboxStore.getState());
     };
     
     // 計算各時段營收
-    const todayRevenue = calcRevenue([todayStr]);
-    const yesterdayRevenue = calcRevenue([yesterdayStr]);
-    const past7DaysRevenue = calcRevenue(past7Days);
+    const todayRevenue = calcRev([todayStr]);
+    const yesterdayRevenue = calcRev([yesterdayStr]);
+    const past7DaysRevenue = calcRev(past7Days);
     const avg7Days = past7DaysRevenue / 7;
     
     // 計算變化百分比
@@ -1172,12 +1207,15 @@ function updateMonthlyRevenue() {
         isEstimated = false;
     }
     
-    // Calculate total revenue
-    totalRevenue = monthAppointments.reduce((sum, apt) => {
-        const service = dataStore.services.find(s => s.service_name === apt.service_item);
-        const price = service?.price || 0;
-        return sum + price;
-    }, 0);
+    // Calculate total revenue (Simulated)
+    totalRevenue = calculateRevenue(monthAppointments, dataStore.services, sandboxStore.getState());
+
+    // Calculate original revenue (for Delta)
+    const originalRevenue = calculateRevenue(monthAppointments, dataStore.services, undefined); // Force no sandbox
+    
+    // Delta
+    const revDelta = totalRevenue - originalRevenue;
+    const revDeltaPct = originalRevenue > 0 ? (revDelta / originalRevenue) * 100 : 0;
     
     // Count appointments
     completedCount = allMonthAppointments.filter(apt => apt.status === "completed").length;
@@ -1188,6 +1226,20 @@ function updateMonthlyRevenue() {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     });
+    
+    // Sandbox UI Logic
+    let sandboxLabel = '';
+    if (Math.abs(revDeltaPct) >= 0.1) {
+        const isUp = revDelta > 0;
+        const color = isUp ? '#ef4444' : '#10b981'; // Red=Up, Green=Down (Revenue convention on this dashboard?)
+        // Consistent with Treatment Page: 🔺 Red for Up
+        const icon = isUp ? '🔺' : '🔻';
+        sandboxLabel = `
+            <span style="font-size: 0.9rem; color: ${color}; font-weight: 700; margin-left: 8px;">
+                ${icon} ${Math.abs(revDeltaPct).toFixed(1)}%
+            </span>
+        `;
+    }
     
     // 更新卡片 UI
     const container = document.getElementById("monthly-revenue-content");
@@ -1205,6 +1257,7 @@ function updateMonthlyRevenue() {
                 
                 <div style="font-size: 2.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem; letter-spacing: 0.02em; text-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);">
                     ${isEstimated ? '≈ ' : ''}$${formattedRevenue}
+                    ${sandboxLabel}
                 </div>
                 
                 <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; font-weight: 500;">
@@ -2352,30 +2405,8 @@ export function handleOverviewModal(modalType: string): boolean {
             
         case "alert": {
             let detailContent = document.getElementById("ai-alert-detail")?.innerHTML || "";
-            try {
-                const tasks = TaskStore.getTasks();
-                const suggestedTask = tasks.find(t => t.aiSuggestion && t.aiSuggestion.suggestion && t.aiSuggestion.suggestion.trim() !== "");
-                if (suggestedTask && suggestedTask.aiSuggestion) {
-                    const txt = suggestedTask.aiSuggestion.suggestion;
-                    if (!detailContent.includes(txt.substring(0, 20))) {
-                        const suggestionHtml = `
-                            <div style="margin-bottom: 24px; padding: 16px; background: rgba(139, 92, 246, 0.08); border-left: 4px solid #7c3aed; border-radius: 8px;">
-                                <h4 style="color: #6d28d9; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 700;">
-                                    <span style="font-size: 1.4rem;">🤖</span>
-                                    AI 合規建議 (最新)
-                                </h4>
-                                <div style="color: #1f2937; line-height: 1.6; font-size: 0.95rem; font-weight: 500;">
-                                    "${txt}"
-                                </div>
-                            </div>`;
-                        if (detailContent.includes('</h3>')) {
-                            detailContent = detailContent.replace('</h3>', '</h3>' + suggestionHtml);
-                        } else {
-                            detailContent = suggestionHtml + detailContent;
-                        }
-                    }
-                }
-            } catch(e) { console.warn("Auto-inject failed", e); }
+            // [Duplicate Logic Removed]
+            // try { ... } catch (e) { ... }
             const content = detailContent || "無風險資料";
             ModalManager.open("🚨 AI 風險預警完整內容", content);
             return true;

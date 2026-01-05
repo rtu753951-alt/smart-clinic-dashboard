@@ -1,4 +1,5 @@
 import type { AppointmentRecord } from "../data/schema.js";
+import { sandboxStore } from "../features/sandbox/sandboxStore.js";
 
 // 取得 CSV 最後一天當作今天
 function getLatestDate(list: AppointmentRecord[]): string {
@@ -221,7 +222,8 @@ export function getTopTreatments(appointments: AppointmentRecord[]) {
  */
 export function calcRoomAndEquipmentUsage(
   appointments: AppointmentRecord[],
-  services: any[] = []
+  services: any[] = [],
+  forceNoSandbox: boolean = false
 ): { roomUsage: Array<{room: string; usageRate: number}>; equipmentUsage: Array<{equipment: string; usageRate: number}> } {
   
   // 1. 取得目標月份 (從全站選單)
@@ -265,23 +267,41 @@ export function calcRoomAndEquipmentUsage(
   const roomMinutes: Record<string, number> = {};
   const equipMinutes: Record<string, number> = {};
   
+  // Determine Sandbox State
+  const sbState = forceNoSandbox ? undefined : sandboxStore.getState();
+  
   monthApps.forEach(apt => {
     // 查詢 service 資訊
     const svc = serviceMap.get(apt.service_item);
     const duration = svc?.duration || 30;
     const buffer = svc?.buffer_time || 10;
     const totalMinutes = duration + buffer;
+
+    // Sandbox Growth
+    // We need service object to know category. `serviceMap` only has duration/buffer.
+    // We need to look up full service or refine serviceMap. 
+    // Wait, services array is passed in. We can re-find or enhance serviceMap.
+    const fullService = services.find(s => s.service_name === apt.service_item);
+    let growth = 1;
+    if (sbState && sbState.isActive && fullService) {
+        let cat = fullService.category;
+        // Fallback or mapping? `schema.ts`: "laser" | "inject" | "rf" | "consult" | "drip"
+        // Store keys match schema category.
+        growth = 1 + (sbState.serviceGrowth[cat as keyof typeof sbState.serviceGrowth] || 0);
+    }
+    
+    const finalMinutes = totalMinutes * growth;
     
     // 累加診間使用時長
     if (apt.room && apt.room.trim()) {
       const room = apt.room.trim();
-      roomMinutes[room] = (roomMinutes[room] || 0) + totalMinutes;
+      roomMinutes[room] = (roomMinutes[room] || 0) + finalMinutes;
     }
     
     // 累加設備使用時長
     if (apt.equipment && apt.equipment.trim()) {
       const equip = apt.equipment.trim();
-      equipMinutes[equip] = (equipMinutes[equip] || 0) + totalMinutes;
+      equipMinutes[equip] = (equipMinutes[equip] || 0) + finalMinutes;
     }
   });
   

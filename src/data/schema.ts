@@ -106,6 +106,7 @@ export interface ServiceInfo {
   duration: number;          // 操作時間（分鐘）
   buffer_time: number;       // 緩衝時間（分鐘）
   executor_role: StaffRole;  // 標準角色：doctor | nurse | therapist | consultant
+  intensity?: string;        // high / medium / low (from csv intensity_level)
 }
 
 // ------------------------------------
