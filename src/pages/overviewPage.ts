@@ -506,56 +506,73 @@ function updateAISummaryBlocks() {
     }
     
     // === 詳細分析 (Modal 顯示) ===
+    // === 詳細分析 (Modal 顯示) ===
     const detailContainer = document.getElementById("ai-full-report");
     if (detailContainer) {
         const detailHTML = `
-            <div style="padding: 20px;">
-                <h3 style="color: var(--text-heading); margin-bottom: 20px; border-bottom: 2px solid var(--accent-color); padding-bottom: 10px;">
-                    📊 AI 趨勢完整分析
-                </h3>
+            <div style="padding: 20px; color: #1e293b;">
+
                 
-                <!-- 1. 預約趨勢分析 -->
+                <!-- 1. 近期動能（回顧） -->
                 <div style="margin-bottom: 24px;">
-                    <h4 style="color: var(--accent-color); margin-bottom: 12px;">📈 預約趨勢分析</h4>
-                    ${aiReport.detail.bookingTrend.map(line => 
-                        `<div style="margin-bottom: 6px; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                    <h4 style="color: var(--accent-color); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center; font-weight: 600;">
+                        <span>1. 近期動能（回顧）</span>
+                        <span style="font-size:0.9rem; padding: 4px 10px; border-radius:12px; background:#f1f5f9; color:#0f172a; font-weight: 600; border: 1px solid #cbd5e1;">
+                            ${aiReport.detail.recentMomentum.conclusion}
+                        </span>
+                    </h4>
+                    
+                    ${aiReport.detail.recentMomentum.stats.map(line => 
+                        `<div style="margin-bottom: 8px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: #334155; font-size: 0.95rem; font-weight: 500;">
                             ${line}
                         </div>`
                     ).join('')}
                 </div>
                 
-                <!-- 2. 熱門療程變化 -->
+                <!-- 2. 結構變化（回顧） -->
                 <div style="margin-bottom: 24px;">
-                    <h4 style="color: var(--accent-color); margin-bottom: 12px;">🔥 熱門療程變化</h4>
-                    ${aiReport.detail.serviceTrend.map(line => 
-                        `<div style="margin-bottom: 6px; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
+                    <h4 style="color: var(--accent-color); margin-bottom: 12px; font-weight: 600;">2. 結構變化（回顧）</h4>
+                    ${aiReport.detail.structuralChanges.highlights.map(line => 
+                        `<div style="margin-bottom: 8px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; color: #334155; font-size: 0.95rem; font-weight: 500;">
+                            ${line}
+                        </div>`
+                    ).join('')}
+                    <div style="margin-top: 10px; padding: 12px; border-left: 4px solid #64748b; background: #f1f5f9; color: #475569; font-size: 0.95rem; line-height: 1.5;">
+                        💡 ${aiReport.detail.structuralChanges.implication}
+                    </div>
+                </div>
+                
+                <!-- 3. 瓶頸與承載（現況） -->
+                <div style="margin-bottom: 24px;">
+                    <h4 style="color: var(--accent-color); margin-bottom: 12px; font-weight: 600;">3. 瓶頸與承載（現況）</h4>
+                    
+                    <!-- 設備/角色閾值 -->
+                    ${aiReport.detail.bottlenecks.thresholds.map(line => 
+                        `<div style="margin-bottom: 8px; padding: 12px; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 4px; color: #991b1b; font-weight: 500;">
+                            ${line}
+                        </div>`
+                    ).join('')}
+
+                    <!-- 易塞車時段 -->
+                    ${aiReport.detail.bottlenecks.congestedSlots.map(line => 
+                        `<div style="margin-bottom: 8px; padding: 12px; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px; color: #92400e; font-weight: 500;">
                             ${line}
                         </div>`
                     ).join('')}
                 </div>
                 
-                <!-- 3. 醫師/人員變化 -->
+                <!-- 4. 策略建議 -->
                 <div style="margin-bottom: 24px;">
-                    <h4 style="color: var(--accent-color); margin-bottom: 12px;">👨‍⚕️ 醫師預約變化</h4>
-                    ${aiReport.detail.staffTrend.map(line => 
-                        `<div style="margin-bottom: 6px; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px;">
-                            ${line}
-                        </div>`
-                    ).join('')}
-                </div>
-                
-                <!-- 4. AI 解讀 -->
-                <div style="margin-bottom: 24px;">
-                    <h4 style="color: var(--accent-color); margin-bottom: 12px;">💡 AI 營運策略參考</h4>
-                    ${aiReport.detail.aiInsight.map(line => 
-                        `<div style="margin-bottom: 12px; padding: 12px; background: rgba(6, 182, 212, 0.1); border-left: 3px solid #06b6d4; border-radius: 4px; line-height: 1.6;">
-                            ${line}
+                    <h4 style="color: var(--accent-color); margin-bottom: 12px; font-weight: 600;">4. 策略建議</h4>
+                    ${aiReport.detail.strategy.map(line => 
+                        `<div style="margin-bottom: 12px; padding: 14px; background: #ecfeff; border-left: 4px solid #06b6d4; border-radius: 4px; line-height: 1.6; color: #155e75; font-size: 1rem; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                            🎯 ${line}
                         </div>`
                     ).join('')}
                 </div>
 
-                <div style="margin-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 15px; text-align: center;">
-                    <small style="color: var(--text-muted); font-size: 0.8rem; opacity: 0.7;">
+                <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px; text-align: center;">
+                    <small style="color: #64748b; font-size: 0.85rem;">
                         * AI 洞察分析僅供營運數據參考，最終臨床決策與人力調度請以管理職判斷為準。
                     </small>
                 </div>
@@ -858,7 +875,14 @@ function updateAISummaryBlocks() {
                 });
             }
             
-            detailHTML += `</div>`;
+            // [Mandatory Footer]
+            detailHTML += `
+                <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px; text-align: center;">
+                    <small style="color: #64748b; font-size: 0.85rem;">
+                        * 本報告僅供參考，不代表醫療診斷或即時財務建議。決策前請諮詢相關專業人員。
+                    </small>
+                </div>
+            </div>`;
             alertDetailEl!.innerHTML = detailHTML;
         }
     }
@@ -874,98 +898,8 @@ function bindOverviewCards() {
         card.addEventListener("click", () => {
             const modalType = card.getAttribute("data-modal");
             
-            switch(modalType) {
-                case "doc-top3":
-                case "doctor": {
-                    ModalManager.loading();
-                    setTimeout(() => {
-                        const content = generateDoctorDetail(getDoctorTop3(dataStore.appointments, dataStore.staff));
-                        ModalManager.open("👨‍⚕️ 醫師 Top 3 詳細明細", content, "max-w-4xl");
-                    }, 500);
-                    break;
-                }
-                    
-                case "treat-top3":
-                case "treatment": {
-                    ModalManager.loading();
-                    setTimeout(() => {
-                        const content = generateTreatmentDetail(getTopTreatments(dataStore.appointments));
-                        ModalManager.open("🔥 熱門療程 Top 3 詳細明細", content, "max-w-4xl");
-                    }, 500);
-                    break;
-                }
-                    
-                case "room": {
-                    ModalManager.loading();
-                    setTimeout(() => {
-                        const content = generateResourceDetail("room");
-                        ModalManager.open("🏥 診間資源監控表", content, "max-w-4xl");
-                    }, 500);
-                    break;
-                }
-                    
-                case "equip": {
-                    ModalManager.loading();
-                    setTimeout(() => {
-                        const content = generateResourceDetail("equip");
-                        ModalManager.open("⚡ 設備資源監控表", content, "max-w-4xl");
-                    }, 500);
-                    break;
-                }
-                    
-                case "alert": {
-                    // 直接使用詳細分析內容（而不是簡要版）
-                    let detailContent = document.getElementById("ai-alert-detail")?.innerHTML || "";
-                    
-                    // [即時注入] 強制讀取最新 AI 建議，避免頁面未刷新導致資料過時
-                    // [即時注入] 邏輯移除：詳細資料已在 updateAISummaryBlocks 完整處理，無需在此重複注入
-                    // try { ... } catch (e) ...
-
-                    const content = detailContent || "無風險資料";
-                    ModalManager.open("🚨 AI 風險預警完整內容", content);
-                    break;
-                }
-                    
-                case "modal-ai": {
-                    // 直接使用詳細分析內容
-                    const detailContent = document.getElementById("ai-full-report")?.innerHTML || "";
-                    const content = detailContent || "無趨勢資料";
-                    ModalManager.open("📊 AI 趨勢完整分析", content);
-                    break;
-                }
-                
-                // === 經營成效摘要卡片 ===
-                case "revenue-today": {
-                    const detailContent = document.getElementById("revenue-today-detail")?.innerHTML || "";
-                    const content = detailContent || "無營收資料";
-                    ModalManager.open("💰 今日營收狀態詳細分析", content);
-                    break;
-                }
-                
-                case "revenue-monthly": {
-                    const detailContent = document.getElementById("revenue-monthly-detail")?.innerHTML || "";
-                    const content = detailContent || "無營收資料";
-                    ModalManager.open("📊 本月營收詳細分析", content);
-                    break;
-                }
-                
-                case "return-visit": {
-                    const detailContent = document.getElementById("return-visit-detail")?.innerHTML || "";
-                    const content = detailContent || "無回診資料";
-                    ModalManager.open("🔄 本月顧客回診率詳細分析", content);
-                    break;
-                }
-
-                // === 新增：KPI 詳細彈窗 (AI 升級版) ===
-                case "kpi-today":
-                case "kpi-show-rate":
-                case "kpi-doc":
-                case "kpi-nurse":
-                case "kpi-consultant": {
-                    const content = generateKPIDetail(modalType);
-                    ModalManager.open("📊 營運指標詳細分析", content);
-                    break;
-                }
+            if (modalType) {
+                handleOverviewModal(modalType);
             }
         });
     });
@@ -2243,14 +2177,17 @@ function generateTreatmentDetail(list: {name: string, count: number}[]): string 
 }
 
 // 3. 資源監控詳細生成器 (Room / Equip) – 含 Hover 與紅字警告與淡紅背景
-function generateResourceDetail(type: 'room' | 'equip'): string {
-    const { roomUsage, equipmentUsage } = calcRoomAndEquipmentUsage(dataStore.appointments, dataStore.services);
+function generateResourceDetail(type: 'room' | 'equip', targetDate?: string): string {
+    const { roomUsage, equipmentUsage } = calcRoomAndEquipmentUsage(dataStore.appointments, dataStore.services, false, targetDate);
     
+    const timeLabel = targetDate ? "今日" : "本月";
+    const subLabel = targetDate ? `僅顯示 ${targetDate} 數據` : "本月平均";
+
     let html = `<div style="padding: 24px;">
         <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
             <div>
-                 <h2 style="margin: 0; color: var(--text-heading); font-size: 1.25rem;">資源效能監控表</h2>
-                 <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 0.9rem;">監控診間使用率與設施設備健康度</p>
+                 <h2 style="margin: 0; color: var(--text-heading); font-size: 1.25rem;">${timeLabel}資源效能監控表</h2>
+                 <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 0.9rem;">監控診間使用率與設施設備健康度 (${subLabel})</p>
             </div>
             <span style="color: #10b981; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
                  <i class="fa-solid fa-check-circle"></i> 明細數據載入完成
@@ -2267,7 +2204,7 @@ function generateResourceDetail(type: 'room' | 'equip'): string {
     if (type === 'room') {
         html += `
                         <th style="text-align: center; padding: 16px; color: var(--text-heading); font-size: 1rem;">類型</th>
-                        <th style="text-align: left; padding: 16px; color: var(--text-heading); font-size: 1rem; width: 40%;">本月使用率 (目標 < 80%)</th>
+                        <th style="text-align: left; padding: 16px; color: var(--text-heading); font-size: 1rem; width: 40%;">${timeLabel}使用率 (目標 < 80%)</th>
                         <th style="text-align: center; padding: 16px; color: var(--text-heading); font-size: 1rem;">狀態</th>
                     </tr></thead><tbody>
         `;
@@ -2303,7 +2240,7 @@ function generateResourceDetail(type: 'room' | 'equip'): string {
 
     } else { // Equip
         html += `
-                        <th style="text-align: left; padding: 16px; color: var(--text-heading); font-size: 1rem; width: 30%;">本月使用率</th>
+                        <th style="text-align: left; padding: 16px; color: var(--text-heading); font-size: 1rem; width: 30%;">${timeLabel}使用率</th>
                         <th style="text-align: center; padding: 16px; color: var(--text-heading); font-size: 1rem;">耗材剩餘量 <span style="font-size:0.8rem; color:#ef4444;">(<10 告警)</span></th>
                         <th style="text-align: center; padding: 16px; color: var(--text-heading); font-size: 1rem;">潛在待消化案量</th>
                     </tr></thead><tbody>
@@ -2361,10 +2298,78 @@ function generateResourceDetail(type: 'room' | 'equip'): string {
 }
 
 /* ===================== 全域彈窗委派處理 ===================== */
+
+// Wrapper for Resource Detail with AI Insights
+function generateKPIResourceDetail(type: 'room' | 'equip'): string {
+    const systemToday = new Date().toISOString().slice(0, 10);
+
+    // 1. Get Base Content (Table) - Daily Mode
+    let html = generateResourceDetail(type, systemToday);
+    
+    // 2. Remove the last two closing divs to inject content inside the wrapper
+    // The structure is <div padding> ... <div wrapper><table>...</table></div></div>
+    // generateResourceDetail ends with `</tbody></table></div></div>`
+    
+    const lastDivIndex = html.lastIndexOf('</div>');
+    if (lastDivIndex > -1) {
+        html = html.substring(0, lastDivIndex); // Remove last </div> (padding wrapper close)
+    }
+
+    // 3. Generate AI Insight - Daily Mode
+    const { roomUsage, equipmentUsage } = calcRoomAndEquipmentUsage(dataStore.appointments, dataStore.services, false, systemToday);
+    let insightText = '';
+    
+    if (type === 'room') {
+        const avgUsage = roomUsage.length ? Math.round(roomUsage.reduce((acc, r) => acc + r.usageRate, 0) / roomUsage.length) : 0;
+        if (avgUsage > 80) insightText = '🔥 <strong>空間使用率過高</strong>：今日診間平均負載已超過 80%，建議現場機動調度空檔，避免客戶久候。';
+        else if (avgUsage < 30) insightText = '📉 <strong>空間閒置率高</strong>：今日診間利用率偏低，建議可利用空檔安排教育訓練或環境保養。';
+        else insightText = '✅ <strong>空間配置適宜</strong>：今日診間運作平穩，請持續保持目前的服務節奏。';
+    } else {
+        const criticalItems = equipmentUsage.filter(e => e.usageRate > 80);
+        if (criticalItems.length > 0) {
+            const names = criticalItems.map(e => e.equipment).join('、');
+            insightText = `⚠️ <strong>設備負載警示</strong>：今日檢測到 ${names} 使用率過高，請留意設備過熱狀況。`;
+        } else {
+            insightText = '✅ <strong>設備運作正常</strong>：今日所有設備皆在正常負載範圍內。';
+        }
+    }
+
+    const aiHtml = `
+        <div style="margin-top: 24px; padding: 16px; background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8b5cf6; border-radius: 8px;">
+             <h4 style="color: #8b5cf6; margin-bottom: 8px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-robot"></i> AI 營運洞察 (Daily)
+             </h4>
+             <p style="color: var(--text-body); line-height: 1.6; font-size: 0.95rem;">
+                ${insightText}
+             </p>
+        </div>
+    </div>`; // Close the main wrapper
+
+    return html + aiHtml;
+}
+
 export function handleOverviewModal(modalType: string): boolean {
     if (!modalType) return false;
     
     switch(modalType) {
+        // === New KPI Cards (AI Enhanced) ===
+        case "kpi-room": {
+            ModalManager.loading();
+            setTimeout(() => {
+                const content = generateKPIResourceDetail("room");
+                ModalManager.open("📊 營運指標詳細分析", content, "max-w-4xl");
+            }, 500);
+            return true;
+        }
+        case "kpi-equip": {
+            ModalManager.loading();
+            setTimeout(() => {
+                const content = generateKPIResourceDetail("equip");
+                ModalManager.open("📊 營運指標詳細分析", content, "max-w-4xl");
+            }, 500);
+            return true;
+        }
+
         case "doc-top3":
         case "doctor": {
             ModalManager.loading();

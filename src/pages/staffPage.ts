@@ -206,36 +206,105 @@ function renderRoleFitInsights(stats: any[]) {
     `).join('');
 }
 
+// Module-level state for sorting
+let cachedBufferStats: any[] = [];
+let cachedTimeStructureStats: any[] = [];
+let currentSort: { key: string, dir: 'asc' | 'desc' } = { key: 'compressionRate', dir: 'desc' };
+
 function renderBufferAnalysis(bufferStats: any[], timeStructureStats: any[]) {
     const container = document.getElementById('staffBufferAnalysis');
     if (!container) return;
 
+    // Update Cache
+    cachedBufferStats = [...bufferStats]; // Copy
+    cachedTimeStructureStats = [...timeStructureStats];
+
     const reportHtml = generateBufferStructureReport(timeStructureStats);
     
+    // Create Table Container
+    const tableContainerId = 'buffer-analysis-table-container';
+    
+    container.innerHTML = reportHtml + `<div id="${tableContainerId}" style="margin-top: 20px;"></div>`;
+
+    renderBufferTable();
+}
+
+function renderBufferTable() {
+    const container = document.getElementById('buffer-analysis-table-container');
+    if (!container) return;
+
+    // Sorting Logic
+    const sortedStats = [...cachedBufferStats].sort((a, b) => {
+        const dir = currentSort.dir === 'asc' ? 1 : -1;
+        
+        if (currentSort.key === 'role') {
+            // Parse "Name (RoleType)"
+            const parse = (str: string) => {
+                const match = str.match(/^(.*)\((.*)\)$/);
+                return match ? { name: match[1].trim(), type: match[2].trim() } : { name: str, type: '' };
+            };
+            const pA = parse(a.role);
+            const pB = parse(b.role);
+            
+            // Primary: Type (A-Z)
+            if (pA.type !== pB.type) return pA.type.localeCompare(pB.type) * dir;
+            // Secondary: Name (A-Z)
+            return pA.name.localeCompare(pB.name) * dir;
+        }
+        
+        if (currentSort.key === 'bufferRatio') {
+            // Need to look up from TimeStructure
+            const getRatio = (roleStr: string) => {
+                const roleType = roleStr.includes('(') ? roleStr.split('(')[1].replace(')', '').trim() : roleStr;
+                return cachedTimeStructureStats.find(t => t.role === roleType)?.bufferRatio || 0;
+            };
+            return (getRatio(a.role) - getRatio(b.role)) * dir;
+        }
+
+        if (currentSort.key === 'compressedGaps') {
+            return (a.compressedGaps - b.compressedGaps) * dir;
+        }
+
+        if (currentSort.key === 'compressionRate') {
+            return (a.compressionRate - b.compressionRate) * dir;
+        }
+
+        return 0;
+    });
+
+    // Header Helper
+    const th = (label: string, key: string) => {
+        let arrow = '';
+        if (currentSort.key === key) {
+            arrow = currentSort.dir === 'desc' ? ' ▼' : ' ▲';
+        }
+        return `<th style="padding: 8px; cursor: pointer; user-select: none;" data-sort-key="${key}" class="sortable-header">
+            ${label} <span style="font-size: 0.8em;">${arrow}</span>
+        </th>`;
+    };
+
     const tableHtml = `
-        <div style="margin-top: 20px;">
             <h5 style="margin-bottom: 10px; color: #666;">詳細監測數據 (Buffer 壓縮率)</h5>
             <table class="data-table" style="width: 100%; font-size: 0.9rem; border-collapse: collapse;">
                 <thead>
                     <tr style="border-bottom: 2px solid #eee; text-align: left;">
-                        <th style="padding: 8px;">人員</th>
-                        <th style="padding: 8px;">Buffer 佔比 (結構)</th>
-                        <th style="padding: 8px;">被壓縮次數 (壓力)</th>
-                        <th style="padding: 8px;">壓縮率</th>
+                        ${th('人員', 'role')}
+                        ${th('Buffer 佔比 (結構)', 'bufferRatio')}
+                        ${th('被壓縮次數 (壓力)', 'compressedGaps')}
+                        ${th('壓縮率', 'compressionRate')}
                     </tr>
                 </thead>
                 <tbody>
-                    ${bufferStats.map(s => {
-                         // Parse role type from "Name (role)" string
+                    ${sortedStats.map(s => {
                          const roleType = s.role.includes('(') ? s.role.split('(')[1].replace(')', '').trim() : s.role;
-                         const struct = timeStructureStats.find(t => t.role === roleType) || { bufferRatio: 0 };
+                         const struct = cachedTimeStructureStats.find(t => t.role === roleType) || { bufferRatio: 0 };
                          
                          return `
                         <tr style="border-bottom: 1px solid #f9f9f9;">
                             <td style="padding: 8px;">${s.role}</td>
                             <td style="padding: 8px; color: #666;">${struct.bufferRatio}%</td> 
                             <td style="padding: 8px;">${s.compressedGaps}</td>
-                            <td style="padding: 8px; font-weight: bold; color: ${s.compressionRate > 30 ? '#dc2626' : '#059669'};">
+                            <td style="padding: 8px; font-weight: bold; color: ${s.compressionRate >= 70 ? '#dc2626' : (s.compressionRate >= 30 ? '#f97316' : '#059669')};">
                                 ${s.compressionRate}%
                             </td>
                         </tr>
@@ -244,13 +313,35 @@ function renderBufferAnalysis(bufferStats: any[], timeStructureStats: any[]) {
                 </tbody>
             </table>
             <small style="color: #666; display: block; margin-top: 5px; font-style: italic;">
-                ＊壓縮率超過 70%會觸發<span style="color:#dc2626; font-weight:bold;">紅色警示</span>；30% 至 70%列為「隱性疲勞風險」＊<br/>
+                ＊壓縮率超過 70%會觸發<span style="color:#dc2626; font-weight:bold;">紅色警示</span>；30% 至 70%列為<span style="color:#f97316; font-weight:bold;">「隱性疲勞風險」</span>＊<br/>
                 * Buffer 佔比數據請參考上方顧問報告
             </small>
-        </div>
     `;
 
-    container.innerHTML = reportHtml + tableHtml;
+    container.innerHTML = tableHtml;
+
+    // Bind Events
+    const headers = container.querySelectorAll('th[data-sort-key]');
+    headers.forEach(h => {
+        h.addEventListener('click', () => {
+             const key = h.getAttribute('data-sort-key');
+             if (key) {
+                 if (currentSort.key === key) {
+                     // Toggle
+                     currentSort.dir = currentSort.dir === 'desc' ? 'asc' : 'desc';
+                 } else {
+                     // New Key -> Default Desc (Large to Small) for numbers, but maybe Asc for text?
+                     // User said: "第一次點：降冪（大→小）" for fields.
+                     // For 'role' (text), usually Asc is intuitive, but user didn't specify strict exception except "Main: A-Z".
+                     // Let's stick to Desc default for now as user requested "Default: Desc", then toggle.
+                     // Actually user said: "第一次點：降冪（大→小）".
+                     currentSort.key = key;
+                     currentSort.dir = 'desc';
+                 }
+                 renderBufferTable();
+             }
+        });
+    });
 }
 
 function renderAISuggestions(htmlContent: string) {

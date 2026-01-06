@@ -177,21 +177,21 @@
             </div>
 
             <!-- 診間使用率 -->
-            <div class="kpi-item" title="診間使用率（本月平均）">
-              <i class="fa-solid fa-door-closed kpi-icon"></i>
-              <div class="kpi-content">
-                <span class="kpi-value" id="ov-room-main">--%</span>
-                <span class="kpi-label">診間</span>
-              </div>
+            <div class="kpi-item js-open-modal" title="診間使用率（每日平均）" data-modal="kpi-room" style="cursor: pointer;">
+                <i class="fa-solid fa-door-closed kpi-icon"></i>
+                <div class="kpi-content">
+                    <span class="kpi-value" id="ov-room-main">--%</span>
+                    <span class="kpi-label">診間 (日均)</span>
+                </div>
             </div>
 
             <!-- 設備使用率 -->
-            <div class="kpi-item" title="設備使用率（本月平均）">
-              <i class="fa-solid fa-bolt kpi-icon"></i>
-              <div class="kpi-content">
-                <span class="kpi-value" id="ov-equip-main">--%</span>
-                <span class="kpi-label">設備</span>
-              </div>
+            <div class="kpi-item js-open-modal" title="設備使用率（每日平均）" data-modal="kpi-equip" style="cursor: pointer;">
+                <i class="fa-solid fa-bolt kpi-icon"></i>
+                <div class="kpi-content">
+                    <span class="kpi-value" id="ov-equip-main">--%</span>
+                    <span class="kpi-label">設備 (日均)</span>
+                </div>
             </div>
           </div>
           <!-- ===================== END KPI ===================== -->
@@ -1063,47 +1063,20 @@
                 <!-- JS will append updateReturnRateInfo here -->
               </div>
 
-              <!-- Right: AI Churn Risk Summary -->
+              <!-- Right: AI Diagnosis Report (Strict Template) -->
               <div class="card">
                 <div class="card-header">
                   <h3>
                     <i
-                      class="fa-solid fa-triangle-exclamation"
-                      style="margin-right: 0.5rem; color: var(--danger-color)"
+                      class="fa-solid fa-brain"
+                      style="margin-right: 0.5rem; color: var(--accent-color)"
                     ></i>
-                    AI 流失風險摘要
+                    AI 回診診斷報告
                   </h3>
                 </div>
-                <div class="card-body">
-                  <div class="risk-summary-grid">
-                    <div class="risk-summary-card risk-high">
-                      <div class="risk-icon">🔴</div>
-                      <div class="risk-content">
-                        <div class="risk-label">高風險</div>
-                        <div class="risk-count" id="churn-high-count">--</div>
-                      </div>
-                    </div>
-                    <div class="risk-summary-card risk-medium">
-                      <div class="risk-icon">🟡</div>
-                      <div class="risk-content">
-                        <div class="risk-label">中風險</div>
-                        <div class="risk-count" id="churn-medium-count">--</div>
-                      </div>
-                    </div>
-                    <div class="risk-summary-card risk-low">
-                      <div class="risk-icon">🟢</div>
-                      <div class="risk-content">
-                        <div class="risk-label">低風險</div>
-                        <div class="risk-count" id="churn-low-count">--</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Hidden container for any legacy JS injection compatibility -->
-                  <div
-                    id="ai-churn-report-container"
-                    style="display: none"
-                  ></div>
+                <!-- Logic in customersPage.ts: renderReturnInsights -->
+                <div class="card-body" id="ai-return-insights-container" style="padding: 20px;">
+                  <p style="color: var(--text-muted); text-align: center;">診斷中...</p>
                 </div>
               </div>
             </div>

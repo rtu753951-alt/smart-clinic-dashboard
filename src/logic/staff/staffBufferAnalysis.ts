@@ -2,50 +2,37 @@ import { isCertifiedForCategory } from "../../data/skillMap.js";
 import { AppointmentRecord } from "../../data/schema.js";
 import { dataStore } from "../../data/dataStore.js";
 import { sandboxStore } from "../../features/sandbox/sandboxStore.js";
+import { INVOLVEMENT_RATIOS } from "./staffWorkloadCards.js";
 
 interface BufferStats {
     role: string;
     totalGaps: number;
-    compressedGaps: number; // Gap < Standard Buffer
+    compressedGaps: number;
     avgGapMinutes: number;
     compressionRate: number; // %
+    highDensityHours: number; // New metric
 }
 
 interface TimeStructureStats {
     role: string;
     serviceMinutes: number;
-    bufferMinutes: number; // Based on Standard Buffer definition
+    bufferMinutes: number;
     totalMinutes: number;
-    bufferRatio: number; // %
+    bufferRatio: number;
 }
 
 /**
- * 取得 Hidden Load 分析用的篩選資料
- * 
- * 模式定義：
- * - week: 本週 (2025-12-15 ~ 12-21，假設今日為 12-16)，僅 status=completed
- * - month: 本月 (2025-12-01 ~ 12-31)，僅 status=completed
- * - future: 未來7天 (2025-12-17 ~ 12-23)，包含 completed + no_show (視為 Booked)，排除 cancelled
+ * Filter appointments logic (restored)
  */
 export function filterAppointmentsForMode(
     appointments: AppointmentRecord[],
     mode: 'week' | 'month' | 'future'
 ): AppointmentRecord[] {
     const globalMonth = (window as any).currentDashboardMonth;
-    let anchorDate = new Date(); // Default to Now
-  
-    if (globalMonth) {
-        // e.g. "2024-01" -> Anchor "2024-01-01"
-        anchorDate = new Date(`${globalMonth}-01`);
-        // If the selected month is significantly in the past/future, 'future' mode might be weird.
-        // But for 'week' and 'month', this is correct.
-        // For 'future' (next 7 days from anchor), it makes sense to use anchor as 'today'.
-    }
-    
-    // Normalize to Midnight
+    let anchorDate = new Date();
+    if (globalMonth) anchorDate = new Date(`${globalMonth}-01`);
     anchorDate.setHours(0, 0, 0, 0);
 
-    // Calculate Week Range (Monday to Sunday relative to Anchor)
     const currentDay = anchorDate.getDay(); 
     const distToMonday = currentDay === 0 ? -6 : 1 - currentDay;
     const thisMonday = new Date(anchorDate);
@@ -54,150 +41,103 @@ export function filterAppointmentsForMode(
     thisSunday.setDate(thisMonday.getDate() + 6);
     thisSunday.setHours(23, 59, 59, 999);
 
-    console.log(`[BufferAnalysis] Filtering '${mode}' with Anchor: ${anchorDate.toISOString().slice(0,10)}`);
-
     return appointments.filter(apt => {
         const d = new Date(apt.date);
-        
-        if (mode === 'week') {
-            // Range: Mon - Sun
-            // Status: completed only
-            if (apt.status !== 'completed') return false;
-            return d >= thisMonday && d <= thisSunday;
-        }
-
-        if (mode === 'month') {
-            // Range: Current Month (Dec)
-            // Status: completed only
-            if (apt.status !== 'completed') return false;
-            return apt.date.startsWith("2025-12");
-        }
-
+        if (mode === 'week') return apt.status === 'completed' && d >= thisMonday && d <= thisSunday;
+        if (mode === 'month') return apt.status === 'completed' && apt.date.startsWith("2025-12");
         if (mode === 'future') {
-            // Range: Today+1 to Today+7
-            const start = new Date(anchorDate);
-            start.setDate(start.getDate() + 1);
-            const end = new Date(anchorDate);
-            end.setDate(end.getDate() + 7);
-            end.setHours(23, 59, 59, 999);
-
-            if (d >= start && d <= end) {
-                // Future Rule: include completed (simulated as booked) and no_show (booked but missed -> occupies slot in projection)
-                // Exclude cancelled
-                return apt.status !== 'cancelled';
-            }
-            return false;
+            const start = new Date(anchorDate); start.setDate(start.getDate() + 1);
+            const end = new Date(anchorDate); end.setDate(end.getDate() + 7); end.setHours(23, 59, 59, 999);
+            return d >= start && d <= end && apt.status !== 'cancelled';
         }
-
         return false;
     });
 }
 
-/**
- * 分析隱性負載：Buffer 壓縮率 (Stress)
- */
-/**
- * Helper: Build Staff Role Map
- */
 function getStaffRoleMap(): Map<string, string> {
     const map = new Map<string, string>();
     dataStore.staff.forEach(staff => {
-        if (staff.staff_name) {
-            map.set(staff.staff_name.trim(), staff.staff_type.trim());
-        }
+        if (staff.staff_name) map.set(staff.staff_name.trim(), staff.staff_type.trim());
     });
     return map;
 }
 
 /**
- * 分析隱性負載：Buffer 壓縮率 (Stress)
- * 修正：針對每一位員工 (醫師、護理師、美療師) 個別計算時間間隙
+ * Calculate Buffer Analysis with High Density Logic
  */
 export function calculateBufferAnalysis(appointments: AppointmentRecord[]): BufferStats[] {
-    // 1. Group appointments by Person Name (Doctor + Staff)
     const personAppts: Record<string, AppointmentRecord[]> = {};
     const staffMap = getStaffRoleMap();
 
     const addAppt = (name: string, apt: AppointmentRecord) => {
         const trimmedName = name.trim();
         if (trimmedName === 'nan' || !trimmedName) return;
-        
-        if (!personAppts[trimmedName]) {
-            personAppts[trimmedName] = [];
-        }
+        if (!personAppts[trimmedName]) personAppts[trimmedName] = [];
         personAppts[trimmedName].push(apt);
     };
 
     appointments.forEach(apt => {
         if (apt.status === 'cancelled' || apt.status === 'no_show') return;
-        
-        // Add to Doctor's schedule
-        if (apt.doctor_name) {
-            addAppt(apt.doctor_name, apt);
-        }
-        
-        // Add to Assistant's schedule
-        if (apt.staff_role) {
-            addAppt(apt.staff_role, apt);
-        }
+        if (apt.doctor_name) addAppt(apt.doctor_name, apt);
+        if (apt.staff_role) addAppt(apt.staff_role, apt);
     });
 
     const results: BufferStats[] = [];
-
-
-
-// ... existing code
-
-    // 2. Analyze gaps for each person
     const sbState = sandboxStore.getState();
 
     Object.entries(personAppts).forEach(([name, appts]) => {
-        if (appts.length < 2) return; // Need at least 2 tasks to have a gap
-
+        if (appts.length < 2) return;
+        
         const staffRec = dataStore.staff.find(s => s.staff_name === name);
-
-        // Sort by Time
         appts.sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
 
         let totalGaps = 0;
         let compressedGaps = 0;
         let totalGapMinutes = 0;
-        let totalGrowthAccumulator = 0; // To calculate avg growth for this person
+        let totalGrowthAccumulator = 0;
+        
+        let currentDensityChainMinutes = 0;
+        let totalHighDensityMinutes = 0;
 
         for (let i = 0; i < appts.length - 1; i++) {
             const curr = appts[i];
             const next = appts[i + 1];
             
-            // Stats for growth calculation
             const service = dataStore.services.find(s => s.service_name === curr.service_item);
+            
+            // Growth calc
             if (sbState.isActive && service && staffRec) {
                  const cat = service.category || 'consult';
                  const g = sbState.serviceGrowth[cat as keyof typeof sbState.serviceGrowth] || 0;
-                 
-                 // 🔥 Logic Update: Only apply growth if certified
-                 if (isCertifiedForCategory(staffRec, cat)) {
-                     totalGrowthAccumulator += g;
-                 }
+                 if (isCertifiedForCategory(staffRec, cat)) totalGrowthAccumulator += g;
             }
 
-            // Only measure gap if on the same day
-            if (curr.date !== next.date) continue;
+            // Same Day check
+            if (curr.date !== next.date) {
+                totalHighDensityMinutes += currentDensityChainMinutes;
+                currentDensityChainMinutes = 0;
+                continue;
+            }
 
             const duration = service ? service.duration : 30;
             const buffer = service ? service.buffer_time : 10;
-
             const currEnd = new Date(new Date(`${curr.date}T${curr.time}`).getTime() + duration * 60000);
             const nextStart = new Date(`${next.date}T${next.time}`);
             const gapMinutes = Math.floor((nextStart.getTime() - currEnd.getTime()) / 60000);
 
             if (gapMinutes < buffer) {
                 compressedGaps++;
+                currentDensityChainMinutes += duration;
+            } else {
+                totalHighDensityMinutes += currentDensityChainMinutes;
+                currentDensityChainMinutes = 0;
             }
+            
             totalGaps++;
             totalGapMinutes += gapMinutes;
         }
+        totalHighDensityMinutes += currentDensityChainMinutes;
 
-        // Determine role
         let roleType = staffMap.get(name);
         if (!roleType) {
             if (name.includes('醫師')) roleType = 'doctor';
@@ -208,20 +148,10 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[]): Buff
         }
 
         if (totalGaps > 0) {
-            // Base Metrics
             const baseRate = Math.round((compressedGaps / totalGaps) * 100);
-            
-            // Simulated Metrics
-            // Heuristic: If Avg Growth is +20% (0.2), assume Compression Rate increases linearly.
-            // Why? More tasks -> Less gaps or Smaller gaps.
-            // Let's say Compression Rate increases by (AvgGrowth * 50) percentage points.
-            // e.g. 0.2 * 50 = +10% to rate.
             let finalRate = baseRate;
-            
             if (sbState.isActive) {
-                const avgGrowth = totalGrowthAccumulator / appts.length; // Approximate
-                // Positive correlation function: New Rate = Old Rate + (AvgGrowth * Factor)
-                // We use a factor of 40 to make it noticeable but not insane.
+                const avgGrowth = totalGrowthAccumulator / appts.length; 
                 const simImpact = Math.round(avgGrowth * 40); 
                 finalRate = Math.min(100, Math.max(0, baseRate + simImpact));
             }
@@ -229,17 +159,16 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[]): Buff
             results.push({
                 role: `${name} (${roleType})`,
                 totalGaps,
-                compressedGaps, // Note: This count is historical, but Rate is simulated.
+                compressedGaps, 
                 avgGapMinutes: Math.round(totalGapMinutes / totalGaps),
-                compressionRate: finalRate
+                compressionRate: finalRate,
+                highDensityHours: Math.round((totalHighDensityMinutes / 60) * 10) / 10
             });
         }
     });
 
     return results;
 }
-
-import { INVOLVEMENT_RATIOS } from "./staffWorkloadCards.js";
 
 // ... existing imports
 

@@ -19,64 +19,174 @@ export function initCustomersPage() {
     renderNewVsReturningChart('all');
     renderReturnRateChart();
     renderRFMSegmentChart();
-    renderChurnRiskSummary();
+    renderReturnInsights();
     renderCustomerOperationSuggestions();
 }
 
 /**
- * 3. AI 流失風險摘要 (AI Churn Risk Summary)
+ * 3. AI 回診洞察 (AI Return Insights) - Text & Actions Only
+ * Formerly Churn Risk Summary
  */
-/**
- * 3. AI 流失風險摘要 (AI Churn Risk Summary)
- */
-function renderChurnRiskSummary() {
+function renderReturnInsights() {
     const customers = dataStore.customers;
     
-    // 如果沒有顧客資料，嘗試只檢查 appointments (雖然不太可能)
     if (!customers || customers.length === 0) {
-        console.warn("renderChurnRiskSummary: No customers data found.");
+        console.warn("renderReturnInsights: No customers data found.");
         return;
     }
 
-    // 1. 計算風險數據
+    // 1. 計算數據 (Stats & Trend)
     const stats = calculateChurnRisks(customers);
+    const weeksData = calculateWeeklyReturnRates(12);
+    const trend = analyzeReturnRateTrend(weeksData);
 
-    // 2. 更新數字 (Counts)
-    const setCheck = (id: string, val: number) => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.innerText = val.toString();
-        } else {
-            console.warn(`Element #${id} not found.`);
-        }
-    }
-    setCheck("churn-high-count", stats.high);
-    setCheck("churn-medium-count", stats.medium);
-    setCheck("churn-low-count", stats.low);
+    // 2. 判定狀態 (Green/Yellow/Red)
+    let statusTag = '';
+    let statusClass = '';
+    let overallText = '';
+    let type = 'stable'; // consistent var for logic
 
-    // 3. 生成與渲染文字報告
-    const reportMarkdown = generateChurnRiskReport(stats);
-    const reportHtml = formatAIReportHtml(reportMarkdown);
-
-    // 4. 插入 DOM (使用明確的 Container ID)
-    const reportContainer = document.getElementById("ai-churn-report-container");
-    if (!reportContainer) {
-        console.warn("#ai-churn-report-container not found in HTML.");
-        // Fallback: 如果 HTML 還沒更新到，嘗試動態建立
-        const grid = document.querySelector(".risk-summary-grid");
-        if (grid) {
-             const newContainer = document.createElement("div");
-             newContainer.id = "ai-churn-report-container";
-             grid.insertAdjacentElement('afterend', newContainer);
-             newContainer.innerHTML = reportHtml;
-             applyReportStyles(newContainer);
-        }
-        return;
+    // Logic: 
+    // Red (Alert): High Risk > 0 OR Significant Decline
+    // Yellow (Watch): Medium Risk > 0 OR Slight Decline
+    // Green (Stable): Else
+    if (stats.high > 0 || trend.status === 'significant_decline') {
+        type = 'alert';
+        statusTag = '🔴 異常（Alert）';
+        statusClass = 'color: #ef4444; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);';
+        overallText = '本期回診結構屬於「已出現結構性異常，需注意後續變化」。';
+    } else if (stats.medium > 0 || trend.status === 'slight_decline') {
+        type = 'watch';
+        statusTag = '🟡 需觀察（Watch）';
+        statusClass = 'color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2);';
+        overallText = '本期回診結構屬於「整體穩定，但局部區段開始出現鬆動」。';
+    } else {
+        type = 'stable';
+        statusTag = '🟢 穩定（Stable）';
+        statusClass = 'color: #10b981; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2);';
+        overallText = '本期回診結構屬於「整體健康，未出現結構性下滑」。';
     }
 
-    // 當數據載入時，直接寫入
+    // 3. 診斷依據 (Evidence) - Facts Only
+    let evidencePoints = [];
+    // Point 1: Trend
+    if (trend.status === 'stable') {
+        evidencePoints.push(`近 12 週回診率數據維持穩定區間，未出現連續下滑`);
+    } else {
+        evidencePoints.push(`近 12 週回診率呈現${trend.status === 'significant_decline' ? '顯著下滑' : '輕微波動'}趨勢`);
+    }
+    // Point 2: High Risk
+    if (stats.high > 0) {
+        evidencePoints.push(`高風險（未回訪 > 90天）顧客數量為 ${stats.high} 位，已超過安全閾值`);
+    } else {
+        evidencePoints.push(`高風險顧客數量為 0，整體流失壓力低`);
+    }
+    // Point 3: Medium Risk
+    if (stats.medium > 0) {
+        evidencePoints.push(`中風險顧客集中於未回訪 45–90 天區間（${stats.medium} 位）`);
+    }
+
+    // 4. 結構判讀 (Structural Interpretation) - If/Then
+    let interpretation = '';
+    if (type === 'alert') {
+        interpretation = `目前狀態顯示結構性流失風險顯著，若未回診名單持續積累，可能逐步轉為永久性客群流失。`;
+    } else if (type === 'watch') {
+        interpretation = `目前狀態顯示整體回診結構尚稱健康，但未回訪區段開始集中，若回訪間隔持續延長，可能逐步轉為結構性流失風險。`;
+    } else {
+        interpretation = `目前狀態顯示回診結構健康且具有韌性，若持續維持當前服務頻率，預期可保持穩定營收基礎。`;
+    }
+
+    // 5. 結構樣本觀察 (Sample Table) - Only if High/Medium Risk exists
+    const fullRiskList = getCoreChurnRiskCustomers();
+    const sampleList = fullRiskList.filter(c => c.riskLevel === 'high' || c.riskLevel === 'medium').slice(0, 3);
+    
+    let sampleSection = '';
+    if (sampleList.length > 0) {
+        sampleSection = `
+            <div style="margin-top: 20px;">
+                <h4 style="font-size: 0.9rem; color: var(--text-heading); margin-bottom: 8px; font-weight: 600;">
+                    代表性結構樣本（僅供診斷）
+                </h4>
+                <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-bottom: 4px;">
+                    <thead style="background: rgba(255,255,255,0.05);">
+                        <tr>
+                            <th style="text-align: left; padding: 6px; color: var(--text-muted); font-weight: normal;">顧客 ID</th>
+                            <th style="text-align: left; padding: 6px; color: var(--text-muted); font-weight: normal;">關鍵特徵</th>
+                            <th style="text-align: right; padding: 6px; color: var(--text-muted); font-weight: normal;">狀態標記</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sampleList.map(c => `
+                            <tr style="border-bottom: 1px dashed rgba(255,255,255,0.1);">
+                                <td style="padding: 6px; color: var(--text-body); font-family: monospace;">${c.id}</td>
+                                <td style="padding: 6px; color: var(--text-muted);">未回訪 ${c.days} 天</td>
+                                <td style="padding: 6px; text-align: right;">
+                                    <span style="color: ${c.riskLevel === 'high' ? '#ef4444' : '#f59e0b'};">
+                                        ${c.riskLevel === 'high' ? '高風險' : '中風險'}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                <div style="font-size: 0.75rem; color: var(--text-muted); opacity: 0.7; margin-top: 4px;">
+                    * 此名單僅用於結構診斷，不等同實際行動名單
+                </div>
+            </div>
+        `;
+    }
+
+
+    // Combine HTML
+    const reportHtml = `
+        <div class="ai-diagnosis-report" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-body);">
+            <!-- 1. Diagnosis Header -->
+            <div style="margin-bottom: 16px;">
+                <span style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 0.9rem; ${statusClass}">
+                    ${statusTag}
+                </span>
+            </div>
+
+            <!-- 2. Overall Assessment -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px; font-weight: normal;">整體狀態：</h4>
+                <div style="color: var(--text-heading); font-weight: 600;">
+                    ${overallText}
+                </div>
+            </div>
+
+            <!-- 3. Evidence -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 6px; font-weight: normal;">診斷依據：</h4>
+                <ul style="margin: 0; padding-left: 20px; color: var(--text-body);">
+                    ${evidencePoints.map(p => `<li style="margin-bottom: 4px;">${p}</li>`).join('')}
+                </ul>
+            </div>
+
+            <!-- 4. Structural Interpretation -->
+            <div style="margin-bottom: 20px;">
+                <h4 style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px; font-weight: normal;">結構判讀：</h4>
+                <div style="padding: 12px; background: rgba(59, 130, 246, 0.05); border-left: 3px solid rgba(59, 130, 246, 0.5); border-radius: 0 4px 4px 0; color: var(--text-body);">
+                    ${interpretation}
+                </div>
+            </div>
+
+            <!-- 5. Sample Table (Conditional) -->
+            ${sampleSection}
+
+            <!-- 6. Disclaimer (Footer) -->
+            <div style="margin-top: 24px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.8rem; color: var(--text-muted);">
+                📌 <strong>診斷結論：</strong>
+                本模組僅提供結構與趨勢判讀，實際處置請參考下方「行動建議」。
+            </div>
+        </div>
+    `;
+
+    // Render
+    const reportContainer = document.getElementById("ai-return-insights-container");
+    if (!reportContainer) return;
+
     reportContainer.innerHTML = reportHtml;
-    applyReportStyles(reportContainer);
 }
 
 function applyReportStyles(container: HTMLElement) {
@@ -366,9 +476,13 @@ function updateReturnRateInfo(canvas: HTMLCanvasElement, analysis: any, currentR
     }
 
     // 計算核心流失風險名單 (Unified)
-    // 計算核心流失風險名單 (Unified)
     const riskList = getCoreChurnRiskCustomers();
     const riskCount = riskList.length;
+
+
+
+    // [New] Calculate Risk Stats for embedding (Moved from old Churn Risk Summary)
+    const churnStats = calculateChurnRisks(dataStore.customers);
     
     infoDiv.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
@@ -379,16 +493,39 @@ function updateReturnRateInfo(canvas: HTMLCanvasElement, analysis: any, currentR
                 ${statusText}
             </div>
         </div>
-        <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px;">
+        <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 20px;">
             ${desc}
         </div>
+
+        <!-- Embedded Risk Stats (Clean Layout) -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-bottom: 10px;">
+             <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; display:flex; justify-content:space-between; align-items: center;">
+                <span>流失風險分佈</span>
+                <span style="font-size: 0.75rem; font-family: monospace; opacity: 0.6;">(未回診 > 90天)</span>
+             </div>
+             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <!-- High -->
+                <div style="display: flex; flex-direction: column; align-items: center; padding: 12px 8px; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; background: rgba(239, 68, 68, 0.05); transition: transform 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.1)'" onmouseout="this.style.background='rgba(239, 68, 68, 0.05)'">
+                    <div style="font-size: 1.4rem; font-weight: 700; color: #ef4444; line-height: 1; margin-bottom: 4px;">${churnStats.high}</div>
+                    <div style="font-size: 0.75rem; color: #fca5a5; opacity: 0.9;">高風險</div>
+                </div>
+                <!-- Medium -->
+                <div style="display: flex; flex-direction: column; align-items: center; padding: 12px 8px; border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; background: rgba(245, 158, 11, 0.05); transition: transform 0.2s;" onmouseover="this.style.background='rgba(245, 158, 11, 0.1)'" onmouseout="this.style.background='rgba(245, 158, 11, 0.05)'">
+                     <div style="font-size: 1.4rem; font-weight: 700; color: #f59e0b; line-height: 1; margin-bottom: 4px;">${churnStats.medium}</div>
+                     <div style="font-size: 0.75rem; color: #fcd34d; opacity: 0.9;">中風險</div>
+                </div>
+                <!-- Low -->
+                <div style="display: flex; flex-direction: column; align-items: center; padding: 12px 8px; border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; background: rgba(16, 185, 129, 0.05); transition: transform 0.2s;" onmouseover="this.style.background='rgba(16, 185, 129, 0.1)'" onmouseout="this.style.background='rgba(16, 185, 129, 0.05)'">
+                    <div style="font-size: 1.4rem; font-weight: 700; color: #10b981; line-height: 1; margin-bottom: 4px;">${churnStats.low}</div>
+                    <div style="font-size: 0.75rem; color: #6ee7b7; opacity: 0.9;">低風險</div>
+                </div>
+             </div>
+        </div>
+
         <div style="text-align: right; margin-top: 10px;">
             <a href="javascript:void(0)" id="btn-view-dormant" style="font-size: 0.8rem; color: var(--accent-color); text-decoration: none; border-bottom: 1px dashed var(--accent-color);">
-                ↓ 查看流失風險顧客 (${riskCount} 人)
+                ↓ 查看詳細流失名單 (${riskCount} 人)
             </a>
-            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; opacity: 0.8;">
-                * 本分析已排除單次消費之過路客，專注於具回診潛力之核心客群
-            </div>
         </div>
     `;
 
@@ -1433,27 +1570,18 @@ function openRFMBubbleModal(dataList: any[]) {
              processList = [...top, ...rest]; 
         }
 
-        // Map to Chart Data
-        const bubbleData = processList.map(v => {
-            // Jitter for visibility: Reduced X jitter to ±0.08 as requested
+        // Map to Chart Data (Base)
+        const baseData = processList.map(v => {
+            // Jitter for visibility
             const jitterX = (Math.random() - 0.5) * 0.16; 
             const jitterY = (Math.random() - 0.5) * (v.m * 0.05);
             
-            // Base Colors (RGB)
+            // Base Color Components
             let r=148, g=163, b=184; // Lost (Slate)
-            let borderHex = 'rgba(148, 163, 184, 0.8)';
 
-            if (v.segment === 'vip') { r=96; g=165; b=250; borderHex='#60a5fa'; }
-            else if (v.segment === 'potential') { r=52; g=211; b=153; borderHex='#34d399'; }
-            else if (v.segment === 'sleepy') { r=251; g=191; b=36; borderHex='#fbbf24'; }
-            
-            // Logic: F<=2 -> Opacity 0.25 (Low Freq De-emphasis), else 0.7
-            const isLowFreq = v.f <= 2;
-            const screenOpacity = isLowFreq ? 0.25 : 0.7;
-            const hoverOpacity = 0.9; // Highlight on hover
-            
-            const bgColor = `rgba(${r}, ${g}, ${b}, ${screenOpacity})`;
-            const hoverColor = `rgba(${r}, ${g}, ${b}, ${hoverOpacity})`;
+            if (v.segment === 'vip') { r=96; g=165; b=250; }
+            else if (v.segment === 'potential') { r=52; g=211; b=153; }
+            else if (v.segment === 'sleepy') { r=251; g=191; b=36; }
             
             const rawSize = 4 + Math.min(24, (v.days / 180) * 18);
             const size = rawSize * mobileScale;
@@ -1461,14 +1589,42 @@ function openRFMBubbleModal(dataList: any[]) {
             return {
                 x: Math.max(0, v.f + jitterX),
                 y: Math.max(0, v.m + jitterY),
-                r: size,
-                _raw: v,
-                backgroundColor: bgColor,
-                hoverBackgroundColor: hoverColor,
-                borderColor: v.isRisk ? '#ef4444' : borderHex,
-                borderWidth: v.isRisk ? 2 : 1
+                baseSize: size,
+                rgb: {r, g, b},
+                displayId: v.id,
+                segment: v.segment,
+                realF: v.f,
+                realM: v.m,
+                days: v.days
             };
         });
+
+        // Dataset 1: Outer Halo (Large, Very Transparent, No Stroke)
+        const haloData = baseData.map(d => ({
+            x: d.x, y: d.y,
+            r: d.baseSize * 1.15, // Halo Radius
+            backgroundColor: `rgba(${d.rgb.r}, ${d.rgb.g}, ${d.rgb.b}, 0.05)`, // Alpha 0.05 (Very transparent)
+            borderColor: 'transparent',
+            borderWidth: 0,
+            hoverBackgroundColor: `rgba(${d.rgb.r}, ${d.rgb.g}, ${d.rgb.b}, 0.1)`,
+            hoverBorderWidth: 0,
+            // Meta
+            displayId: d.displayId, segment: d.segment, realF: d.realF, realM: d.realM, days: d.days
+        }));
+
+        // Dataset 2: Inner Core (Small, More Solid -> "Darker", No Stroke)
+        const coreData = baseData.map(d => ({
+            x: d.x, y: d.y,
+            r: d.baseSize * 0.60, // Core Radius
+            backgroundColor: `rgba(${d.rgb.r}, ${d.rgb.g}, ${d.rgb.b}, 0.6)`, // Alpha 0.6 (More solid/darker)
+            borderColor: 'transparent', // No Stroke
+            borderWidth: 0,
+            hoverBackgroundColor: `rgba(${d.rgb.r}, ${d.rgb.g}, ${d.rgb.b}, 0.9)`,
+            hoverBorderColor: '#fff',
+            hoverBorderWidth: 1,
+            // Meta
+            displayId: d.displayId, segment: d.segment, realF: d.realF, realM: d.realM, days: d.days
+        }));
 
         const scalesOptions = {
             x: {
@@ -1477,7 +1633,7 @@ function openRFMBubbleModal(dataList: any[]) {
                 ticks: { color:'#e2e8f0', font: { size: isMobile ? 10 : 12, weight: 'bold' } },
                 border: { color: '#64748b' },
                 min: 0,
-                max: maxF, // [Fix] Fixed X Axis Range
+                max: maxF, 
             },
             y: {
                 title: { display: true, text: '消費金額 M (NT$)', color: '#cbd5e1', font: { size: isMobile ? 12 : 14, weight: 'bold' } },
@@ -1489,7 +1645,7 @@ function openRFMBubbleModal(dataList: any[]) {
                 },
                 border: { color: '#64748b' },
                 min: 0,
-                max: maxM, // [Fix] Fixed Y Axis Range
+                max: maxM, 
             }
         };
 
@@ -1503,17 +1659,28 @@ function openRFMBubbleModal(dataList: any[]) {
                  createOrUpdateChart("rfmModalCanvas", ctx, {
                     type: 'bubble',
                     data: {
-                        datasets: [{
-                            label: '客戶',
-                            data: bubbleData,
-                            backgroundColor: (ctx: any) => ctx.raw?.backgroundColor,
-                            borderColor: (ctx: any) => ctx.raw?.borderColor,
-                            borderWidth: (ctx: any) => ctx.raw?.borderWidth,
-                            hoverRadius: isMobile ? 6 : 10, 
-                            hitRadius: isMobile ? 14 : 6, 
-                            hoverBorderWidth: isMobile ? 2 : 3,
-                            hoverBorderColor: '#fff'
-                        }]
+                        datasets: [
+                            {
+                                label: 'Halo',
+                                data: haloData,
+                                backgroundColor: (ctx: any) => ctx.raw?.backgroundColor,
+                                borderColor: 'transparent',
+                                borderWidth: 0,
+                                hoverRadius: 0, // Disable hover on halo to avoid confusion? Or sync? Let's just let it be.
+                                hitRadius: 0 // Make Halo unclickable to favor Core?
+                            },
+                            {
+                                label: 'Core',
+                                data: coreData,
+                                backgroundColor: (ctx: any) => ctx.raw?.backgroundColor,
+                                borderColor: (ctx: any) => ctx.raw?.borderColor,
+                                borderWidth: (ctx: any) => ctx.raw?.borderWidth,
+                                hoverRadius: isMobile ? 6 : 10, 
+                                hitRadius: isMobile ? 14 : 10, 
+                                hoverBorderWidth: isMobile ? 2 : 2,
+                                hoverBorderColor: '#fff'
+                            }
+                        ]
                     },
                     plugins: [{
                         id: 'quadrants-bg',

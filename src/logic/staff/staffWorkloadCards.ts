@@ -314,7 +314,7 @@ export function calculateWorkloadData(
       usedHours: Math.round(usedHours * 10) / 10,
       totalHours: capacityHours,
       percentage: Math.min(100, percentage),
-      taskCount: taskCount,
+      taskCount: Math.ceil(taskCount),
       status: getLoadStatus(percentage),
       delta: delta // New Field
     });

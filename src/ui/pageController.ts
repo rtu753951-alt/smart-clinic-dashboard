@@ -7,6 +7,7 @@ import { formatCompactNT } from "../utils/currencyFormatter.js";
 import { parseCSVLine } from "../data/csvLoader.js";
 import { SandboxControlPanel } from "../features/sandbox/SandboxControlPanel.js";
 import { sandboxStore } from "../features/sandbox/sandboxStore.js";
+import { checkRevenueMilestones } from "../logic/revenueAnalysis.js";
 
 
 
@@ -365,34 +366,9 @@ function bindTopBarActions() {
                 const riskList = getCoreChurnRiskCustomers(); // Imported
                 const riskCount = riskList.length;
 
-                // 3. Calculate Revenue
-                let dailyRevenue = 0;
-                const targetDate = '2026-01-01';
-                
-                dataStore.appointments.forEach(app => {
-                    if (app.date === targetDate && app.status === 'completed') {
-                        const raw = (app as any).price || (app as any).amount || 0;
-                        const amt = typeof raw === 'number' ? raw : parseFloat(raw);
-                        dailyRevenue += amt;
-                    }
-                });
-                
-                let displayRevenue = 0;
-                let displayLabel = "1 月 1 日";
-                
-                if (dailyRevenue > 0) {
-                    displayRevenue = dailyRevenue;
-                } else {
-                    displayLabel = "本月 (2026-01)";
-                    dataStore.appointments.forEach(app => {
-                        if (app.date.startsWith('2026-01') && app.status === 'completed') {
-                             const raw = (app as any).price || (app as any).amount || 0;
-                             displayRevenue += (typeof raw === 'number' ? raw : parseFloat(raw));
-                        }
-                    });
-                }
-                
-                const revenueStr = formatCompactNT(displayRevenue);
+                // 3. Calculate Revenue & Check Milestones
+                const targetDate = '2026-01-01'; // Simulation Today
+                const milestone = checkRevenueMilestones(targetDate, dataStore.appointments);
                 
                 // 4. Marketing Campaigns Logic
                 const campaigns = [
@@ -458,18 +434,20 @@ function bindTopBarActions() {
                      `;
                 }
                 
-                // Item B: Revenue
-                html += `
-                    <li class="notification-item">
-                        <div class="notif-icon-wrapper success">
-                            <i class="fa-solid fa-trophy"></i>
-                        </div>
-                        <div class="notif-content-wrapper">
-                            <div class="notif-title">🎉 營運捷報：${displayLabel} 即時營收已突破 ${revenueStr}</div>
-                            <div class="notif-desc">單日業績表現優異，目標達成率 100+%。</div>
-                        </div>
-                    </li>
-                `;
+                // Item B: Revenue (Dynamic Brief - Conditional)
+                if (milestone && milestone.triggered) {
+                    html += `
+                        <li class="notification-item">
+                            <div class="notif-icon-wrapper success" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <div class="notif-content-wrapper">
+                                <div class="notif-title">${milestone.title}</div>
+                                <div class="notif-desc">${milestone.description}</div>
+                            </div>
+                        </li>
+                    `;
+                }
                 
                 // SECTION 1.5: LAUNCH COVER REMINDERS (整合啟動頁面的提醒)
                 const launchReminders = (window as any).launchCoverReminders;

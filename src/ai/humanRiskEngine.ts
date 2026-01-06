@@ -68,20 +68,21 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
   const { appointments, services, staff, targetMonth } = input;
   const alerts: HumanRiskAlert[] = [];
 
-  // 篩選本月資料（completed + 未來已預約）
+  // Filter Target Month Data
   const monthData = appointments.filter((a) => {
     if (!a.date.startsWith(targetMonth)) return false;
     return a.status === "completed" || a.status === "scheduled" || a.status === "confirmed";
   });
 
   if (monthData.length === 0) {
-    return {
-      summary: ["✅ 本月人力負載穩定"],
-      details: [],
-    };
+    return { summary: ["✅ 本月人力負載穩定"], details: [] };
   }
 
-  // Doctor involvement ratio model with consultation role split
+  // 1. Calculate Buffer Analysis for All
+  const bufferStats = calculateBufferAnalysis(monthData);
+  const bufferMap = new Map(bufferStats.map(s => [s.role.split(' ')[0], s])); // Name is unique key? staffBufferAnalysis returns "Name (Role)" or just check name matching
+
+  // 2. Calculate Workload (Utilization Rate) for All
   const INVOLVEMENT_RATIOS: Record<string, Record<string, number>> = {
     inject: { doctor: 0.35, therapist: 0, nurse: 0.6, consultant: 0 },
     rf: { doctor: 0.35, therapist: 0, nurse: 0.4, consultant: 0 },
@@ -90,7 +91,6 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
     consult: { doctor: 0.30, therapist: 0, nurse: 0, consultant: 0.70 }
   };
 
-  // 按個人統計工作負載
   const staffWorkload: Record<string, {
     staff_name: string;
     staff_type: string;
@@ -102,21 +102,18 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
   monthData.forEach((appt) => {
     const staffName = appt.doctor_name || appt.staff_name;
     if (!staffName) return;
-
     const staffInfo = staff.find((s) => s.staff_name === staffName);
     if (!staffInfo) return;
 
-    // 查詢療程時間（僅用於計算工時，不涉及療程邏輯）
     const service = services.find((s) => s.service_name === appt.service_item);
-    const duration = service ? service.duration : 30;
-    const buffer = service ? service.buffer_time : 10;
+    // Safe duration/buffer
+    const duration = service ? Number(service.duration) : 30;
+    const buffer = service ? Number(service.buffer_time) : 10;
     const totalMinutes = duration + buffer;
 
-    // Get service category to determine involvement ratios
     const category = service?.category || 'inject';
     const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['inject'];
-
-    // Sandbox Growth
+    
     let growth = 1;
     if (input.sandboxState && input.sandboxState.isActive) {
         growth = 1 + (input.sandboxState.serviceGrowth[category as keyof typeof input.sandboxState.serviceGrowth] || 0);
@@ -131,10 +128,8 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
         appointmentCount: 0,
       };
     }
-
     staffWorkload[staffName].workDays.add(appt.date);
     
-    // Apply involvement ratio based on staff type and service category
     const staffType = staffInfo.staff_type;
     const involvementRatio = ratios[staffType] || 0;
     
@@ -144,132 +139,143 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
     }
   });
 
-  console.log("👤 個人工作負載分析:", Object.values(staffWorkload).map(s => ({
-    name: s.staff_name,
-    type: s.staff_type,
-    days: s.workDays.size,
-    hours: Math.round(s.totalMinutes / 60 * 10) / 10,
-    count: s.appointmentCount,
-  })));
+  // 3. Strict Categorization
+  Object.values(staffWorkload).forEach(s => {
+      // Find matching buffer stats (Buffer logic uses "Name (Role)" format or just Name logic? 
+      // staffBufferAnalysis: returns `role: "${name} (${roleType})"`
+      // We need to match by name.
+      const bStat = bufferStats.find(b => b.role.startsWith(s.staff_name)); // Simple prefix match
+      
+      // Calculate Utilization Metrics
+      const dailyHours = s.staff_type === 'doctor' ? 6 : 8;
+      const maxCapacityHours = s.workDays.size * dailyHours;
+      const actualHours = s.totalMinutes / 60;
+      const loadRate = maxCapacityHours > 0 ? Math.round((actualHours / maxCapacityHours) * 100) : 0;
+      
+      // Calculate Fatigue Metrics
+      const compressionRate = bStat ? bStat.compressionRate : 0;
+      const avgInterval = bStat ? bStat.avgGapMinutes : 15;
+      const highDensityHours = bStat ? bStat.highDensityHours : 0;
+      const totalGaps = bStat ? bStat.totalGaps : 0;
 
-  // 計算每個人的負載率
-  Object.values(staffWorkload).forEach((staffData) => {
-    const workDays = staffData.workDays.size;
-    const totalHours = staffData.totalMinutes / 60;
-    
-    // Doctor available medical hours: 6 hours/day (conservative estimate)
-    // Other roles: 8 hours/day
-    const dailyHours = staffData.staff_type === 'doctor' ? 6 : 8;
-    const maxCapacity = workDays * dailyHours;
-    const loadRate = Math.round((totalHours / maxCapacity) * 100);
+      // Text Logic for Interval Deviation (Role-based SOP)
+      const SOP_STANDARDS: Record<string, number> = {
+          doctor: 10,
+          consultant: 12,
+          nurse: 8,
+          therapist: 10,
+          other: 10
+      };
+      
+      const roleSop = SOP_STANDARDS[s.staff_type] || 10;
+      const diff = avgInterval - roleSop;
+      const absDiff = Math.round(Math.abs(diff));
+      
+      let diffText = '';
+      if (Math.abs(diff) < 1) { // Treat small decimal diffs as "Exact" or if round is 0
+          diffText = `符合 SOP 標準`;
+      } else if (diff > 0) {
+          diffText = `高於 SOP 標準 ${absDiff} 分鐘（有緩衝）`;
+      } else {
+          diffText = `低於 SOP 標準 ${absDiff} 分鐘（密集）`;
+      }
 
-    console.log(`  ${staffData.staff_name} (${staffData.staff_type}):`, {
-      workDays,
-      totalHours: Math.round(totalHours * 10) / 10,
-      maxCapacity,
-      loadRate: `${loadRate}%`,
-    });
+      // Sample Size Warning
+      const sampleSizeWarning = totalGaps < 10 ? '（樣本偏少，僅供參考）' : '';
+      const reasonText = `高密度連續時段：${highDensityHours.toFixed(1)} 小時｜平均服務間隔 ${diffText}${sampleSizeWarning}`;
 
-    const metadata = {
-      loadRate,
-      workDays,
-      totalHours: Math.round(totalHours * 10) / 10,
-      maxCapacity,
-      appointmentCount: staffData.appointmentCount,
-    };
+      const metadata: any = {
+          loadRate, compressionRate, 
+          workDays: s.workDays.size, 
+          actualHours: Math.round(actualHours*10)/10, 
+          maxCapacityHours,
+          appointmentCount: Math.round(s.appointmentCount),
+          avgInterval,
+          highDensityHours
+      };
 
-    // 🔴 高風險：≥ 90%
-    if (loadRate >= 90) {
-      alerts.push({
-        type: "human",
-        level: "critical",
-        icon: "🔴",
-        staffName: staffData.staff_name,
-        staffType: staffData.staff_type,
-        summary: `${staffData.staff_name}（${staffData.staff_type}）人力負載過高`,
-        detail: `${staffData.staff_name} 本月負載率達 ${loadRate}%，已接近或超過可承受上限`,
-        reason: `工作天數：${workDays} 天｜執行療程：${staffData.appointmentCount} 次｜實際工時：${Math.round(totalHours)} / ${maxCapacity} 小時`,
-        suggestion: "建議調整未來兩週排班，分流部分高工時療程至其他人員，或增加休息時段",
-        metadata,
-      });
-    }
-    // 🟠 中風險：70-89%
-    else if (loadRate >= 70) {
-      alerts.push({
-        type: "human",
-        level: "warning",
-        icon: "🟠",
-        staffName: staffData.staff_name,
-        staffType: staffData.staff_type,
-        summary: `${staffData.staff_name}（${staffData.staff_type}）人力負載偏高`,
-        detail: `${staffData.staff_name} 本月負載率為 ${loadRate}%，接近高檔`,
-        reason: `工作天數：${workDays} 天｜執行療程：${staffData.appointmentCount} 次｜實際工時：${Math.round(totalHours)} / ${maxCapacity} 小時`,
-        suggestion: "建議持續觀察，必要時調整排班或引導部分療程至其他時段",
-        metadata,
-      });
-    }
-    // 🔵 低利用：< 30%
-    else if (loadRate < 30 && workDays > 0) {
-      alerts.push({
-        type: "human",
-        level: "low",
-        icon: "🔵",
-        staffName: staffData.staff_name,
-        staffType: staffData.staff_type,
-        summary: `${staffData.staff_name}（${staffData.staff_type}）人力利用率偏低`,
-        detail: `${staffData.staff_name} 本月負載率僅 ${loadRate}%，明顯偏低`,
-        reason: `工作天數：${workDays} 天｜執行療程：${staffData.appointmentCount} 次｜實際工時：${Math.round(totalHours)} / ${maxCapacity} 小時`,
-        suggestion: "建議評估是否調整排班、增加導流，或安排教育訓練與內部優化",
-        metadata,
-      });
-    }
+      let isFatigue = false;
+      const isSim = input.sandboxState && input.sandboxState.isActive;
+
+      // === Priority 1: Fatigue Risk (🔥) ===
+      if (compressionRate >= 70) {
+          // High Risk Overload -> Must Show
+          isFatigue = true;
+          alerts.push({
+              type: "human", level: "critical", icon: "🔥",
+              staffName: s.staff_name, staffType: s.staff_type,
+              summary: `${s.staff_name} 高風險過勞 (Fatigue)`,
+              detail: `壓縮率 ${compressionRate}%｜已達 Burnout 高風險區`,
+              reason: reasonText,
+              suggestion: "立即強制介入休息，或下修該員工業績目標",
+              metadata
+          });
+      } else if (compressionRate >= 50) {
+          // Obvious Fatigue -> Show
+          isFatigue = true;
+          alerts.push({
+              type: "human", level: "warning", icon: "🔥",
+              staffName: s.staff_name, staffType: s.staff_type,
+              summary: `${s.staff_name} 明顯疲勞 (Fatigue)`,
+              detail: `壓縮率 ${compressionRate}%｜疲勞已可感知`,
+              reason: reasonText,
+              suggestion: "建議安排行政時段作為緩衝",
+              metadata
+          });
+      } else if (compressionRate >= 30) {
+          // Hidden Fatigue (Conditional)
+          const trigger1 = avgInterval < 15;
+          const trigger2 = highDensityHours >= 2;
+          const trigger3 = isSim; 
+          
+          if (trigger1 || trigger2 || trigger3) {
+             isFatigue = true;
+             alerts.push({
+                  type: "human", level: "warning", icon: "🔥",
+                  staffName: s.staff_name, staffType: s.staff_type,
+                  summary: `${s.staff_name} 隱性疲勞風險 (Hidden)`,
+                  detail: `壓縮率 ${compressionRate}%｜符合二階觸發條件`,
+                  reason: `觸發：${trigger1 ? '平均間隔過短' : trigger2 ? '連續高密度工時' : '模擬壓力測試'}`,
+                  suggestion: "雖未達過勞門檻，但建議預防性調整排班",
+                  metadata
+             }); 
+          }
+      }
+
+      // === Priority 2: Utilization Risk (🧊) === (Exclusive)
+      if (!isFatigue) {
+          if (loadRate < 40) {
+             alerts.push({
+                  type: "human", level: "low", icon: "🧊",
+                  staffName: s.staff_name, staffType: s.staff_type,
+                  summary: `${s.staff_name} 人力利用率偏低`,
+                  detail: `負載率 ${loadRate}%｜明顯偏低`,
+                  reason: `本月實際工時 ${Math.round(actualHours)} / ${maxCapacityHours} 小時｜執行案件數 ${Math.round(s.appointmentCount)}`,
+                  suggestion: "建議增加導流或安排教育訓練",
+                  metadata
+             });
+          } else if (loadRate < 70) {
+             alerts.push({
+                  type: "human", level: "warning", icon: "🧊",
+                  staffName: s.staff_name, staffType: s.staff_type,
+                  summary: `${s.staff_name} 人力利用率偏低 (觀察)`,
+                  detail: `負載率 ${loadRate}%｜位於觀察區間`,
+                  reason: `本月實際工時 ${Math.round(actualHours)} / ${maxCapacityHours} 小時`,
+                  suggestion: "視管理需求調整排班密度",
+                  metadata
+             });
+          }
+      }
   });
 
-  // Calculate Buffer Compression Risks using shared logic
-  const bufferStats = calculateBufferAnalysis(monthData); // Use filtered month data
-
-  bufferStats.forEach(stat => {
-      // 🔴 結構性崩潰風險：壓縮率 > 70%
-      if (stat.compressionRate > 70) {
-          alerts.push({
-              type: "human",
-              level: "critical",
-              icon: "☣️", 
-              staffName: stat.role, 
-              staffType: "mixed",
-              summary: `${stat.role} 結構性崩潰風險`,
-              detail: `模擬顯示服務間隔壓縮率達 ${stat.compressionRate}%（>70%），極度危險`,
-              reason: `平均間隔僅 ${stat.avgGapMinutes} 分鐘，遠低於標準。身心耗竭(Burnout)風險極高。`,
-              suggestion: "立即下修該員工業績目標，或增派 1-2 名助理協助轉場與術後衛教。",
-              metadata: { loadRate: stat.compressionRate } as any
-          });
-      }
-      // 🟠 隱性疲勞風險：壓縮率 > 30%
-      else if (stat.compressionRate > 30) {
-          alerts.push({
-              type: "human",
-              level: "warning",
-              icon: "⏱️",
-              staffName: stat.role,
-              staffType: "mixed",
-              summary: `${stat.role} 隱性疲勞風險`,
-              detail: `服務間隔壓縮率 ${stat.compressionRate}%，高頻切換易導致認知疲勞`,
-              reason: `平均間隔 ${stat.avgGapMinutes} 分鐘。雖工時可能未滿，但心理壓力強度大。`,
-              suggestion: "建議在連續排程中強制插入 10 分鐘緩衝，或安排行政時段。",
-              metadata: { loadRate: stat.compressionRate } as any
-          });
-      }
-  });
-
-  // 按風險等級排序：critical > warning > low
+  // Sort: Critical > Warning > Low
   alerts.sort((a, b) => {
     const order = { critical: 0, warning: 1, normal: 2, low: 3 };
     return order[a.level] - order[b.level];
   });
 
-  // 生成摘要
+  // Generate Summary
   const summary = generateHumanSummary(alerts);
-
   return { summary, details: alerts };
 }
 
@@ -277,24 +283,15 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
 
 function generateHumanSummary(alerts: HumanRiskAlert[]): string[] {
   if (alerts.length === 0) {
-    return ["✅ 本月人力負載穩定"];
+    return ["✅ 本月人力配置健康，無顯著風險"];
   }
 
-  const criticalCount = alerts.filter((a) => a.level === "critical").length;
-  const warningCount = alerts.filter((a) => a.level === "warning").length;
-  const lowCount = alerts.filter((a) => a.level === "low").length;
-
+  const fatigueCount = alerts.filter(a => a.icon === "🔥").length;
+  const utilCount = alerts.filter(a => a.icon === "🧊").length;
+  
   const summary: string[] = [];
+  if (fatigueCount > 0) summary.push(`🔥 ${fatigueCount} 位與人員存在疲勞/隱性疲勞風險`);
+  if (utilCount > 0) summary.push(`🧊 ${utilCount} 位人員人力利用率有優化空間`);
 
-  if (criticalCount > 0) {
-    summary.push(`🔴 ${criticalCount} 位人員本月負載超過 90%，存在過載風險`);
-  }
-  if (warningCount > 0) {
-    summary.push(`🟠 ${warningCount} 位人員本月負載偏高（70-89%），需持續觀察`);
-  }
-  if (lowCount > 0) {
-    summary.push(`🔵 ${lowCount} 位人員利用率偏低，可調整導流策略`);
-  }
-
-  return summary.slice(0, 3);
+  return summary;
 }

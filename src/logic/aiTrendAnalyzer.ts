@@ -1,22 +1,34 @@
 /**
  * AI 趨勢摘要模組
  * 
- * 提供專業的營運分析,分為簡要摘要與詳細分析兩層
+ * 提供專業的營運分析,分為四個維度：
+ * 1. 近期動能 (Recent Momentum)
+ * 2. 結構變化 (Structural Changes)
+ * 3. 瓶頸與承載 (Bottlenecks)
+ * 4. 策略建議 (Strategy)
  */
 
 import { AppointmentRecord } from "../data/schema.js";
+import { calcRoomAndEquipmentUsage } from "./kpiEngine.js";
 
 export interface AITrendReport {
-  summary: string[];           // 簡要摘要 (3~5行)
+  summary: string[];           // 簡要摘要 (保留給卡片顯示)
   detail: {
-    bookingTrend: string[];    // 預約趨勢分析
-    serviceTrend: string[];    // 熱門療程變化
-    staffTrend: string[];      // 醫師/人員變化
-    aiInsight: string[];       // AI 解讀
+    recentMomentum: {
+        stats: string[];       // 數據回顧
+        conclusion: string;    // 結論用詞 (略為放緩/持平/回升)
+    };
+    structuralChanges: {
+        highlights: string[];  // 變化亮點
+        implication: string;   // 營收/人力含意
+    };
+    bottlenecks: {
+        thresholds: string[];  // 接近閾值的角色/設備
+        congestedSlots: string[]; // 易塞車時段
+    };
+    strategy: string[];        // 策略建議 ("因為...所以...")
   };
 }
-
-import { calcRoomAndEquipmentUsage } from "./kpiEngine.js";
 
 /**
  * 生成 AI 趨勢分析報告
@@ -24,399 +36,289 @@ import { calcRoomAndEquipmentUsage } from "./kpiEngine.js";
 export function generateAITrendReport(
   appointments: AppointmentRecord[],
   staffList: any[] = [],
-  services: any[] = [] // Added services for equipment analysis
+  services: any[] = []
 ): AITrendReport {
   
   // 取得目標月份
   const targetMonth = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
   const today = new Date();
-  today.setHours(23, 59, 59, 999);
   
-  // 計算前一個月
-  const [year, month] = targetMonth.split('-').map(Number);
-  const prevMonth = month === 1 
-    ? `${year - 1}-12` 
-    : `${year}-${String(month - 1).padStart(2, '0')}`;
+  // 1. 近期動能 (30天 vs 前30天)
+  // 使用 "今天" 往前推 30 天作為基準，而非僅限於當月，以反映最新動能
+  const momentum = generateRecentMomentum(appointments, today);
   
-  // 過濾本月 completed 預約 (不含未來)
-  const currentMonthData = appointments.filter(apt => {
-    if (!apt.date || apt.status !== 'completed') return false;
-    const aptDate = new Date(apt.date);
-    const aptMonth = apt.date.slice(0, 7);
-    return aptMonth === targetMonth && aptDate <= today;
-  });
+  // 2. 結構變化 (本月 vs 上月)
+  const structure = generateStructuralChanges(appointments, targetMonth, services);
   
-  // 過濾上月 completed 預約
-  const prevMonthData = appointments.filter(apt => {
-    if (!apt.date || apt.status !== 'completed') return false;
-    return apt.date.slice(0, 7) === prevMonth;
-  });
-  
-  // === 1. 預約趨勢分析 ===
-  const currentTotal = currentMonthData.length;
-  const prevTotal = prevMonthData.length;
-  const diff = currentTotal - prevTotal;
-  const diffPercent = prevTotal === 0 ? 0 : Math.round((diff / prevTotal) * 100);
-  
-  // === 2. 療程統計 ===
-  const currentServices = countServices(currentMonthData);
-  const prevServices = countServices(prevMonthData);
-  const serviceChanges = compareServices(currentServices, prevServices);
-  
-  // === 3. 醫師統計 ===
-  const doctorSet = new Set(staffList.filter(s => s.staff_type === 'doctor').map(s => s.staff_name?.trim()));
-  const currentDoctors = countDoctors(currentMonthData, doctorSet);
-  const prevDoctors = countDoctors(prevMonthData, doctorSet);
-  const doctorChanges = compareDoctors(currentDoctors, prevDoctors);
-  
-  // === 4. 進階風險監測 (Insight Engine) ===
-  
-  // A. 設備產能瓶頸 (Equipment Bottleneck)
-  const { equipmentUsage } = calcRoomAndEquipmentUsage(currentMonthData, services);
-  const highLoadEquipment = equipmentUsage.filter(e => e.usageRate >= 90);
-  
-  // B. 人力錯置 (Staff Misallocation)
-  // Logic: High Doctor Load (>600 or relative high) vs Low Consultant Utilization (<20%)
-  const maxDoctorLoad = Math.max(...Object.values(currentDoctors), 0);
-  
-  // C. 諮詢師利用率估算
-  const consultants = staffList.filter(s => s.staff_type === 'consultant');
-  const consultantCount = consultants.length || 1; 
-  // Simple estimation: Count apps with consultant_name or staff_role='consultant'
-  const consultantApps = currentMonthData.filter(a => a.consultant_name || a.staff_role === 'consultant').length;
-  // Avg apps per consultant (Rough proxy for utilization if time not avail)
-  // But prompt says "12%". Let's try to calc time-based utilizing calcRoomAndEquipment logic roughly?
-  // Let's stick to a simpler proxy or hardcode the logic based on values if we can't fully calc.
-  // Actually, let's calc time based.
-  const serviceMap = new Map();
-  services.forEach(s => serviceMap.set(s.service_name, s.duration || 30));
-  
-  let totalConsultantMinutes = 0;
-  currentMonthData.forEach(a => {
-      if (a.consultant_name || a.staff_role === 'consultant') {
-         const dur = serviceMap.get(a.service_item) || 30;
-         totalConsultantMinutes += dur;
-      }
-  });
-  
-  // Capacity: Days * 540mins * N_Consultants
-  // Get days from kpiEngine logic (need to duplicate or assume 30 days for rough est or reuse calcRoom logic?)
-  // Let's assume 22 work days for a month standard? Or 26?
-  // Using 26 days * 540 = 14040 mins per person
-  const capacityPerPerson = 14040;
-  const totalCapacity = capacityPerPerson * consultantCount;
-  const consultantUtilRate = totalCapacity > 0 ? Math.round((totalConsultantMinutes / totalCapacity) * 100) : 0;
+  // 3. 瓶頸與承載 (本月現況)
+  const bottlenecks = generateBottlenecks(appointments, targetMonth, services, staffList);
 
-  // C. 結構性缺口 (Structural Gap) - Microdermabrasion
-  // Check if any staff has 'Microdermabrasion' in certified_services
-  // Assuming staffList has 'certified_services' field string
-  const hasMicroStaff = staffList.some(s => s.certified_services && s.certified_services.includes('Microdermabrasion'));
-  const hasMicroService = services.some(s => s.service_name === 'Microdermabrasion');
+  // 4. 策略建議 (綜合以上)
+  const strategy = generateStrategy(momentum, structure, bottlenecks);
 
-  // === 生成簡要摘要 ===
-  const summary = generateSummary(
-    currentTotal,
-    diff,
-    diffPercent,
-    serviceChanges,
-    doctorChanges
-  );
-  
-  // === 生成詳細分析 ===
-  const detail = {
-    bookingTrend: generateBookingTrend(currentTotal, prevTotal, diff, diffPercent),
-    serviceTrend: generateServiceTrend(serviceChanges, currentServices),
-    staffTrend: generateStaffTrend(doctorChanges, currentDoctors),
-    aiInsight: generateAIInsight(
-        diff, 
-        serviceChanges, 
-        doctorChanges,
-        // Pass new risk factors
-        highLoadEquipment,
-        maxDoctorLoad,
-        consultantUtilRate,
-        (hasMicroService && !hasMicroStaff)
-    )
+  // 簡要摘要 (保留給首頁卡片用，抽取各區精華)
+  const summary = [
+    `動能：${momentum.conclusion}`,
+    `焦點：${structure.highlights[0] || '無顯著變化'}`,
+    `瓶頸：${bottlenecks.congestedSlots[0] || '時段分佈平均'}`,
+  ];
+
+  return { 
+    summary, 
+    detail: {
+        recentMomentum: momentum,
+        structuralChanges: structure,
+        bottlenecks: bottlenecks,
+        strategy: strategy
+    }
   };
-  
-  return { summary, detail };
 }
 
-/**
- * 統計療程數量
- */
-function countServices(appointments: AppointmentRecord[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  
-  appointments.forEach(apt => {
-    if (!apt.service_item) return;
-    const services = apt.service_item.split(';');
-    services.forEach(s => {
-      const name = s.trim();
-      if (name) {
-        counts[name] = (counts[name] || 0) + 1;
-      }
+// =========================================================================
+// 1. 近期動能 (Recent Momentum)
+// =========================================================================
+function generateRecentMomentum(appointments: AppointmentRecord[], refDate: Date) {
+    // 定義區間：近 30 天 (Period 1) vs 前 30 天 (Period 2)
+    const p1End = new Date(refDate);
+    const p1Start = new Date(refDate); p1Start.setDate(p1Start.getDate() - 30);
+    
+    const p2End = new Date(p1Start);
+    const p2Start = new Date(p1Start); p2Start.setDate(p2Start.getDate() - 30);
+
+    const getStats = (start: Date, end: Date) => {
+        const apps = appointments.filter(a => {
+            const d = new Date(a.date);
+            return d >= start && d < end;
+        });
+        const total = apps.length;
+        if (total === 0) return { showRate: 0, cancelRate: 0, total: 0, completed: 0 };
+
+        const completed = apps.filter(a => a.status === 'completed').length;
+        const cancelled = apps.filter(a => a.status === 'cancelled').length;
+        
+        // 分母使用 total (含 cancelled) 或 adjusted based on logic? 
+        // 這裡簡單用 total for cancelRate, total-cancelled for showRate usually?
+        // Let's use standard:
+        // Show Rate = Completed / (Total - Cancelled)
+        // Cancel Rate = Cancelled / Total
+        const effective = total - cancelled;
+        const showRate = effective > 0 ? (completed / effective) : 0;
+        const cancelRate = cancelled / total;
+
+        return { showRate, cancelRate, total, completed };
+    };
+
+    const current = getStats(p1Start, p1End);
+    const prev = getStats(p2Start, p2End);
+
+    // 判斷結論
+    let conclusion = "持平";
+    // 邏輯：看完成數 (Completed Volume) 的變化
+    const volumeDiff = current.completed - prev.completed;
+    const volumeDiffPct = prev.completed > 0 ? volumeDiff / prev.completed : 0;
+
+    if (volumeDiffPct >= 0.1) conclusion = "回升";
+    else if (volumeDiffPct <= -0.1) conclusion = "略為放緩";
+    else conclusion = "持平";
+
+    // 數據展示文字
+    const stats: string[] = [];
+    
+    // 1. 到診率
+    const currShowPct = Math.round(current.showRate * 100);
+    const prevShowPct = Math.round(prev.showRate * 100);
+    const showDiff = currShowPct - prevShowPct;
+    stats.push(`近 30 天到診率 ${currShowPct}% (${showDiff >= 0 ? '+' : ''}${showDiff}%)`);
+
+    // 2. 取消率
+    const currCancelPct = Math.round(current.cancelRate * 100);
+    const prevCancelPct = Math.round(prev.cancelRate * 100);
+    const cancelDiff = currCancelPct - prevCancelPct;
+    const cancelIcon = cancelDiff > 0 ? '🔺' : (cancelDiff < 0 ? 'good' : '-'); // Cancel rate up is bad usually
+    // 若取消率上升 > 3% 標示
+    stats.push(`預約取消率 ${currCancelPct}% (${cancelDiff > 0 ? '+' : ''}${cancelDiff}%)`);
+    
+    // 3. 預約量 (Optional)
+    stats.push(`完成服務人次 ${current.completed} 人 (${volumeDiff >= 0 ? '+' : ''}${volumeDiff})`);
+
+    return { stats, conclusion };
+}
+
+// =========================================================================
+// 2. 結構變化 (Structural Changes)
+// =========================================================================
+function generateStructuralChanges(appointments: AppointmentRecord[], targetMonth: string, servicesList: any[]) {
+    // 取得本月與上月數據
+    const [year, month] = targetMonth.split('-').map(Number);
+    const prevMonth = month === 1 
+      ? `${year - 1}-12` 
+      : `${year}-${String(month - 1).padStart(2, '0')}`;
+
+    const getServiceCounts = (m: string) => {
+        const counts: Record<string, number> = {};
+        let total = 0;
+        appointments.filter(a => a.date.startsWith(m) && a.status === 'completed').forEach(a => {
+            if (a.service_item) {
+                a.service_item.split(';').forEach(s => {
+                    const name = s.trim();
+                    if (name) {
+                        counts[name] = (counts[name] || 0) + 1;
+                        total++;
+                    }
+                });
+            }
+        });
+        return { counts, total };
+    };
+
+    const curr = getServiceCounts(targetMonth);
+    const prev = getServiceCounts(prevMonth);
+
+    // 計算佔比變化
+    const stats: {name: string, diffPct: number, currentCount: number}[] = [];
+    const allServices = new Set([...Object.keys(curr.counts), ...Object.keys(prev.counts)]);
+
+    allServices.forEach(name => {
+        const cVal = curr.counts[name] || 0;
+        const pVal = prev.counts[name] || 0;
+            
+        // 佔比 (Share)
+        const cShare = curr.total > 0 ? cVal / curr.total : 0;
+        const pShare = prev.total > 0 ? pVal / prev.total : 0;
+        const diffShare = cShare - pShare; // 絕對百分比變化 (e.g. +5% share)
+
+        // 只關注有一定量的項目 (本月 > 3 或 上月 > 3)
+        if (cVal > 3 || pVal > 3) {
+            stats.push({ name, diffPct: diffShare, currentCount: cVal });
+        }
     });
-  });
-  
-  return counts;
-}
 
-/**
- * 統計醫師預約數
- */
-function countDoctors(
-  appointments: AppointmentRecord[],
-  doctorSet: Set<string>
-): Record<string, number> {
-  const counts: Record<string, number> = {};
-  
-  appointments.forEach(apt => {
-    const doc = apt.doctor_name?.trim();
-    if (doc && doctorSet.has(doc)) {
-      counts[doc] = (counts[doc] || 0) + 1;
-    }
-  });
-  
-  return counts;
-}
-
-/**
- * 比較療程變化
- */
-function compareServices(
-  current: Record<string, number>,
-  prev: Record<string, number>
-): Array<{name: string; current: number; prev: number; diff: number; diffPercent: number}> {
-  
-  const allServices = new Set([...Object.keys(current), ...Object.keys(prev)]);
-  const changes: Array<any> = [];
-  
-  allServices.forEach(name => {
-    const curr = current[name] || 0;
-    const prv = prev[name] || 0;
-    const diff = curr - prv;
-    const diffPercent = prv === 0 ? (curr > 0 ? 100 : 0) : Math.round((diff / prv) * 100);
+    // 排序：升幅最大 與 降幅最大
+    stats.sort((a, b) => b.diffPct - a.diffPct);
     
-    changes.push({ name, current: curr, prev: prv, diff, diffPercent });
-  });
-  
-  // 按當前數量排序
-  return changes.sort((a, b) => b.current - a.current);
-}
+    // 找出亮點
+    const highlights: string[] = [];
+    const rising = stats[0];
+    const falling = stats[stats.length - 1];
 
-/**
- * 比較醫師變化
- */
-function compareDoctors(
-  current: Record<string, number>,
-  prev: Record<string, number>
-): Array<{name: string; current: number; prev: number; diff: number; diffPercent: number}> {
-  
-  const allDoctors = new Set([...Object.keys(current), ...Object.keys(prev)]);
-  const changes: Array<any> = [];
-  
-  allDoctors.forEach(name => {
-    const curr = current[name] || 0;
-    const prv = prev[name] || 0;
-    const diff = curr - prv;
-    const diffPercent = prv === 0 ? (curr > 0 ? 100 : 0) : Math.round((diff / prv) * 100);
-    
-    // 只記錄有顯著變化的 (差異 >= 5 件或變化率 >= 20%)
-    if (Math.abs(diff) >= 5 || Math.abs(diffPercent) >= 20) {
-      changes.push({ name, current: curr, prev: prv, diff, diffPercent });
+    if (rising && rising.diffPct > 0.03) { // 佔比增加 3% 以上
+        highlights.push(`🔥 ${rising.name} 佔比顯著上升 (+${(rising.diffPct*100).toFixed(1)}%)`);
     }
-  });
-  
-  // 按變化幅度排序
-  return changes.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff));
+    if (falling && falling.diffPct < -0.03) {
+        highlights.push(`📉 ${falling.name} 需求佔比下滑 (${(falling.diffPct*100).toFixed(1)}%)`);
+    }
+    
+    if (highlights.length === 0) {
+        highlights.push("各項療程佔比分佈穩定，無顯著結構異動");
+    }
+
+    // 營收/人力含意
+    let implication = "目前服務結構穩定，有利於維持標準化作業流程。";
+    if (rising && rising.diffPct > 0.05) {
+        // Find service price/duration info? Assuming high impact if big shift
+        implication = `主力項目轉移至 ${rising.name}，建議預留相關時段與耗材庫存。`;
+    }
+
+    return { highlights, implication };
 }
 
-/**
- * 生成簡要摘要 (3~4行, 無數字/人名, 管理視角)
- */
-function generateSummary(
-  currentTotal: number,
-  diff: number,
-  diffPercent: number,
-  serviceChanges: any[],
-  doctorChanges: any[]
+// =========================================================================
+// 3. 瓶頸與承載 (Bottlenecks)
+// =========================================================================
+function generateBottlenecks(appointments: AppointmentRecord[], targetMonth: string, services: any[], staffList: any[]) {
+    const currentMonthApps = appointments.filter(a => a.date.startsWith(targetMonth));
+    
+    // A. 設備/空間接近閾值
+    const thresholds: string[] = [];
+    const { roomUsage, equipmentUsage } = calcRoomAndEquipmentUsage(currentMonthApps, services);
+    
+    // Check Rooms
+    roomUsage.forEach(r => {
+        if (r.usageRate >= 85) thresholds.push(`⚠️ ${r.room} 使用率 (${r.usageRate}%) 瀕臨滿載`);
+    });
+    // Check Equip
+    equipmentUsage.forEach(e => {
+        if (e.usageRate >= 85) thresholds.push(`⚠️ ${e.equipment} 負載 (${e.usageRate}%) 過高`);
+    });
+
+    // Check Staff (Logic simplified: simply high count of appointments per month? e.g. > 150)
+    const docCounts: Record<string, number> = {};
+    currentMonthApps.forEach(a => {
+        if(a.doctor_name) docCounts[a.doctor_name] = (docCounts[a.doctor_name] || 0) + 1;
+    });
+    Object.entries(docCounts).forEach(([doc, count]) => {
+        if(count > 150) thresholds.push(`👨‍⚕️ ${doc} 本月診次負荷偏重 (${count}診)`);
+    });
+
+    if (thresholds.length === 0) thresholds.push("✅ 目前無資源超過警示閾值");
+
+    // B. 易塞車時段 (Heatmap logic subset)
+    const congestedSlots: string[] = [];
+    const hourCounts = new Array(24).fill(0);
+    
+    currentMonthApps.forEach(a => {
+        if (a.time && a.status !== 'cancelled') {
+            const h = parseInt(a.time.split(':')[0], 10);
+            if (!isNaN(h)) hourCounts[h]++;
+        }
+    });
+
+    // Find peak hours
+    const maxVal = Math.max(...hourCounts);
+    const peaks = hourCounts.map((v, i) => ({h: i, v})).filter(item => item.v >= maxVal * 0.9 && item.v > 5); // Top 90% and >5 apps
+    
+    if (peaks.length > 0) {
+        const timeStr = peaks.map(p => `${p.h}:00`).join('、');
+        congestedSlots.push(`⏰ 晚間尖峰集中於 ${timeStr}，候診時間可能拉長`);
+    } else {
+        congestedSlots.push("✅ 各時段客流分佈平均，無明顯壅塞");
+    }
+
+    return { thresholds, congestedSlots };
+}
+
+// =========================================================================
+// 4. 策略建議 (Strategy)
+// =========================================================================
+function generateStrategy(
+    momentum: { conclusion: string, stats: string[] },
+    structure: { highlights: string[], implication: string },
+    bottlenecks: { thresholds: string[], congestedSlots: string[] }
 ): string[] {
-  
-  const summary: string[] = [];
-  
-  // 1. 整體營運方向
-  if (diffPercent >= 5) {
-    summary.push("📈 整體營運呈現穩健成長趨勢");
-  } else if (diffPercent <= -5) {
-    summary.push("📉 近期預約動能稍顯疲軟");
-  } else {
-    summary.push("⚖️ 營運狀況保持穩定持平");
-  }
-  
-  // 2. 療程需求趨勢
-  // Check if top service is growing
-  const topService = serviceChanges[0];
-  if (topService && topService.diff > 0) {
-    summary.push("🔥 主力療程市場需求持續升溫");
-  } else if (topService && topService.diff < 0) {
-    summary.push("⚠️ 核心項目熱度微幅衰退");
-  } else {
-    summary.push("📊 各項療程需求分佈平均");
-  }
-  
-  // 3. 資源/產能趨勢
-  // Check total doctor volume trend
-  const doctorGrowing = doctorChanges.some((d: { diff: number; }) => d.diff > 0);
-  if (diffPercent > 0 || doctorGrowing) {
-     summary.push("⚡ 醫療人力產能利用率提升");
-  } else {
-     summary.push("📉 醫師診次裝載率有待優化");
-  }
+    const strategies: string[] = [];
 
-  // 4. 總結/風險方向
-  if (diffPercent >= 10) {
-      summary.push("🚀 可評估擴大服務量能");
-  } else if (diffPercent <= -10) {
-      summary.push("🛡️ 建議強化舊客回訪機制");
-  } else {
-      summary.push("✅ 適合優化內部服務流程");
-  }
-  
-  return summary;
+    // Rule 1: Congestion -> Buffer
+    const isCongested = bottlenecks.congestedSlots.some(s => s.includes("尖峰") || s.includes("壅塞"));
+    if (isCongested) {
+        strategies.push("因為晚間尖峰集中 → 建議實施錯峰預約優惠或保留 15% 現場彈性緩衝 (Buffer)。");
+    }
+
+    // Rule 2: Equipment/Room Overload -> Maintenance/Scheduling
+    const isOverload = bottlenecks.thresholds.some(s => s.includes("負載") || s.includes("滿載"));
+    const overloadItem = bottlenecks.thresholds.find(s => s.includes("負載") || s.includes("滿載"));
+    if (isOverload) {
+        const target = overloadItem?.split(' ')[1] || "關鍵資源"; // Try to extract name
+        strategies.push(`因為 ${target} 接近承載上限 → 建議評估加開設備或嚴格管控該項目的連續預約。`);
+    }
+
+    // Rule 3: Momentum Slowing -> Recall
+    if (momentum.conclusion === "略為放緩") {
+        strategies.push("因為近期預約動能放緩 → 建議啟動舊客喚醒計畫 (Wake-up Call) 或針對流失客群發送關懷訊息。");
+    }
+
+    // Rule 4: Structural Shift -> Training
+    const rising = structure.highlights.find(h => h.includes("上升") || h.includes("增加"));
+    if (rising) {
+        // 提取療程名稱簡單版
+        const name = rising.split(' ')[1] || "熱門項目";
+        strategies.push(`因為 ${name} 需求顯著升溫 → 建議確認相關耗材庫存水位，並安排助理支援該療程前置作業。`);
+    }
+
+    // Default if few strategies
+    if (strategies.length < 2) {
+        strategies.push("因為營運與資源指標穩定 → 建議著重於優化現有SOP與提升顧客滿意度細節。");
+    }
+
+    return strategies.slice(0, 3); // Return max 3
 }
 
-/**
- * 生成預約趨勢詳細分析 (管理洞察版)
- */
-function generateBookingTrend(
-  current: number,
-  prev: number,
-  diff: number,
-  diffPercent: number
-): string[] {
-  
-  const trend: string[] = [];
-  
-  if (diffPercent >= 5) {
-    trend.push("根據歷史數據推估，未來30天內預期來客需求將呈現成長，");
-    trend.push("可能對現場服務量能產生壓力，");
-    trend.push("詳細時段波動請至「預約分析頁」。");
-  } else if (diffPercent <= -5) {
-    trend.push("根據歷史數據推估，未來30天內預期整體預約動能可能趨緩，");
-    trend.push("建議留意顧客回訪與流失狀況，");
-    trend.push("詳細數據請至「預約分析頁」。");
-  } else {
-    trend.push("目前來客與預約狀況維持穩定，");
-    trend.push("營運節奏與人力配置運作良好，");
-    trend.push("詳細數據請至「預約分析頁」。");
-  }
-  
-  return trend;
-}
-
-/**
- * 生成療程趨勢詳細分析 (管理洞察版)
- */
-function generateServiceTrend(
-  changes: any[],
-  currentServices: Record<string, number>
-): string[] {
-  
-  const trend: string[] = [];
-  const topChange = changes[0];
-
-  if (topChange && topChange.diff > 0) {
-    trend.push("主力療程的市場需求持續集中，");
-    trend.push("需注意相關耗材庫存與設備排程，");
-    trend.push("品項佔比請至「療程營收頁」。");
-  } else if (topChange && topChange.diff < 0) {
-    trend.push("部分核心項目熱度出現衰退跡象，");
-    trend.push("可能影響整體客單價與營收結構，");
-    trend.push("品項佔比請至「療程營收頁」。");
-  } else {
-    trend.push("各項療程需求分佈相對平均，");
-    trend.push("有利於診間與設備資源均衡利用，");
-    trend.push("品項佔比請至「療程營收頁」。");
-  }
-  
-  return trend;
-}
-
-/**
- * 生成醫師趨勢詳細分析 (管理洞察版)
- */
-function generateStaffTrend(
-  changes: any[],
-  currentDoctors: Record<string, number>
-): string[] {
-  
-  const trend: string[] = [];
-  const hasGrowing = changes.some((c: { diff: number; }) => c.diff > 0);
-  
-  if (hasGrowing) {
-    trend.push("部分醫師診次預約趨近滿載，");
-    trend.push("需留意特定時段人力是否分配不均，");
-    trend.push("個別負載請至「人力分析頁」。");
-  } else {
-    trend.push("醫療團隊預約分佈狀況穩健，");
-    trend.push("顯示目前的排班與派案機制適當，");
-    trend.push("個別負載請至「人力分析頁」。");
-  }
-  
-  return trend;
-}
-
-/**
- * 生成 AI 解讀 (管理洞察版)
- */
-function generateAIInsight(
-  totalDiff: number,
-  serviceChanges: any[],
-  doctorChanges: any[],
-  highLoadEquipment: any[] = [],
-  maxDoctorLoad: number = 0,
-  consultantUtilRate: number = 0,
-  structuralGap: boolean = false
-): string[] {
-  
-  const insights: string[] = [];
-
-  // 1. 產能瓶頸建議 (Capacity Bottleneck)
-  if (highLoadEquipment.length > 0) {
-      const names = highLoadEquipment.map(e => e.equipment).join('、');
-      insights.push(`⚠️ 核心設備 (${names}) 產能已滿載，建議評估增購設備或引導客戶至離峰時段。`);
-  }
-
-  // 2. 人力錯置提醒 (Staff Misallocation)
-  // Thresholds: Doctor Load > 600 (High) AND Consultant Util < 25% (Low)
-  // The prompt used 777 and 12%, specifically < 20%
-  if (maxDoctorLoad > 600 && consultantUtilRate < 20) {
-      insights.push(`⚖️ 偵測到人力分配不均，建議由諮詢師分擔更多術前衛教工作，以減緩醫師壓力。`);
-  }
-
-  // 3. 結構性缺口 (Structural Gap)
-  if (structuralGap || 
-      // Fallback: If logic calculation is tricky, force check if strict user requirement 
-      // logic is safe but let's ensure text appears if user specifically asked pending 'Microdermabrasion' scenario.
-      // Based on prompt, user implies it IS a case.
-      true 
-     ) {
-      // Logic check: only show if specifically detected or if we want to force it for the 'Microdermabrasion' scenario mentioned.
-      // User said: "Retain warning...".
-      // Be safe: if specific logic `structuralGap` is true OR if we want to ensure it appears for this specific task context.
-      // But adhering to 'Logic'.
-      if (structuralGap) {
-         insights.push(`🛠️ Microdermabrasion 目前無可執行人力，建議管理層安排人員參與該項目的技術培訓。`);
-      }
-  }
-  
-  // 4. 綜合總結 (Cross-domain insight)
-  if (totalDiff > 0) {
-    insights.push("數據顯示整體營運規模正處於擴張期，建議密切監控資源配置的適應性。");
-  } else {
-    insights.push("數據顯示目前營運與資源配置處於穩定期，建議可進行內部流程優化與品質提升。");
-  }
-  
-  return insights;
-}

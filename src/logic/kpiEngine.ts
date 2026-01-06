@@ -223,36 +223,49 @@ export function getTopTreatments(appointments: AppointmentRecord[]) {
 export function calcRoomAndEquipmentUsage(
   appointments: AppointmentRecord[],
   services: any[] = [],
-  forceNoSandbox: boolean = false
+  forceNoSandbox: boolean = false,
+  targetDate?: string // Optional: "YYYY-MM-DD"
 ): { roomUsage: Array<{room: string; usageRate: number}>; equipmentUsage: Array<{equipment: string; usageRate: number}> } {
   
-  // 1. 取得目標月份 (從全站選單)
-  const targetMonth = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
+  // 1. Determine Date Range
+  let targetApps: AppointmentRecord[] = [];
+  let workingDays = 1;
+
+  if (targetDate) {
+    // --- Daily Mode ---
+    // Filter strictly by date
+    targetApps = appointments.filter(apt => apt.date === targetDate);
+    // Exclude cancelled/no_show
+    targetApps = targetApps.filter(apt => apt.status !== 'no_show' && apt.status !== 'cancelled');
+    workingDays = 1;
+  } else {
+    // --- Monthly Mode (Original Logic) ---
+    const targetMonth = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    // Filter by month & up to today
+    targetApps = appointments.filter(apt => {
+        if (!apt.date) return false;
+        const aptDate = new Date(apt.date);
+        const aptMonth = apt.date.slice(0, 7);
+        
+        if (aptMonth !== targetMonth) return false;
+        if (aptDate > today) return false;
+        if (apt.status === 'no_show' || apt.status === 'cancelled') return false;
+        return true;
+    });
+
+    // Calculate working days
+    const [year, month] = targetMonth.split('-').map(Number);
+    const monthStart = new Date(year, month - 1, 1);
+    const monthEnd = new Date(year, month, 0); 
+    const effectiveEnd = monthEnd < today ? monthEnd : today;
+    const daysDiff = Math.floor((effectiveEnd.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    workingDays = Math.max(1, daysDiff);
+  }
   
-  // 2. 取得今天日期 (不顯示未來資料)
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-  
-  // 3. 過濾該月份的預約 (排除 no_show 和 cancelled, 且不超過今天)
-  const monthApps = appointments.filter(apt => {
-    if (!apt.date) return false;
-    
-    const aptDate = new Date(apt.date);
-    const aptMonth = apt.date.slice(0, 7);
-    
-    // 必須是目標月份
-    if (aptMonth !== targetMonth) return false;
-    
-    // 不能超過今天
-    if (aptDate > today) return false;
-    
-    // 排除 no_show 和 cancelled
-    if (apt.status === 'no_show' || apt.status === 'cancelled') return false;
-    
-    return true;
-  });
-  
-  // 4. 建立 service 查詢 map
+  // 2. Build Service Map
   const serviceMap = new Map<string, {duration: number; buffer_time: number}>();
   services.forEach(s => {
     if (s.service_name) {
@@ -263,64 +276,43 @@ export function calcRoomAndEquipmentUsage(
     }
   });
   
-  // 5. 累加各診間和設備的使用時長 (分鐘)
+  // 3. Accumulate Minutes
   const roomMinutes: Record<string, number> = {};
   const equipMinutes: Record<string, number> = {};
   
   // Determine Sandbox State
   const sbState = forceNoSandbox ? undefined : sandboxStore.getState();
   
-  monthApps.forEach(apt => {
-    // 查詢 service 資訊
+  targetApps.forEach(apt => {
     const svc = serviceMap.get(apt.service_item);
     const duration = svc?.duration || 30;
     const buffer = svc?.buffer_time || 10;
     const totalMinutes = duration + buffer;
 
     // Sandbox Growth
-    // We need service object to know category. `serviceMap` only has duration/buffer.
-    // We need to look up full service or refine serviceMap. 
-    // Wait, services array is passed in. We can re-find or enhance serviceMap.
     const fullService = services.find(s => s.service_name === apt.service_item);
     let growth = 1;
     if (sbState && sbState.isActive && fullService) {
         let cat = fullService.category;
-        // Fallback or mapping? `schema.ts`: "laser" | "inject" | "rf" | "consult" | "drip"
-        // Store keys match schema category.
         growth = 1 + (sbState.serviceGrowth[cat as keyof typeof sbState.serviceGrowth] || 0);
     }
     
     const finalMinutes = totalMinutes * growth;
     
-    // 累加診間使用時長
     if (apt.room && apt.room.trim()) {
       const room = apt.room.trim();
       roomMinutes[room] = (roomMinutes[room] || 0) + finalMinutes;
     }
-    
-    // 累加設備使用時長
     if (apt.equipment && apt.equipment.trim()) {
       const equip = apt.equipment.trim();
       equipMinutes[equip] = (equipMinutes[equip] || 0) + finalMinutes;
     }
   });
   
-  // 6. 計算該月份的工作天數 (到今天為止)
-  const [year, month] = targetMonth.split('-').map(Number);
-  const monthStart = new Date(year, month - 1, 1);
-  const monthEnd = new Date(year, month, 0); // 該月最後一天
-  
-  // 實際計算天數: 從月初到 min(月底, 今天)
-  const effectiveEnd = monthEnd < today ? monthEnd : today;
-  
-  // 計算天數差
-  const daysDiff = Math.floor((effectiveEnd.getTime() - monthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  const workingDays = Math.max(1, daysDiff); // 至少1天
-  
-  // 7. 計算容量 (每天 540 分鐘 × 工作天數)
+  // 4. Calculate Usage based on Capacity
+  // Capacity = 540 minutes * workingDays
   const capacityMinutes = 540 * workingDays;
   
-  // 8. 計算使用率
   const roomUsage = Object.keys(roomMinutes).map(room => ({
     room,
     usageRate: Math.min(100, Math.round((roomMinutes[room] / capacityMinutes) * 100))

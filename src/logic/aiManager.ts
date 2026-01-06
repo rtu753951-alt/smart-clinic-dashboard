@@ -31,7 +31,8 @@ export interface AIReportOutput {
 }
 
 export function updateServiceAISummary(text: string | null) {
-    const box = document.getElementById("ai-full-report");
+    // [Fix] Changed ID to avoid conflict with Overview AI Trend Modal (ai-full-report)
+    const box = document.getElementById("service-ai-summary-text"); 
     if (!box) return;
     box.textContent = text;
 }
@@ -513,15 +514,18 @@ export function generateStaffSuggestions(
         const criticalList = bufferStats.filter(b => b.compressionRate > 70);
         const pressed = bufferStats.find(b => b.compressionRate > 30);
 
-        if (isSim && criticalList.length > 0) {
+        if (criticalList.length > 0) {
              const names = criticalList.map(item => item.role.split('(')[0].trim()).join('、');
+             const title = isSim ? "[模擬警示] 結構性崩潰風險" : "結構性崩潰風險";
+             const desc = isSim ? "模擬顯示" : "監測顯示";
+             
              suggestions.push(`
                 <div class="ai-card danger" style="border-left: 5px solid #ef4444; background: #fef2f2;">
                     <div class="ai-card-title" style="color: #b91c1c;">
-                        <i class="fa-solid fa-radiation"></i> [模擬警示] 結構性崩潰風險
+                        <i class="fa-solid fa-radiation"></i> ${title}
                     </div>
                     <div class="ai-card-body" style="color: #991b1b;">
-                        模擬顯示 <strong>${names}</strong> 的壓縮率已突破 70%（極度危險）。
+                        ${desc} <strong>${names}</strong> 的壓縮率已突破 70%（極度危險）。
                         <br/>此強度下，人員將在 2 週內出現嚴重身心耗竭 (Burnout)，請務必下修目標或增補人力。
                     </div>
                 </div>
