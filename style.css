@@ -213,32 +213,69 @@ body::after {
   border-top: 1px solid rgba(160, 210, 255, 0.3);
 }
 
-.system-status {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.85rem;
+/* Hide Admin Tab from Sidebar */
+[data-tab="admin"] {
+  display: none !important;
+}
+
+/* System Status Card (New) */
+.system-status-card {
   background: rgba(223, 247, 255, 0.3);
-  padding: 0.75rem;
+  padding: 12px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(180, 220, 255, 0.4);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.system-status .status-item {
+.system-status-card:hover {
+  border-color: var(--neon-blue);
+  box-shadow: 0 4px 12px rgba(59, 168, 255, 0.15);
+  transform: translateY(-2px);
+  background: rgba(223, 247, 255, 0.5);
+}
+
+.system-status-card .status-header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
   color: var(--text-secondary);
-  font-family: monospace;
 }
 
-.system-status .status-item .label {
-  color: var(--text-muted);
-}
-
-.system-status .status-item .value {
+.system-status-card .status-badge {
   font-weight: 600;
-  color: var(--primary-blue);
+  font-size: 0.85rem;
 }
+
+.system-status-card .status-badge.normal {
+  color: var(--text-main); /* Or Success Green? "🟢 穩定" has emoji. Let's keep text neutral or dark. */
+}
+.system-status-card .status-badge.warning {
+  color: var(--warning-orange);
+}
+.system-status-card .status-badge.critical {
+  color: var(--error-red);
+}
+
+.system-status-card .status-main {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.system-status-card .status-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
 
 /* ========================================
    Main Content

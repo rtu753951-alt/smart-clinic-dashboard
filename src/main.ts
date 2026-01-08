@@ -5,6 +5,7 @@ import "../style_kpi_compact.css";
 import "../style_customer_insights.css";
 import "./styles/workload-cards.css";
 import "./styles/launchCover.css";
+import "./styles/admin.css";
 
 // === Import 區 ===
 import { initPanelController, bindModalEvents } from "./ui/panelController.js";
@@ -20,6 +21,9 @@ import { initCustomersPage } from "./pages/customersPage.js";
 import { initLaunchCover } from "./pages/launchCoverPage.js";
 import { initTasksPage } from "./pages/tasksPage.js";
 import { openChurnRiskViewGlobal } from "./pages/customersPage.js";
+import { initAdminPage } from "./pages/adminPage.js";
+import { SystemHealthEvaluator } from "./logic/systemHealthEvaluator.js";
+
 
 
 // === 全域註冊頁面初始化（給 pageController 使用）===
@@ -31,6 +35,7 @@ import { openChurnRiskViewGlobal } from "./pages/customersPage.js";
 (window as any).initCustomersPage = initCustomersPage;
 (window as any).initLaunchCover = initLaunchCover;
 (window as any).initTasksPage = initTasksPage;
+(window as any).initAdminPage = initAdminPage;
 
 // === Global Event Delegation for Modals ===
 document.addEventListener('click', (e) => {
@@ -133,7 +138,46 @@ declare global {
         initAppointmentsPage?: () => void;
         initStaffPage?: () => void;
         initCustomersPage?: () => void;
-        initTasksPage?: () => void;
         initLaunchCover?: () => void;
+        initAdminPage?: () => void;
+        updateSystemHealthStatus?: () => void;
     }
 }
+
+// === System Health Status ===
+// === System Health Status ===
+function setupSystemHealthStatus() {
+    const report = dataStore.validationReport;
+    if (!report) return;
+
+    const status = SystemHealthEvaluator.evaluate(report);
+    
+    // New Card Elements
+    const card = document.getElementById("system-status-card");
+    const badge = document.getElementById("sys-status-badge");
+    const mainText = document.getElementById("sys-status-main");
+    const subText = document.getElementById("sys-status-sub");
+
+    if (card && badge && mainText && subText) {
+        // Update Content
+        badge.className = "status-badge " + status.level; // e.g. status-badge normal
+        badge.textContent = status.level === 'normal' ? '🟢 穩定' : 
+                            (status.level === 'warning' ? '⚠️ 注意' : '🔴 需處理');
+        
+        mainText.textContent = status.message;
+        subText.textContent = status.description;
+
+        // Card Click Handler (Always active for detail view)
+        card.onclick = () => {
+             const adminTab = document.querySelector('[data-tab="admin"]') as HTMLElement;
+             if (adminTab) adminTab.click();
+        };
+
+        // Ensure visible if hidden (optional)
+        card.style.display = 'block';
+    }
+}
+
+// Expose to window for calling after data load
+(window as any).updateSystemHealthStatus = setupSystemHealthStatus;
+

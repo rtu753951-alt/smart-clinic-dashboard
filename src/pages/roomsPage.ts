@@ -54,11 +54,19 @@ export function initRoomsPage() {
 function updateDataCache(month: string) {
     cachedMonth = month;
     
-    // 1. 過濾當月資料 (Strict Filtering)
+    // 1. 過濾當月資料 (Strict Filtering for Actual Usage)
     if (!dataStore.appointments) return;
-    filteredAppts = dataStore.appointments.filter(a => 
-        a.date && a.date.startsWith(month)
-    );
+    
+    // 定義有效的使用狀態 (依據語意：人有到、設備有被用)
+    const VALID_STATUSES = ['completed', 'paid', 'in_service'];
+
+    filteredAppts = dataStore.appointments.filter(a => {
+        if (!a.date || !a.date.startsWith(month)) return false;
+        
+        const status = (a.status || '').toLowerCase();
+        // 必須屬於有效狀態，明確排除 no_show / canceled
+        return VALID_STATUSES.includes(status);
+    });
 
     // 2. 聚合計算
     equipUsageMinutes = {};
@@ -349,9 +357,14 @@ function renderPaginationControls(container: HTMLElement, totalPages: number, to
     }
 
     controls.innerHTML = `
-        <span style="color: #64748b; font-size: 0.9rem;">
-            顯示 ${Math.min((currentPage - 1) * PAGE_SIZE + 1, totalItems)} - ${Math.min(currentPage * PAGE_SIZE, totalItems)} 筆，共 ${totalItems} 筆
-        </span>
+        <div style="flex: 1;">
+            <span style="color: #64748b; font-size: 0.9rem;">
+                顯示 ${Math.min((currentPage - 1) * PAGE_SIZE + 1, totalItems)} - ${Math.min(currentPage * PAGE_SIZE, totalItems)} 筆，共 ${totalItems} 筆
+            </span>
+            <div style="color: #94a3b8; font-size: 0.75rem; margin-top: 4px;">
+                ℹ️ 本列表僅納入實際使用紀錄 (Completed/Paid)，不含 No Show/Canceled
+            </div>
+        </div>
         <div style="display: flex; gap: 8px;">
             <button id="btnPrevRooms" class="btn-secondary" ${currentPage === 1 ? 'disabled' : ''} style="padding: 4px 12px;">上一頁</button>
             <span style="line-height: 28px; font-weight: bold; color: #334155;">Page ${currentPage} / ${totalPages}</span>

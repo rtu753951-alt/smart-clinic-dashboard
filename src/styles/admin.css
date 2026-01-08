@@ -1,0 +1,150 @@
+/* Admin Data Health Dashboard Styles */
+
+/* Filter Tags */
+.filter-tag {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-tag:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-main);
+}
+
+.filter-tag.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.filter-tag .tag-count {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+}
+
+.filter-tag.ghost {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+}
+
+/* Data Table (Scoped to Admin Page) */
+#admin .table-container {
+    background: rgba(30, 41, 59, 0.5); /* Darker bg for contrast */
+    border-radius: 4px;
+}
+
+#admin .data-table {
+    width: 100%;
+}
+
+#admin .data-table th {
+    font-weight: 600;
+    color: #f8fafc; /* High contrast for dark header */
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
+    background: rgba(30, 41, 59, 0.8); /* More solid background for readability */
+}
+
+#admin .data-table td {
+    color: var(--text-main);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+}
+
+#admin .data-table tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Drawer */
+.right-drawer {
+    backdrop-filter: blur(10px);
+    box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Inputs */
+.search-input {
+    transition: all 0.2s;
+}
+.search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: #0f172a;
+}
+
+/* === Neutral Metric Cards (Boss Friendly) === */
+.metric-neutral {
+    background: #ffffff; /* Pure white for best contrast */
+    border: 1px solid rgba(226, 232, 240, 1); /* Slate-200 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.metric-neutral:hover {
+    background: #f8fafc; /* Slate-50 */
+    border-color: #cbd5e1; /* Slate-300 */
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.1); /* Subtle blue glow */
+}
+
+.metric-neutral .metric-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.metric-neutral .metric-icon {
+    background: #eff6ff !important; /* Blue-50 */
+    color: #3b82f6 !important; /* Blue-500 */
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.metric-neutral .metric-title-group h3 {
+    color: #64748b; /* Slate-500 */
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.metric-neutral .metric-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.metric-neutral .value {
+    color: #0f172a; /* Slate-900 (Dark) */
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+/* Ensure sub-labels are readable */
+.metric-neutral .sub-label {
+    color: #94a3b8; /* Slate-400 */
+}
+

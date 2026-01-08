@@ -100,6 +100,10 @@ class DataStore {
     }
   }
 
+  // Validator
+  validationReport: any = null; // Type: ValidationReport
+  quarantinedAppointments: any[] = []; // Type: QuarantinedRecord[] from validator
+
 /**
  * 重型載入（Appointments）：
  * 專門處理 appointments.csv，這是最卡的部分
@@ -114,6 +118,9 @@ async loadAppointments(): Promise<void> {
 
   console.log("[DataStore] Loading Appointments Data (Heavy)...");
 
+  // Dynamic Import Validator to avoid circular/init issues if any
+  const { DataValidator } = await import("../logic/dataValidator.js");
+
   this.coreDataPromise = (async () => {
     // ✅ 讓 UI 先 paint，避免 Edge/桌機冷啟動看起來像掛掉（很建議）
     await new Promise(requestAnimationFrame);
@@ -122,6 +129,36 @@ async loadAppointments(): Promise<void> {
 
     if (!this.isAppointmentsLoaded) {
       this.processAppointments(rawAppointments);
+
+      // --- RUN VALIDATOR ---
+      if (this.appointments.length > 0) {
+        // Ensure services/staff are loaded first (Bootstrap should be done usually)
+        if (!this.isBootstrapLoaded) {
+           console.warn("[DataStore] Warning: Validator running before Bootstrap loaded. Validation might fail ref checks.");
+           // Ideally we await loadBootstrap here or assume caller order. 
+           // For now, let's just warn or let it run partial.
+        }
+        
+        const report = DataValidator.runAll(this.appointments, this.staff, this.services);
+        this.validationReport = report;
+        
+        // Apply Partitioning (Keep clean for UI, Move errors to Quarantine)
+        this.appointments = report.validAppointments;
+        this.quarantinedAppointments = report.quarantinedAppointments;
+
+        console.log(`[DataStore] Validation Complete. Valid: ${this.appointments.length}, Quarantined: ${this.quarantinedAppointments.length}`);
+        
+        // Log Errors for Dev
+        if (report.meta.errorCount > 0) {
+           console.groupCollapsed(`[Validator] ⚠️ Found ${report.meta.errorCount} Errors`);
+           console.table(report.issues.filter((i: any) => i.severity === 'error'));
+           console.groupEnd();
+        }
+
+        // Trigger System Status Update
+        (window as any).updateSystemHealthStatus?.();
+      }
+
       this.isAppointmentsLoaded = true;
       console.log(`[DataStore] Appointments Loaded: ${this.appointments.length} records`);
     }
