@@ -1,0 +1,2 @@
+appointment_id,date,time,doctor_name,service_item,age,gender,is_new,status
+A_TEST_01,2023-10-27,10:00,沒有這樣的醫生,一般診察,30,male,false,completed

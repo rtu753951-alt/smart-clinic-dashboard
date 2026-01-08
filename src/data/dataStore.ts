@@ -1,6 +1,7 @@
 // src/data/dataStore.ts
 import { loadCSV } from "./csvLoader.js";
 import { normalizeRole } from "./roleUtils.js";
+import { ApiDataSource, USE_BACKEND_API } from "./apiDataSource.js"; 
 import type {
   AppointmentRecord,
   ServiceInfo,
@@ -91,6 +92,25 @@ class DataStore {
         this.processCustomers(rawCustomersProfile);
         this.processCustomerVisits(rawCustomerVisits);
 
+        // --- BACKEND AUTO-INGEST (Bootstrap Phase) ---
+        if (USE_BACKEND_API) {
+            console.log("[DataStore] Backend API Enabled. Ingesting Metadata...");
+            // Non-blocking ingest for metadata
+            (async () => {
+                try {
+                    const staffBlob = await fetch("data/staff.csv").then(r => r.blob());
+                    await ApiDataSource.ingestStaff(staffBlob);
+                    console.log("[DataStore] Staff Ingested.");
+                    
+                    const svcBlob = await fetch("data/services.csv").then(r => r.blob());
+                    await ApiDataSource.ingestServices(svcBlob);
+                    console.log("[DataStore] Services Ingested.");
+                } catch (e) {
+                    console.error("[DataStore] Metadata Ingest Failed", e);
+                }
+            })();
+        }
+
         this.isBootstrapLoaded = true;
         console.log("[DataStore] Bootstrap Loaded.");
     } catch (err: any) {
@@ -125,6 +145,50 @@ async loadAppointments(): Promise<void> {
     // ✅ 讓 UI 先 paint，避免 Edge/桌機冷啟動看起來像掛掉（很建議）
     await new Promise(requestAnimationFrame);
 
+    // --- BACKEND API MODE ---
+    if (USE_BACKEND_API) {
+        console.log("[DataStore] Mode: BACKEND API. Starting Ingest Sequence...");
+        try {
+            // 1. Fetch Blob for Ingest (Simulating upload from local source)
+            const blob = await fetch("data/appointments.csv").then(r => r.blob());
+            
+            // 2. Ingest (Replace Mode)
+            const ingestResult = await ApiDataSource.ingestAppointments(blob, 'replace');
+            console.log("[DataStore] API Ingest Result:", ingestResult);
+
+            // 3. Map to ValidationReport (Mocking frontend structure for Admin UI compatibility)
+            this.validationReport = {
+                meta: {
+                    totalProcessed: ingestResult.counts.total,
+                    validCount: ingestResult.counts.valid,
+                    quarantineCount: ingestResult.counts.quarantine,
+                    warningCount: 0, // Backend currently doesn't summarize warnings in response root
+                    errorCount: ingestResult.counts.quarantine,
+                    errorsByCode: {}
+                },
+                issues: [], // Details not available in simple ingest response
+                validAppointments: [], 
+                quarantinedAppointments: []
+            };
+
+            // 4. Fetch Query Data (The 'View') - Populate frontend cache
+            this.appointments = await ApiDataSource.loadAppointments();
+            
+            // 5. Trigger UI updates
+            this.isAppointmentsLoaded = true;
+            console.log(`[DataStore] API Data Loaded: ${this.appointments.length} records`);
+            (window as any).updateSystemHealthStatus?.();
+            
+            return;
+
+        } catch (e) {
+            console.error("[DataStore] API Ingest/Load Failed", e);
+            this.appointmentError = "API Connection Failed";
+            throw e;
+        }
+    }
+
+    // --- LEGACY CSV MODE ---
     const rawAppointments = await loadCSV<any>("data/appointments.csv");
 
     if (!this.isAppointmentsLoaded) {
@@ -171,6 +235,7 @@ async loadAppointments(): Promise<void> {
 
   return this.coreDataPromise;
 }
+
 
   // Refactored Process Methods (Moved from loadAll big block)
   private processAppointments(rawAppointments: any[]) {

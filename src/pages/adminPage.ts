@@ -1,5 +1,5 @@
 import { dataStore } from "../data/dataStore";
-// import { formatCompactNumber } from "../utils/currencyFormatter"; // Removed (unused)
+import { SystemHealthEvaluator } from "../logic/systemHealthEvaluator";
 import { ValidationIssue } from "../logic/dataValidator";
 import { KPI_REVENUE_STATUSES, KPI_VALID_STATUSES } from "../logic/dataValidator";
 
@@ -27,6 +27,36 @@ function renderDataHealthDashboard() {
         `;
         return;
     }
+
+    // Evaluate Status for Badge
+    const status = SystemHealthEvaluator.evaluate(report);
+    const levelTextMap: Record<string, string> = { 'normal': '良好', 'warning': '需留意', 'critical': '風控中' };
+    const iconMap: Record<string, string> = { 'normal': '🟢', 'warning': '🟡', 'critical': '🔴' };
+    const statusBadge = `<span class="status-badge ${status.level}" style="font-size: 1rem; padding: 6px 16px; border-radius: 20px; background: rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1);">${iconMap[status.level]} ${levelTextMap[status.level]}</span>`;
+
+    // 0. Metadata Bar
+    const timeStr = report.timestamp ? new Date(report.timestamp).toLocaleString('zh-TW', { hour12: false }) : '--';
+    const metaBarHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; padding: 16px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
+            <div style="display:flex; gap: 24px;">
+                <div>
+                     <span style="color:var(--text-muted); font-size:0.9rem;">匯入來源</span>
+                     <div style="font-weight:600; font-size:1.1rem;">${report.meta.mode ? 'API (' + report.meta.mode + ')' : 'CSV File'}</div>
+                </div>
+                <div>
+                     <span style="color:var(--text-muted); font-size:0.9rem;">匯入時間</span>
+                     <div style="font-weight:600; font-size:1.1rem;">${timeStr}</div>
+                </div>
+                <div>
+                     <span style="color:var(--text-muted); font-size:0.9rem;">Import ID</span>
+                     <div style="font-family:monospace; color:var(--accent-color);">${report.meta.importId || 'LOCAL-SESSION'}</div>
+                </div>
+            </div>
+            <div>
+                 ${statusBadge}
+            </div>
+        </div>
+    `;
 
     // 1. Summary Cards (Boss-Friendly, Neutral)
     const summaryHTML = `
@@ -169,7 +199,7 @@ function renderDataHealthDashboard() {
     `;
 
     // Assemble
-    container.innerHTML = summaryHTML + errorSectionHTML + tableHTML;
+    container.innerHTML = metaBarHTML + summaryHTML + errorSectionHTML + tableHTML;
 
 
     // Post-render inputs

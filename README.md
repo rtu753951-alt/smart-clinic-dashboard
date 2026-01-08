@@ -122,6 +122,25 @@ npm install
 npm run dev
 ```
 
+### 1-1.（可選）Backend API / Data Governance（MVP）
+
+> GitHub Pages Demo 仍可純前端運行；以下後端屬於「可選增強」，用於資料治理（匯入驗證、隔離 Quarantine、API 分頁查詢等）。
+
+#### ✅ 後端功能摘要
+- **Express + TypeScript + Prisma + SQLite**
+- **共用驗證邏輯**：前後端共用 `packages/shared`（Zod schemas / types / constants）
+- **資料分流**：Valid / Quarantine 分表存放，KPI 可只基於 Valid 資料
+- **匯入模式**：
+  - `mode=replace`：每次匯入前清空資料表，確保與 CSV 快照一致（預設建議）
+  - `mode=append`：保留既有資料，遇到重複 `appointment_id` 會回傳衝突錯誤
+
+#### 🚀 啟動（Bare Metal / 不用 Docker）
+```bash
+cd apps/backend
+npm install
+npm run dev
+
+
 ### 2. 設定 AI 金鑰 (必要)
 
 1. 前往 Google AI Studio 申請 API Key。

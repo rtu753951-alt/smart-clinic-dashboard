@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./apps/backend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_TYPE=sqlite
+      - DATABASE_URL=file:/app/data/dev.db
+      - ADMIN_TOKEN=secret123
+    volumes:
+      - ./apps/backend:/app/apps/backend
+      - ./packages/shared:/app/packages/shared
+      - ./data:/app/data
+    command: sh -c "cd apps/backend && npm install && npx prisma generate && npx prisma db push && npm run dev"

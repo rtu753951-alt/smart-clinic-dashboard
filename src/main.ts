@@ -152,28 +152,52 @@ function setupSystemHealthStatus() {
 
     const status = SystemHealthEvaluator.evaluate(report);
     
-    // New Card Elements
+    // Elements
     const card = document.getElementById("system-status-card");
     const badge = document.getElementById("sys-status-badge");
     const mainText = document.getElementById("sys-status-main");
     const subText = document.getElementById("sys-status-sub");
 
     if (card && badge && mainText && subText) {
-        // Update Content
-        badge.className = "status-badge " + status.level; // e.g. status-badge normal
-        badge.textContent = status.level === 'normal' ? '🟢 穩定' : 
-                            (status.level === 'warning' ? '⚠️ 注意' : '🔴 需處理');
-        
-        mainText.textContent = status.message;
-        subText.textContent = status.description;
+        // 0. Update Label (Semantics: Data Quality)
+        const label = card.querySelector('.label');
+        if (label) label.textContent = '資料品質狀態';
 
-        // Card Click Handler (Always active for detail view)
+        // 1. Source Label
+        const isApi = !!report.meta.mode;
+        const sourceLabel = isApi ? `API` : "CSV";
+        
+        // 2. Badge (Business Friendly)
+        const levelTextMap: Record<string, string> = { 'normal': '良好', 'warning': '需留意', 'critical': '風控中' };
+        const iconMap: Record<string, string> = { 'normal': '🟢', 'warning': '🟡', 'critical': '🔴' };
+        
+        badge.className = "status-badge " + status.level; 
+        badge.textContent = `${iconMap[status.level]} ${levelTextMap[status.level]}`;
+        
+        // 3. Main Text (User Friendly Message)
+        mainText.textContent = status.message;
+        
+        // 4. Sub Text (Details + Quarantine Risk Control)
+        const timeStr = report.timestamp ? new Date(report.timestamp).toLocaleString('zh-TW', { hour12: false, month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--';
+        const qCount = report.meta.quarantineCount;
+        
+        subText.innerHTML = `
+            <div style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 3px;">
+                ${sourceLabel} • ${timeStr}
+            </div>
+            <div style="${qCount > 0 ? 'color: #fbbf24; font-weight: 500;' : 'opacity: 0.8;'}">
+                🛡 已隔離: ${qCount} 筆
+            </div>
+        `;
+        
+        // Tooltip for full description (Explanation)
+        card.title = status.description;
+
         card.onclick = () => {
              const adminTab = document.querySelector('[data-tab="admin"]') as HTMLElement;
              if (adminTab) adminTab.click();
         };
 
-        // Ensure visible if hidden (optional)
         card.style.display = 'block';
     }
 }

@@ -48,6 +48,8 @@ export interface ValidationReport {
     validCount: number;
     quarantineCount: number;
     errorsByCode: Record<string, number>;
+    importId?: string;
+    mode?: string;
   }
 }
 
