@@ -44,3 +44,15 @@ Desktop.ini
 tmp/
 .gemini/
 build_log.txt
+
+# SQLite / Prisma local dev database
+apps/backend/prisma/*.db
+apps/backend/prisma/*.db-journal
+apps/backend/prisma/*.db-wal
+apps/backend/prisma/*.db-shm
+
+# Optional: general DB files anywhere
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
