@@ -254,3 +254,35 @@ export interface AppointmentRecord {
     amount?: number;
 }
 
+
+// ------------------------------------
+// ⑧ Import Jobs (Data Governance)
+// ------------------------------------
+
+export type ImportStatus = "RUNNING" | "COMPLETED" | "FAILED";
+export type DatasetType = "APPOINTMENTS" | "STAFF" | "SERVICES" | "ROOMS" | "EQUIPMENT" | "TASKS";
+export type ImportSource = "UPLOAD_CSV" | "GOOGLE_SHEETS" | "MANUAL" | "SYSTEM";
+export type ImportMode = "APPEND" | "REPLACE" | "UPSERT";
+
+export interface ImportRecord {
+  id: string;
+  filename: string;
+  file_hash: string;
+  imported_at: string; // ISO String
+  status: ImportStatus;
+  
+  dataset: DatasetType;
+  source: ImportSource;
+  mode: ImportMode;
+  
+  started_at?: string;
+  finished_at?: string;
+  duration_ms?: number;
+  
+  valid_count: number;
+  quarantine_count: number;
+  warning_count: number;
+  
+  report_json: Record<string, any>; // Strictly typed as object
+  error_summary?: string;
+}

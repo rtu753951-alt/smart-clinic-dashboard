@@ -47,6 +47,7 @@ export async function initLaunchCover(): Promise<void> {
 
     // 顯示封面與 Skeleton
     coverContainer.style.display = "flex";
+    coverContainer.style.overflowY = "auto"; // Enable vertical scroll for cover content
     showLoadingState(coverContainer);
 
     // [效能優化] 讓瀏覽器有機會先繪製 Skeleton (Yield to main thread)
@@ -76,6 +77,17 @@ export async function initLaunchCover(): Promise<void> {
         }
     }, 12000);
     
+    // 📌 Define Refresh Logic Early (Prevent Race Condition)
+    const performRefresh = async () => {
+        // Re-calculate with whatever data we have now
+        const coverData = await calculateLaunchCoverData();
+        // Update UI
+        renderCoverContent(coverContainer, coverData);
+        // Re-bind events since we replaced innerHTML
+        bindInteractiveEvents(coverContainer);
+    };
+    (window as any).refreshLaunchCoverData = performRefresh;
+    
     try {
         // 3. 載入資料 (基礎數據 Bootstrap)
         // [New Strategy] Load lightweight data first, render UI, then load heavy data
@@ -99,9 +111,15 @@ export async function initLaunchCover(): Promise<void> {
 
                 // 2. Only refresh Cover UI if cover is still visible
                 if (coverContainer.style.display !== 'none') {
-                   (window as any).refreshLaunchCoverData(); 
+                   performRefresh(); 
                 }
-            }).catch(e => console.warn("Background load failed:", e));
+            }).catch(e => {
+                console.warn("Background load failed:", e);
+                // Also refresh UI to show "Sync Failed" state
+                 if (coverContainer.style.display !== 'none') {
+                   performRefresh(); 
+                }
+            });
         }
 
         // 5. 計算 KPI (Partial Data is OK)
@@ -122,16 +140,6 @@ export async function initLaunchCover(): Promise<void> {
         // 確保永遠綁定事件，讓用戶能離開
         bindInteractiveEvents(coverContainer);
     }
-
-    // Expose refresh function
-    (window as any).refreshLaunchCoverData = async () => {
-        // Re-calculate with whatever data we have now
-        const coverData = await calculateLaunchCoverData();
-        // Update UI
-        renderCoverContent(coverContainer, coverData);
-        // Re-bind events since we replaced innerHTML
-        bindInteractiveEvents(coverContainer);
-    };
 }
 
 /**
@@ -160,9 +168,15 @@ async function calculateLaunchCoverData(): Promise<LaunchCoverData> {
         }, 0);
         
         // Display Loading or Value
-        const monthlyRevenueFormatted = dataStore.isAppointmentsLoaded 
-            ? formatNTRevenue(monthlyRevenue, 'compact')
-            : "同步中...";
+        let revenueDisplay = "同步中...";
+        if (dataStore.isAppointmentsLoaded) {
+            revenueDisplay = formatNTRevenue(monthlyRevenue, 'compact');
+        } else if (dataStore.appointmentError) {
+            // User requested to keep "Syncing..." UI even on failure
+            // revenueDisplay = "同步失敗"; 
+            console.warn("[Cover] Revenue Sync Failed, keeping UI as Syncing:", dataStore.appointmentError);
+        }
+        const monthlyRevenueFormatted = revenueDisplay;
         
         // 2. VIP Count
         const vipCount = calculateVIPCount();
@@ -434,83 +448,285 @@ function renderCoverContent(container: HTMLElement, data: LaunchCoverData): void
             ${(() => {
                 if (!data.reminders || data.reminders.length === 0) return '';
                 
-                // 計算指標 (結合關鍵字與 AI 持久化建議)
-                // 計算指標 (結合關鍵字與 AI 持久化建議)
-                const RISK_KEYWORDS = ['第一', '治療', '有效', '疾病', '最', '首創', '保證', '外泌體', '根治', '合規'];
+                // --- Smart Layout Logic (UX Analyst Role) ---
+                const isDesktop = window.innerWidth >= 768; 
+                const maxCards = isDesktop ? 3 : 2;
                 
-                // Helper to check risk
+                // 1. Helper: Check Risk
+                const RISK_KEYWORDS = ['第一', '治療', '有效', '疾病', '最', '首創', '保證', '外泌體', '根治', '合規', '到診風險', 'uv', '低溫'];
+                const humidityRisk = (msg: string) => {
+                    const match = msg.match(/濕度\s*(\d+)%/);
+                    return match && parseInt(match[1]) < 30;
+                };
+
                 const checkRisk = (r: any) => {
-                    // 0. Check System Alert Level
                     if (r.level === 'error' || r.level === 'critical') return true;
-
-                    // 1. Check AI Persisted Result
-                    const t = r.id ? TaskStore.getTask(r.id) : null;
-                    if (t?.severity === 'high') return true; 
-                    if (t?.aiSuggestion && !t.aiSuggestion.isSafe) return true;
+                    if (r.type === 'task') {
+                        const t = r.id ? TaskStore.getTask(r.id) : null;
+                        if (t?.severity === 'high') return true; 
+                        if (t?.aiSuggestion && !t.aiSuggestion.isSafe) return true;
+                    }
+                    const title = (r.title || '').toLowerCase();
+                    // Implicit Risk Keywords
+                    if (RISK_KEYWORDS.some(k => title.includes(k))) return true;
+                    // Conditional Risk (Severe Dryness)
+                    if (title.includes('乾燥') && humidityRisk(r.desc)) return true;
                     
-                    // 2. Fallback to Keywords
-                    return RISK_KEYWORDS.some(k => r.title.includes(k) || r.desc.includes(k));
+                    return false;
                 };
 
-                const riskReminders = data.reminders.filter(r => checkRisk(r));
+                // 2. Helper: Calculate Priority Score
+                const getScore = (r: any) => {
+                    const title = (r.title || '').toLowerCase();
+                    
+                    // (1) Visit Risk
+                    if (title.includes('到診風險')) return 100;
 
-                // 將所有提醒存儲到 window 以供通知面板使用
-                (window as any).launchCoverReminders = {
-                    all: data.reminders,
-                    risk: riskReminders,
-                    normal: data.reminders.filter(r => !checkRisk(r))
+                    // (2) Critical Internal Risks
+                    if ((r.type === 'task' && checkRisk(r)) || r.level === 'error') return 95;
+
+                    // (3) UV High
+                    if (title.includes('uv') || title.includes('高 uv')) return 90;
+
+                    // (4) Cold High
+                    if (title.includes('低溫') || title.includes('寒流')) return 85;
+
+                    // (5) Dry (Conditional)
+                    if (title.includes('乾燥')) {
+                        if (humidityRisk(r.desc)) return 82; // Severe Dry -> High Priority
+                        return 40; // Normal Dry -> Low Priority (unless space available)
+                    }
+
+                    // (6) Others
+                    return 50;
+                };
+
+                // 3. Sorting & Mixed Strategy (Task + Risks)
+                // First, ensure 'sorted' is defined
+                const sorted = [...data.reminders].sort((a, b) => {
+                    const sA = getScore(a);
+                    const sB = getScore(b);
+                    if (sA !== sB) return sB - sA; 
+                    return (a.diffDays ?? 999) - (b.diffDays ?? 999);
+                });
+
+                const internalTasks = sorted.filter(r => r.type === 'task');
+                const riskAlerts = sorted.filter(r => r.type !== 'task');
+
+                let primaryCards: any[] = [];
+                const usedIds = new Set<string>();
+
+                // Strategy: 1 Todo + Rest Risks
+                // Step A: Pick 1 Internal Task (if any)
+                if (internalTasks.length > 0) {
+                    const topTask = internalTasks[0];
+                    primaryCards.push(topTask);
+                    usedIds.add(JSON.stringify(topTask));
+                }
+
+                // Step B: Fill remaining slots with Top Risk Alerts
+                const slotsLeft = maxCards - primaryCards.length;
+                let addedRisks = 0;
+                for (const risk of riskAlerts) {
+                    if (addedRisks >= slotsLeft) break;
+                    primaryCards.push(risk);
+                    usedIds.add(JSON.stringify(risk));
+                    addedRisks++;
+                }
+
+                // Step C: If still have slots (e.g. no risks), fill with remaining sorted items
+                if (primaryCards.length < maxCards) {
+                    const remainingSlots = maxCards - primaryCards.length;
+                    const leftovers = sorted.filter(r => !usedIds.has(JSON.stringify(r)));
+                    for (let i = 0; i < remainingSlots && i < leftovers.length; i++) {
+                         primaryCards.push(leftovers[i]);
+                         usedIds.add(JSON.stringify(leftovers[i]));
+                    }
+                }
+                
+                // Sort Primary Cards by Priority Score
+                primaryCards.sort((a, b) => getScore(b) - getScore(a));
+
+                // Calculate Overflow
+                const overflowCards = sorted.filter(r => !usedIds.has(JSON.stringify(r)));
+                const overflowCount = overflowCards.length;
+                
+                const totalRisk = sorted.filter(r => checkRisk(r)).length;
+
+                // 5. Prepare Data Structure (Output JSON Spec)
+                const launchTaskData = {
+                    device: isDesktop ? 'desktop' : 'mobile',
+                    maxCards,
+                    primaryCards,
+                    headerBadges: [
+                        totalRisk > 0 ? { key: 'risk', label: `⚠️ 風險 ${totalRisk}`, count: totalRisk, style: 'background: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.4);' } : null,
+                        overflowCount > 0 ? { key: 'more', label: `+${overflowCount} 更多`, count: overflowCount, style: 'background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4);' } : null
+                    ].filter(Boolean) as any[],
+                    morePanel: {
+                        title: "所有提醒",
+                        items: overflowCards.map((c: any) => ({
+                            level: c.alertLevel || 'info', // Using 'any' cast to avoid TS error
+                            shortTitle: (c.title || '').substring(0, 18),
+                            shortMessage: (c.desc || '').substring(0, 28) + '...',
+                            suggestedAction: c.actionLabel || '查看'
+                        }))
+                    }
                 };
                 
-                // 取前2筆任務展示
-                const topTasks = data.reminders.slice(0, 2);
-                const riskCount = riskReminders.length;
-                
+                // Expose to window for interactions
+                (window as any).launchTaskData = launchTaskData;
+
+                // 6. Render Functions
+                const renderCard = (task: any) => {
+                    const t = task.id ? TaskStore.getTask(task.id) : null;
+                    const aiUnsafe = t?.aiSuggestion && !t.aiSuggestion.isSafe;
+                    const isHighRisk = aiUnsafe || checkRisk(task);
+                    const borderClass = isHighRisk ? 'task-card-risk' : 'task-card-normal';
+                    
+                    let cleanDesc = task.desc;
+                    if (aiUnsafe) cleanDesc = `⚖️ AI 建議：${t?.aiSuggestion?.suggestion}`;
+                    if (cleanDesc.length > 40) cleanDesc = cleanDesc.substring(0, 38) + '...';
+
+                    return `
+                        <div class="launch-task-card ${borderClass}" onclick="window.switchPage('tasks')">
+                            <div class="task-card-header">
+                                <div class="task-card-icon ${isHighRisk ? 'icon-risk' : 'icon-normal'}" style="${isHighRisk ? 'color: #ef4444;' : ''}">
+                                    <i class="fa-solid ${isHighRisk ? 'fa-triangle-exclamation' : 'fa-bell'}"></i>
+                                </div>
+                                <div class="task-card-title">
+                                    ${task.title}
+                                    ${isHighRisk ? `<span class="risk-tag" style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.5);">${aiUnsafe ? 'AI 警示' : '違規風險'}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="task-card-desc" style="${aiUnsafe ? 'color: #fca5a5;' : ''}">${cleanDesc}</div>
+                            ${task.diffDays !== undefined && task.diffDays !== 0 ? `<div class="task-card-meta"><i class="fa-regular fa-clock"></i> 剩 ${task.diffDays} 天</div>` : ''}
+                        </div>
+                    `;
+                };
+
+                const renderBadge = (b: any) => `
+                    <span class="launch-badge" 
+                          onclick="document.getElementById('launch-more-modal').classList.add('active')"
+                          style="cursor: pointer; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; ${b.style}">
+                        ${b.label}
+                    </span>
+                `;
+
                 return `
                     <div class="launch-task-preview-section">
+                        <style>
+                            /* Custom Scrollbar for Cards */
+                            .task-preview-cards::-webkit-scrollbar {
+                                height: 6px;
+                            }
+                            .task-preview-cards::-webkit-scrollbar-track {
+                                background: rgba(255, 255, 255, 0.05);
+                                border-radius: 3px;
+                            }
+                            .task-preview-cards::-webkit-scrollbar-thumb {
+                                background: rgba(255, 255, 255, 0.2);
+                                border-radius: 3px;
+                                transition: background 0.3s;
+                            }
+                            .task-preview-cards::-webkit-scrollbar-thumb:hover {
+                                background: rgba(255, 255, 255, 0.4);
+                            }
+                            /* Prevent Card Compression */
+                            .launch-task-card {
+                                flex: 0 0 auto; /* Crucial for horizontal scroll */
+                                min-width: 300px; /* Min width valid for both desktop/mobile */
+                                width: auto;
+                            }
+                            /* Ensure Modal Overlay handles events correctly */
+                            .launch-modal-overlay { pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+                            .launch-modal-overlay.active { pointer-events: auto; opacity: 1; }
+                        </style>
                         <div class="task-preview-header">
                             <i class="fa-solid fa-clipboard-check"></i>
                             <span>即時任務預覽</span>
                             
-                            <!-- 狀態整合 Badge -->
+                            <!-- Header Badges -->
                             <div class="header-badges" style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
-                                ${riskCount > 0 ? `
-                                    <span style="background: rgba(220, 38, 38, 0.2); color: #f87171; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; border: 1px solid rgba(220, 38, 38, 0.4); display: flex; align-items: center; gap: 4px;">
-                                        <i class="fa-solid fa-triangle-exclamation"></i> ${riskCount} 風險
-                                    </span>
-                                ` : ''}
-                                <span class="task-count" style="margin: 0;">${data.reminders.length} 待辦</span>
+                                ${launchTaskData.headerBadges.map(renderBadge).join('')}
+                                ${launchTaskData.headerBadges.length === 0 ? `<span class="task-count" style="margin: 0; opacity: 0.6; font-size: 0.8rem;">暫無緊急事項</span>` : ''}
                             </div>
                         </div>
                         
-                        <div class="task-preview-cards">
-                            ${topTasks.map(task => {
-                                const t = task.id ? TaskStore.getTask(task.id) : null;
-                                const aiUnsafe = t?.aiSuggestion && !t.aiSuggestion.isSafe;
-                                const isHighRisk = aiUnsafe || checkRisk(task);
-                                const borderClass = isHighRisk ? 'task-card-risk' : 'task-card-normal';
-                                
-                                // 若有 AI 建議，顯示 AI 建議，否則顯示原描述
-                                const displayDesc = aiUnsafe 
-                                    ? `⚖️ AI 建議：${t?.aiSuggestion?.suggestion}` 
-                                    : (task.desc.length > 25 ? task.desc.substring(0, 25) + '...' : task.desc);
-                                
-                                return `
-                                    <div class="launch-task-card ${borderClass}" onclick="window.switchPage('tasks')">
-                                        <div class="task-card-header">
-                                            <div class="task-card-icon ${isHighRisk ? 'icon-risk' : 'icon-normal'}" style="${isHighRisk ? 'color: #ef4444;' : ''}">
-                                                <i class="fa-solid ${isHighRisk ? 'fa-triangle-exclamation' : 'fa-bell'}"></i>
-                                            </div>
-                                            <div class="task-card-title">
-                                                ${task.title}
-                                                ${isHighRisk ? `<span class="risk-tag" style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.5);">${aiUnsafe ? 'AI 警示' : '違規風險'}</span>` : ''}
-                                            </div>
-                                        </div>
-                                        <div class="task-card-desc" style="${aiUnsafe ? 'color: #fca5a5;' : ''}">${displayDesc}</div>
-                                        ${task.diffDays ? `<div class="task-card-meta"><i class="fa-regular fa-clock"></i> 剩 ${task.diffDays} 天</div>` : ''}
-                                    </div>
-                                `;
-                            }).join('')}
+                        <div class="task-preview-cards" style="display: flex; flex-wrap: nowrap; gap: 12px; overflow-x: auto; padding-bottom: 8px; position: relative; z-index: 10;">
+                            ${primaryCards.map(renderCard).join('')}
                         </div>
+
+                        <!-- Modal Structure -->
+                        <div id="launch-more-modal" class="launch-modal-overlay">
+                            <div class="launch-modal-content glass-panel">
+                                <div class="launch-modal-header">
+                                    <h3>🔔 所有提醒清單 (${sorted.length})</h3>
+                                    <button class="close-btn" onclick="document.getElementById('launch-more-modal').classList.remove('active')">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                                <div class="launch-modal-body">
+                                    ${sorted.map(task => {
+                                        const isHighRisk = checkRisk(task);
+                                        return `
+                                            <div class="modal-list-item ${isHighRisk ? 'item-risk' : ''}" onclick="window.switchPage('tasks')">
+                                                <div class="item-icon">
+                                                    <i class="fa-solid ${isHighRisk ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i>
+                                                </div>
+                                                <div class="item-info">
+                                                    <div class="item-title">${task.title}</div>
+                                                    <div class="item-desc">${task.desc}</div>
+                                                </div>
+                                                ${task.type !== 'task' ? `<span class="item-tag">外部</span>` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <style>
+                            .launch-modal-overlay {
+                                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                                background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+                                z-index: 9999;
+                                display: flex; align-items: center; justify-content: center;
+                                opacity: 0; pointer-events: none; transition: opacity 0.3s;
+                            }
+                            .launch-modal-overlay.active {
+                                opacity: 1; pointer-events: auto;
+                            }
+                            .launch-modal-content {
+                                width: 90%; max-width: 500px; max-height: 80vh;
+                                background: rgba(17, 24, 39, 0.95);
+                                border: 1px solid rgba(255,255,255,0.1);
+                                border-radius: 16px;
+                                display: flex; flex-direction: column;
+                                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+                            }
+                            .launch-modal-header {
+                                padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1);
+                                display: flex; justify-content: space-between; align-items: center;
+                            }
+                            .launch-modal-header h3 { margin: 0; font-size: 1.1rem; color: #fff; }
+                            .close-btn { background: none; border: none; color: rgba(255,255,255,0.6); font-size: 1.2rem; cursor: pointer; }
+                            .close-btn:hover { color: #fff; }
+                            .launch-modal-body { padding: 16px; overflow-y: auto; }
+                            .modal-list-item {
+                                display: flex; gap: 12px; padding: 12px;
+                                border-radius: 8px; background: rgba(255,255,255,0.03);
+                                margin-bottom: 8px; cursor: pointer; transition: background 0.2s;
+                                align-items: flex-start;
+                            }
+                            .modal-list-item:hover { background: rgba(255,255,255,0.08); }
+                            .modal-list-item.item-risk { border-left: 3px solid #ef4444; background: rgba(239,68,68,0.05); }
+                            .item-icon { margin-top: 2px; color: rgba(255,255,255,0.5); font-size: 0.9rem; }
+                            .modal-list-item.item-risk .item-icon { color: #ef4444; }
+                            .item-info { flex: 1; min-width: 0; }
+                            .item-title { font-weight: 500; font-size: 0.95rem; margin-bottom: 2px; color: #e5e7eb; }
+                            .item-desc { font-size: 0.85rem; color: rgba(255,255,255,0.6); line-height: 1.4; }
+                            .item-tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); height: fit-content; margin-top: 2px; }
+                        </style>
                     </div>
                 `;
             })()}

@@ -15,55 +15,72 @@ export class ApiService {
 
     /**
      * 獲取 AI 服務金鑰
-     * 優先順序：環境變數 (VITE_GEMINI_KEY) > LocalStorage 設定
+     * 優先順序：SessionStorage > LocalStorage > 環境變數 (VITE_GEMINI_KEY)
+     * 使用者手動輸入的 Key (存於 Storage) 優先於環境變數，允許覆蓋。
      */
     public getApiKey(): string | null {
-        // 1. 嘗試從環境變數讀取 (Vite Env)
+        // 1. Session Storage (當次有效)
+        const sessionKey = sessionStorage.getItem(this.STORAGE_KEY);
+        if (sessionKey && sessionKey.trim() !== '') {
+            return sessionKey;
+        }
+
+        // 2. Local Storage (持久有效)
+        const localKey = localStorage.getItem(this.STORAGE_KEY);
+        if (localKey && localKey.trim() !== '') {
+            return localKey;
+        }
+
+        // 3. 環境變數 (預設值)
         if (import.meta.env && import.meta.env.VITE_GEMINI_KEY) {
             return import.meta.env.VITE_GEMINI_KEY;
         }
 
-        // 2. 舊版環境變數檢查 (Backup)
+        // 4. Backward Compatibility
         if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
             return process.env.GEMINI_API_KEY;
-        }
-
-        // 3. 嘗試從 LocalStorage 讀取 (使用者手動設定)
-        const userKey = localStorage.getItem(this.STORAGE_KEY);
-        if (userKey && userKey.trim() !== '') {
-            return userKey;
         }
 
         return null;
     }
 
     /**
-     * 檢查是否使用環境變數中的金鑰
+     * 獲取金鑰來源 (用於 UI 顯示狀態)
      */
-    public isUsingEnvKey(): boolean {
-        // Check Vite Env
-        if (import.meta.env && import.meta.env.VITE_GEMINI_KEY) {
-            return true;
-        }
-        // Check Process Env
-        if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
-            return true;
-        }
-        return false;
+    public getKeySource(): 'env' | 'localStorage' | 'sessionStorage' | null {
+        if (sessionStorage.getItem(this.STORAGE_KEY)) return 'sessionStorage';
+        if (localStorage.getItem(this.STORAGE_KEY)) return 'localStorage';
+        if ((import.meta.env && import.meta.env.VITE_GEMINI_KEY) || (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY)) return 'env';
+        return null;
     }
 
     /**
      * 儲存使用者設定的金鑰
+     * @param key API Key
+     * @param remember 是否記住 (True=LocalStorage, False=SessionStorage)
      */
-    public setApiKey(key: string): void {
-        localStorage.setItem(this.STORAGE_KEY, key.trim());
+    public setApiKey(key: string, remember: boolean = true): void {
+        const trimmed = key.trim();
+        if (!trimmed) {
+            this.clearApiKey();
+            return;
+        }
+
+        if (remember) {
+            localStorage.setItem(this.STORAGE_KEY, trimmed);
+            sessionStorage.removeItem(this.STORAGE_KEY); // Clean other slot
+        } else {
+            sessionStorage.setItem(this.STORAGE_KEY, trimmed);
+            localStorage.removeItem(this.STORAGE_KEY); // Clean other slot
+        }
     }
 
     /**
-     * 清除金鑰
+     * 清除金鑰 (同時清除兩種 Storage)
      */
     public clearApiKey(): void {
         localStorage.removeItem(this.STORAGE_KEY);
+        sessionStorage.removeItem(this.STORAGE_KEY);
     }
     
     /**

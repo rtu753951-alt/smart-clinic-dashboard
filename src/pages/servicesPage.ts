@@ -684,6 +684,7 @@ function renderServiceStructureChart(revenueMap: any, titleSuffix: string) {
     }
 
     // 3. 建立新圖表
+    // 3. 建立新圖表
     structureChart = new Chart(ctx, {
         type: "doughnut",
         data: {
@@ -707,12 +708,7 @@ function renderServiceStructureChart(revenueMap: any, titleSuffix: string) {
                     padding: { bottom: 10 }
                 },
                 legend: {
-                    position: 'right',
-                    labels: {
-                        usePointStyle: true,
-                        boxWidth: 12,
-                        font: { family: "'Noto Sans TC', sans-serif", size: 14 }
-                    }
+                    display: false // Use custom legend
                 },
                 tooltip: {
                     callbacks: {
@@ -727,6 +723,140 @@ function renderServiceStructureChart(revenueMap: any, titleSuffix: string) {
             }
         }
     } as any);
+
+    // 4. Generate Custom Legend
+    generateCustomLegend(structureChart, labels, backgroundColors, values);
+}
+
+// Helper: Custom Legend Logic (Leaderboard Style)
+function generateCustomLegend(chart: any, labels: string[], colors: string[], values: number[]) {
+    const container = document.getElementById('srv-legend-items');
+    const countEl = document.getElementById('srv-legend-hidden-count');
+    const btnAll = document.getElementById('srv-legend-btn-all');
+    
+    if (!container) return;
+
+    const totalRevenue = values.reduce((a, b) => a + b, 0);
+
+    const render = () => {
+        container.innerHTML = '';
+        let hiddenCount = 0;
+        let visibleCount = 0;
+
+        // Calculate counts first
+        labels.forEach((_, i) => {
+            if (chart.getDataVisibility(i) === false) hiddenCount++;
+            else visibleCount++;
+        });
+
+        // Update Hidden Count Text
+        if (countEl) countEl.innerText = `已隱藏 ${hiddenCount}`;
+
+        // Render Items (Leaderboard)
+        labels.forEach((label, i) => {
+            const isHidden = chart.getDataVisibility(i) === false;
+            const color = colors[i];
+            const val = values[i];
+            const pct = totalRevenue > 0 ? (val / totalRevenue) * 100 : 0;
+            const pctStr = pct.toFixed(1) + '%';
+            
+            // Clean Label
+            let cleanLabel = label.replace(' ⭐ 主力', '');
+            let isMain = label.includes(' ⭐');
+
+            // Item Wrapper
+            const item = document.createElement('div');
+            item.style.cssText = `
+                display: flex; flex-direction: column; gap: 4px;
+                cursor: pointer; padding: 6px 8px; border-radius: 6px;
+                transition: background 0.2s;
+                opacity: ${isHidden ? '0.5' : '1'};
+                border-bottom: 1px solid rgba(0,0,0,0.03);
+            `;
+            item.onmouseover = () => item.style.background = 'rgba(0,0,0,0.03)';
+            item.onmouseout = () => item.style.background = 'transparent';
+            if (isHidden) item.style.filter = 'grayscale(1)';
+
+            // Top Row: Dot + Name ...... Amount + %
+            const rowTop = document.createElement('div');
+            rowTop.style.cssText = "display: flex; align-items: center; justify-content: space-between; width: 100%;";
+
+            // Left: Dot + Name
+            const left = document.createElement('div');
+            left.style.cssText = "display: flex; align-items: center; gap: 6px; overflow: hidden;";
+            
+            const dot = document.createElement('div');
+            dot.style.cssText = `width: 8px; height: 8px; border-radius: 50%; background: ${color}; flex-shrink: 0;`;
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.innerHTML = isMain ? `${cleanLabel} <span style="font-size:0.75em">⭐</span>` : cleanLabel;
+            nameSpan.style.cssText = "font-size: 0.9rem; font-weight: 500; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;";
+            
+            left.appendChild(dot);
+            left.appendChild(nameSpan);
+
+            // Right: Amount + %
+            const right = document.createElement('div');
+            right.style.cssText = "display: flex; align-items: baseline; gap: 6px; flex-shrink: 0;";
+
+            const amtSpan = document.createElement('span');
+            amtSpan.innerText = formatCurrency(val);
+            amtSpan.style.cssText = "font-size: 0.9rem; font-weight: 600; color: #334155;";
+
+            const pctSpan = document.createElement('span');
+            pctSpan.innerText = pctStr;
+            pctSpan.style.cssText = "font-size: 0.75rem; color: #94a3b8; font-weight: 400;";
+
+            right.appendChild(amtSpan);
+            right.appendChild(pctSpan);
+
+            rowTop.appendChild(left);
+            rowTop.appendChild(right);
+
+            // Bottom Row: Progress Bar
+            const rowBar = document.createElement('div');
+            rowBar.style.cssText = "width: 100%; height: 4px; background: rgba(0,0,0,0.05); border-radius: 2px; overflow: hidden;";
+            
+            const barFill = document.createElement('div');
+            barFill.style.cssText = `width: ${pct}%; height: 100%; background: ${color}; border-radius: 2px; opacity: 0.8;`;
+            
+            rowBar.appendChild(barFill);
+
+            // Click Handler
+            item.onclick = () => {
+                 if (!isHidden && visibleCount <= 1) {
+                    alert("至少需保留一個顯示項目");
+                    return;
+                }
+                chart.toggleDataVisibility(i);
+                chart.update();
+                render();
+            };
+
+            item.appendChild(rowTop);
+            if (!isHidden) item.appendChild(rowBar); // Only show bar if visible
+
+            container.appendChild(item);
+        });
+    };
+
+    // Bind Select All
+    if (btnAll) {
+        const newBtn = btnAll.cloneNode(true);
+        btnAll.parentNode?.replaceChild(newBtn, btnAll);
+        newBtn.addEventListener('click', () => {
+            labels.forEach((_, i) => {
+                if (chart.getDataVisibility(i) === false) {
+                     chart.toggleDataVisibility(i);
+                }
+            });
+            chart.update();
+            render();
+        });
+    }
+
+    // Initial Render
+    render();
 }
 
 

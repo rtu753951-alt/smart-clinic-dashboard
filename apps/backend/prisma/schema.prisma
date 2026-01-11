@@ -7,108 +7,92 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 3.1 Imports (Import Batch Snapshot)
 model Import {
-  id               String   @id @default(uuid())
+  id               String                  @id @default(uuid())
   filename         String
-  file_hash        String?  // Optional for now
-  imported_at      DateTime @default(now())
-  status           String   // processing / completed / failed
-  
-  valid_count      Int      @default(0)
-  quarantine_count Int      @default(0)
-  warning_count    Int      @default(0)
-  report_json      String   // JSON string of ValidationReport
-
+  file_hash        String?
+  imported_at      DateTime                @default(now())
+  status           String
+  dataset          String?
+  source           String                  @default("upload_csv")
+  mode             String                  @default("replace")
+  started_at       DateTime?
+  finished_at      DateTime?
+  duration_ms      Int?
+  error_summary    String?
+  valid_count      Int                     @default(0)
+  quarantine_count Int                     @default(0)
+  warning_count    Int                     @default(0)
+  report_json      String                  @default("{\"issues\":[]}")
   appointments     Appointment[]
   quarantined      QuarantineAppointment[]
 
   @@index([imported_at])
+  @@index([file_hash]) // 建議加這個，後面查重更快
 }
 
-// 3.2 Staff
 model Staff {
-  id                 String  @id @default(uuid())
-  staff_name         String  @unique
-  staff_type         String  // Doctor / Nurse ...
+  id                 String        @id @default(uuid())
+  staff_name         String        @unique
+  staff_type         String
   specialty          String?
   skill_level        String?
-  certified_services String? // JSON string or text
-  status             String  @default("active")
-  
-  // Relations
+  certified_services String?
+  status             String        @default("active")
   appointments       Appointment[]
 }
 
-// 3.3 Services
 model Service {
-  id              String  @id @default(uuid())
-  service_name    String  @unique
+  id              String        @id @default(uuid())
+  service_name    String        @unique
   category        String?
   price           Float?
-  duration        Int?    // minutes
-  buffer_time     Int?    // minutes
+  duration        Int?
+  buffer_time     Int?
   executor_role   String?
   intensity_level String?
-  transferable    Boolean? @default(false)
-  
-  // Relations
+  transferable    Boolean?      @default(false)
   appointments    Appointment[]
 }
 
-// 3.4 Appointments (Clean Data)
 model Appointment {
   id                 String   @id @default(uuid())
-  appointment_id     String   @unique // Business ID (A001)
-  
+  appointment_id     String   @unique
   import_id          String
-  import             Import   @relation(fields: [import_id], references: [id])
-
-  date               String   // YYYY-MM-DD
+  date               String
   time               String?
+  status             String
+  customer_id        String?
+  doctor_id          String?
+  doctor_name        String?
+  staff_role         String?
+  service_id         String?
+  service_item       String?
+  purchased_services String?
+  room               String?
+  equipment          String?
+  raw_source         String?
   age                Int?
   gender             String?
   is_new             Boolean?
-  status             String
-
-  customer_id        String?
-
-  // Doctor Relation
-  doctor_id          String?
-  doctor             Staff?   @relation(fields: [doctor_id], references: [id])
-  doctor_name        String?  // Fallback / Cache
-
-  staff_role         String?
-
-  // Service Relation
-  service_id         String?
   service            Service? @relation(fields: [service_id], references: [id])
-  service_item       String?  // Fallback / Cache
-  
-  purchased_services String?  // Raw string list
-  room               String?
-  equipment          String?
-  
-  raw_source         String?  // JSON string if needed
+  doctor             Staff?   @relation(fields: [doctor_id], references: [id])
+  import             Import   @relation(fields: [import_id], references: [id])
 
   @@index([date])
   @@index([status])
   @@index([import_id])
 }
 
-// 3.5 Quarantine (Invalid Data)
 model QuarantineAppointment {
   id             String   @id @default(uuid())
-  
   import_id      String
-  import         Import   @relation(fields: [import_id], references: [id])
-
   created_at     DateTime @default(now())
   row_index      Int
-  appointment_id String?  // If available
-  
-  raw_data       String   // JSON string of original CSV row
-  issues_json    String   // JSON string of Zod issues
+  appointment_id String?
+  raw_data       String
+  issues_json    String
+  import         Import   @relation(fields: [import_id], references: [id])
 
   @@index([import_id])
   @@index([created_at])

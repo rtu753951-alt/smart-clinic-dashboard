@@ -40,15 +40,15 @@ function renderDataHealthDashboard() {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; padding: 16px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
             <div style="display:flex; gap: 24px;">
                 <div>
-                     <span style="color:var(--text-muted); font-size:0.9rem;">匯入來源</span>
+                     <span style="color:rgba(255,255,255,0.7); font-size:0.9rem;">匯入來源</span>
                      <div style="font-weight:600; font-size:1.1rem;">${report.meta.mode ? 'API (' + report.meta.mode + ')' : 'CSV File'}</div>
                 </div>
                 <div>
-                     <span style="color:var(--text-muted); font-size:0.9rem;">匯入時間</span>
+                     <span style="color:rgba(255,255,255,0.7); font-size:0.9rem;">匯入時間</span>
                      <div style="font-weight:600; font-size:1.1rem;">${timeStr}</div>
                 </div>
                 <div>
-                     <span style="color:var(--text-muted); font-size:0.9rem;">Import ID</span>
+                     <span style="color:rgba(255,255,255,0.7); font-size:0.9rem;">Import ID</span>
                      <div style="font-family:monospace; color:var(--accent-color);">${report.meta.importId || 'LOCAL-SESSION'}</div>
                 </div>
             </div>

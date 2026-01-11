@@ -411,7 +411,14 @@ export function renderWorkloadCards(
   }
 
   const workloadData = calculateWorkloadData(dataToUse, period);
-  workloadData.sort((a, b) => b.percentage - a.percentage);
+  // Fixed Sort Order: Doctor > Nurse > Therapist > Consultant
+  const fixedOrder = ['doctor', 'nurse', 'therapist', 'consultant'];
+  workloadData.sort((a, b) => {
+      const idxA = fixedOrder.indexOf(a.role);
+      const idxB = fixedOrder.indexOf(b.role);
+      // Fallback for unknown roles to end
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+  });
 
   const html = workloadData.map(data => renderWorkloadCard(data)).join('');
   container.innerHTML = html || '<p style="text-align: center; color: var(--text-muted); padding: 40px;">此期間無合適資料</p>';

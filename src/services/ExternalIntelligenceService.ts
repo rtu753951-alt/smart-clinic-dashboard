@@ -447,21 +447,141 @@ class ExternalIntelligenceService {
 
     private async checkCurrentEventsAndWeather(): Promise<ExternalAlert[]> {
         const alerts: ExternalAlert[] = [];
+    
         const now = new Date();
-        const month = now.getMonth();
-        const dateSeed = now.getDate() + month * 31;
-        const simulatedUV = (dateSeed % 13);
-        
-        if (simulatedUV > 7) {
-             alerts.push({
+    
+        // TODO: 改成你的診所緯度/經度（或改成從設定檔讀）
+        const latitude = 25.0478;
+        const longitude = 121.5319;
+    
+        let uvNow: number | null = null;
+        let uvMaxToday: number | null = null;
+    
+        let humidityNow: number | null = null;
+        let dewPointNow: number | null = null;
+        let tempNow: number | null = null;
+        let apparentTempNow: number | null = null;
+        let windNow: number | null = null;
+        let precipitationNow: number | null = null;
+    
+        try {
+            // 一次取：目前 UV / 濕度 / 溫度 / 體感溫度 / 露點 / 風速 / 降雨 + 今日最大 UV
+            const url =
+                `https://api.open-meteo.com/v1/forecast` +
+                `?latitude=${latitude}&longitude=${longitude}` +
+                `&current=uv_index,relative_humidity_2m,temperature_2m,apparent_temperature,dew_point_2m,wind_speed_10m,precipitation` +
+                `&daily=uv_index_max` +
+                `&timezone=Asia%2FTaipei&forecast_days=1`;
+    
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Weather fetch failed: ${res.status}`);
+    
+            const data = await res.json() as any;
+    
+            // current（目前）
+            uvNow = (typeof data?.current?.uv_index === "number") ? data.current.uv_index : null;
+            humidityNow = (typeof data?.current?.relative_humidity_2m === "number") ? data.current.relative_humidity_2m : null;
+            tempNow = (typeof data?.current?.temperature_2m === "number") ? data.current.temperature_2m : null;
+            apparentTempNow = (typeof data?.current?.apparent_temperature === "number") ? data.current.apparent_temperature : null;
+            dewPointNow = (typeof data?.current?.dew_point_2m === "number") ? data.current.dew_point_2m : null;
+            windNow = (typeof data?.current?.wind_speed_10m === "number") ? data.current.wind_speed_10m : null;
+            precipitationNow = (typeof data?.current?.precipitation === "number") ? data.current.precipitation : null;
+    
+            // daily（今日最大）— 回傳陣列，取第 0 筆
+            uvMaxToday = (typeof data?.daily?.uv_index_max?.[0] === "number") ? data.daily.uv_index_max[0] : null;
+    
+        } catch (e) {
+            console.warn("[ExternalIntelligence] Weather data unavailable:", e);
+            // 拿不到資料就直接回傳空 alerts（避免假警報）
+            return alerts;
+        }
+    
+        // -------------------------
+        // ☀️ UV 預警（優先用今日最大）
+        // -------------------------
+        const uvForAlert = uvMaxToday ?? uvNow;
+    
+        if (uvForAlert != null && uvForAlert > 7) {
+            alerts.push({
                 type: 'market',
                 level: 'warning',
-                title: `☀️ 高 UV 預警 (UV ${simulatedUV})`,
-                message: '預測紫外線指數偏高，建議加強術後防曬衛教。',
+                title: `☀️ 高 UV 預警 (UV ${Math.round(uvForAlert)})`,
+                message: uvMaxToday != null
+                    ? '今日紫外線可能達過量級，建議加強術後防曬衛教。'
+                    : '目前紫外線偏高，建議加強術後防曬衛教。',
                 actionLabel: '發送衛教',
                 date: now.toISOString()
             });
         }
+    
+        // -------------------------
+        // 💧 乾燥提醒（濕度為主，風大加強提示）
+        // -------------------------
+        if (humidityNow != null) {
+            const isVeryDry = humidityNow < 30; // 乾燥警示
+            const isDry = humidityNow < 40;     // 偏乾提醒
+    
+            if (isVeryDry || isDry) {
+                const windHint = (windNow != null && windNow >= 20) ? '（風偏大，體感更乾）' : '';
+                const dewHint = (dewPointNow != null) ? `（露點 ${Math.round(dewPointNow)}°C）` : '';
+    
+                alerts.push({
+                    type: 'market',
+                    level: 'warning',
+                    title: `💧 乾燥提醒 (濕度 ${Math.round(humidityNow)}%)`,
+                    message: `目前環境偏乾${windHint}${dewHint}，建議加強保濕修護、減少刺激性保養與過度清潔。`,
+                    actionLabel: '發送保濕衛教',
+                    date: now.toISOString()
+                });
+            }
+        }
+    
+        // -------------------------
+        // 🥶 寒冷/寒流提醒（用體感溫度更符合感受）
+        // -------------------------
+        const coldRef = (apparentTempNow ?? tempNow);
+        if (coldRef != null) {
+            const isVeryCold = coldRef <= 12;
+            const isCold = coldRef <= 16;
+    
+            if (isVeryCold || isCold) {
+                const tLabel = apparentTempNow != null ? '體感' : '氣溫';
+                const tValue = Math.round(coldRef);
+                const windHint = (windNow != null && windNow >= 20) ? '，且風偏大' : '';
+    
+                alerts.push({
+                    type: 'market',
+                    level: 'warning',
+                    title: `🥶 低溫提醒 (${tLabel} ${tValue}°C)`,
+                    message: `目前${tLabel}偏低${windHint}，建議術後加強保濕修護與防風保暖，避免冷風直吹與過度清潔。`,
+                    actionLabel: '發送修護衛教',
+                    date: now.toISOString()
+                });
+            }
+        }
+    
+        // -------------------------
+        // 📉 到診風險提醒（降雨 / 體感過冷）
+        // - precipitation 是「目前」降水量（mm），小雨也可能影響到診
+        // -------------------------
+        const rainRisk = (precipitationNow != null && precipitationNow >= 0.5); // 可調：0.5mm 當作“正在下雨”
+        const coldRisk = (coldRef != null && coldRef <= 12); // 體感 <= 12°C 當作高風險
+    
+        if (rainRisk || coldRisk) {
+            const parts: string[] = [];
+            if (rainRisk) parts.push(`降雨中（${precipitationNow!.toFixed(1)}mm）`);
+            if (coldRisk) parts.push(`偏冷（${Math.round(coldRef!)}°C）`);
+    
+            alerts.push({
+                type: 'market',
+                level: 'warning',
+                title: `📉 到診風險提醒（${parts.join(' / ')}）`,
+                message: '建議客服提前提醒交通與改期選項，並對高價/療程客優先確認到診，降低 no-show。',
+                actionLabel: '提醒客服',
+                date: now.toISOString()
+            });
+        }
+    
         return alerts;
     }
     

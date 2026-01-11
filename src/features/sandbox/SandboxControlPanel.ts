@@ -1,4 +1,5 @@
 import { sandboxStore, SandboxState } from "./sandboxStore.js";
+import { dataStore } from "../../data/dataStore.js";
 import { renderStaffWorkloadChart } from "../../logic/staff/staffWorkloadChart.js";
 
 /**
@@ -86,14 +87,19 @@ export class SandboxControlPanel {
     }
 
     private renderStaffSlider(role: string, label: string, eng: string) {
+        // Calculate current active staff count
+        const count = dataStore.staff.filter(s => s.staff_type === role && s.status === 'active').length;
+        // Limit: Cannot reduce more than (count - 1), so at least 1 remains.
+        const minVal = -Math.max(0, count - 1);
+
         return `
             <div class="control-row">
                 <div class="control-label">
-                    <span>${label}</span>
+                    <span>${label} <span style="font-size:0.8em; color:#64748b;">(現有: ${count})</span></span>
                     <span id="val-staff-${role}" class="control-value">0</span>
                 </div>
                 <input type="range" id="slider-staff-${role}" data-role="${role}" 
-                    min="-5" max="5" step="1" value="0" class="sandbox-slider staff-slider">
+                    min="${minVal}" max="5" step="1" value="0" class="sandbox-slider staff-slider">
             </div>
         `;
     }

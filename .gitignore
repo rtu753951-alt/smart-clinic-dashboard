@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json # Recommended to commit this for apps
 
 # Build Output
 dist/
@@ -30,6 +30,7 @@ Desktop.ini
 
 # Editors
 .vscode/
+!.vscode/extensions.json
 .idea/
 *.suo
 *.ntvs
@@ -37,13 +38,17 @@ Desktop.ini
 *.sln
 *.swp
 
-# Generated Data (Simulated)
-# *.csv
+# Generated Data
+*.csv
+!public/data/*.csv # Keep public sample data if needed
+*.bak
 
 # Temporary
 tmp/
 .gemini/
 build_log.txt
+dummy.csv
+apps/backend/dummy.csv
 
 # SQLite / Prisma local dev database
 apps/backend/prisma/*.db

@@ -706,14 +706,28 @@ function bindTopBarActions() {
                         <!-- API Key -->
                         <div class="setting-group">
                             <label><i class="fa-solid fa-key"></i> AI 連網服務金鑰 (Google Gemini)</label>
+                            
+                            <!-- Status Badge -->
+                            <div style="margin-bottom: 8px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+                                <span id="key-status-badge" style="padding: 2px 8px; border-radius: 4px; background: #334155; color: #94a3b8; font-weight: 500;">檢查中...</span>
+                                <span style="font-size: 0.8rem; color: #64748b;">(優先級：手動輸入 > 環境設定)</span>
+                            </div>
+
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <input type="password" id="setting-ai-key" class="setting-input" placeholder="輸入 API Key..." style="flex: 1;">
+                                <input type="password" id="setting-ai-key" class="setting-input" placeholder="輸入 API Key (留空則使用環境設定)..." style="flex: 1;">
                                 <button id="btn-test-ai-connection" class="btn-secondary" style="white-space: nowrap; height: 38px; display: flex; align-items: center; gap: 6px;">
                                     <i class="fa-solid fa-plug"></i> 測試連線
                                 </button>
                             </div>
+
+                            <!-- Options -->
+                            <div style="margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+                                <input type="checkbox" id="setting-ai-remember" checked style="cursor: pointer;">
+                                <label for="setting-ai-remember" style="margin: 0; font-size: 0.9rem; color: #cbd5e1; cursor: pointer;">記住我 (儲存於本機 LocalStorage)</label>
+                            </div>
+                            <div class="setting-helper" style="margin-left: 20px; font-size: 0.8rem;">若取消勾選，Key 僅在本次瀏覽器工作階段有效 (SessionStorage)，關閉後即清除。</div>
+
                             <div id="ai-connection-status" style="font-size: 0.85rem; margin-top: 6px; min-height: 1.4em; display: flex; align-items: center;"></div>
-                            <div class="setting-helper">用於法規檢測與時事分析 (儲存於本地，不回傳伺服器)。</div>
                         </div>
 
                         <!-- AI Sensitivity -->
@@ -775,104 +789,146 @@ function bindTopBarActions() {
             // Test Connection Logic
             const btnTest = modalOverlay.querySelector('#btn-test-ai-connection');
             const statusEl = modalOverlay.querySelector('#ai-connection-status');
+            const keyInput = modalOverlay.querySelector('#setting-ai-key') as HTMLInputElement;
+            const rememberCheck = modalOverlay.querySelector('#setting-ai-remember') as HTMLInputElement;
             
             btnTest?.addEventListener('click', async () => {
-                const inputEl = document.getElementById('setting-ai-key') as HTMLInputElement;
-                // Prefer Environment Key if locked, otherwise input value
-                let key = inputEl.value;
+                const manualKey = keyInput.value.trim();
                 
-                // If the input says "Loaded from Env", we shouldn't use that literal string
-                // But getApiKey() inside service handles priority.
-                // However, testConnectivity uses providedKey OR getApiKey().
-                // If user typed a new key, we test THAT.
-                // If user didn't type (and it's locked), we test the actual env key.
-                
-                // Check if locked/env mode
-                if (inputEl.disabled && apiService.isUsingEnvKey()) {
-                     key = ""; // Let service fetch the real env key
-                } else {
-                     if(!key || key.trim() === '') {
-                        if(statusEl) statusEl.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-circle-exclamation"></i> 請先輸入 Key</span>';
-                        return;
+                if (inputIsDirty) {
+                     if (!manualKey) {
+                         if(statusEl) statusEl.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-circle-exclamation"></i> 請輸入 Key (或保留空白以測試環境設定)</span>';
                      }
+                }
+                
+                if (manualKey) {
+                    apiService.setApiKey(manualKey, rememberCheck.checked);
+                } else if (!apiService.getApiKey()) {
+                     if(statusEl) statusEl.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-circle-exclamation"></i> 未檢測到有效的 Key</span>';
+                     return;
                 }
 
                 if(statusEl) statusEl.innerHTML = '<span style="color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> 測試連線中...</span>';
                 
-                // Need to import externalIntelligence dynamically or ensure it's available
-                // Importing at top of file: import { externalIntelligence } from "../services/ExternalIntelligenceService.js";
-                // Assuming it is imported. If not, I need to add import. 
-                // Based on previous reads, I need to check imports.
-                // Logic:
+                updateKeyStatusUI();
+
                 const { externalIntelligence } = await import("../services/ExternalIntelligenceService.js");
-                const result = await externalIntelligence.testConnectivity(key);
+                const result = await externalIntelligence.testConnectivity();
                 
-                if(statusEl) {
-                    if(result.success) {
-                        statusEl.innerHTML = `<span style="color: #10b981; font-weight:600;"><i class="fa-solid fa-circle-check"></i> ${result.message}</span>`;
-                    } else {
-                        statusEl.innerHTML = `<span style="color: #ef4444; font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> ${result.message}</span>`;
-                    }
+                if (result.success) {
+                    statusEl!.innerHTML = `<span style="color: #4ade80;"><i class="fa-solid fa-check-circle"></i> ${result.message}</span>`;
+                } else {
+                    statusEl!.innerHTML = `<span style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> ${result.message}</span>`;
                 }
             });
             
+            // Input Listener to mark dirty
+            let inputIsDirty = false;
+            keyInput.addEventListener('input', () => {
+                inputIsDirty = true;
+            });
+
+            // UI Helper: Update Badge & Input State based on Service
+            const updateKeyStatusUI = () => {
+                const source = apiService.getKeySource();
+                const badge = document.getElementById('key-status-badge');
+                if (!badge) return;
+
+                const currentKey = apiService.getApiKey();
+
+                if (source === 'env') {
+                    badge.textContent = '已從環境設定載入 (Env)';
+                    badge.style.background = 'rgba(16, 185, 129, 0.2)';
+                    badge.style.color = '#34d399';
+                    badge.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                    
+                    if (!inputIsDirty) {
+                        keyInput.placeholder = '目前使用環境變數 (可輸入以覆蓋)';
+                        keyInput.value = ''; 
+                    }
+                } else if (source === 'localStorage') {
+                    badge.textContent = '已手動設定 (本機)';
+                    badge.style.background = 'rgba(59, 130, 246, 0.2)';
+                    badge.style.color = '#60a5fa';
+                    badge.style.border = '1px solid rgba(59, 130, 246, 0.4)';
+                    
+                    if (!inputIsDirty) {
+                        keyInput.value = currentKey || '';
+                        rememberCheck.checked = true;
+                    }
+                } else if (source === 'sessionStorage') {
+                    badge.textContent = '已手動設定 (暫時)';
+                    badge.style.background = 'rgba(251, 191, 36, 0.2)';
+                    badge.style.color = '#fbbf24';
+                    badge.style.border = '1px solid rgba(251, 191, 36, 0.4)';
+                    
+                    if (!inputIsDirty) {
+                        keyInput.value = currentKey || '';
+                        rememberCheck.checked = false;
+                    }
+                } else {
+                    badge.textContent = '未設定';
+                    badge.style.background = 'rgba(239, 68, 68, 0.2)';
+                    badge.style.color = '#f87171';
+                    badge.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+                    if (!inputIsDirty) keyInput.value = '';
+                }
+            };
+            
+            // Expose update function for 'Open Modal' usage
+            (modalOverlay as any)._updateUI = updateKeyStatusUI;
+
             // Save Settings
             const btnSave = modalOverlay.querySelector('#btn-save-settings');
             btnSave?.addEventListener('click', () => {
-                // Get Values
-                const chur = (document.getElementById('setting-churn-days') as HTMLInputElement).value;
-                const vip = (document.getElementById('setting-vip-quantile') as HTMLInputElement).value;
-                const aiKey = (document.getElementById('setting-ai-key') as HTMLInputElement).value;
-                const aiSense = (document.getElementById('setting-ai-sensitivity') as HTMLSelectElement).value;
-                const tone = (document.getElementById('setting-ai-tone') as HTMLSelectElement).value;
-                const defPage = (document.getElementById('setting-default-page') as HTMLSelectElement).value;
-
-                // Persist
-                localStorage.setItem('config_churn_days', chur);
-                localStorage.setItem('config_vip_quantile', vip);
-                if (aiKey) apiService.setApiKey(aiKey);
-                localStorage.setItem('config_ai_sensitivity', aiSense);
-                localStorage.setItem('report_tone', tone);  // Updated Key
-                localStorage.setItem('config_default_page', defPage);
+                // 1. Save Churn Days
+                const churnInput = document.getElementById('setting-churn-days') as HTMLInputElement;
+                localStorage.setItem('config_churn_days', churnInput.value || '90');
                 
-                alert('系統設定已更新！(Layer 1-3 Synced)');
-                modalOverlay!.classList.remove('active');
+                // 2. Save VIP Quantile
+                const vipInput = document.getElementById('setting-vip-quantile') as HTMLInputElement;
+                localStorage.setItem('config_vip_quantile', vipInput.value || '80');
                 
-                // Refresh Trigger
-                if(typeof (window as any).refreshDashboardWithSettings === 'function') {
-                    (window as any).refreshDashboardWithSettings();
+                // 3. Save AI Key
+                const keyVal = keyInput.value.trim();
+                if (keyVal) {
+                    apiService.setApiKey(keyVal, rememberCheck.checked);
                 } else {
-                     console.log('[Settings] Saved:', { churn: chur, vip, aiSense, tone, defPage });
+                    if (inputIsDirty) {
+                         apiService.clearApiKey();
+                    }
                 }
+                
+                // 4. Save Tone
+                const toneSelect = document.getElementById('setting-ai-tone') as HTMLSelectElement;
+                localStorage.setItem('report_tone', toneSelect.value);
+                
+                // 5. Trigger Refresh
+                (window as any).refreshDashboardWithSettings();
+                modalOverlay!.classList.remove('active');
             });
-            
-            // Load saved settings on open
+
+            // Define loadSettings function
             const loadSettings = () => {
                 const sChurn = localStorage.getItem('config_churn_days');
                 const sVip = localStorage.getItem('config_vip_quantile');
                 const sAi = localStorage.getItem('config_ai_sensitivity');
-                const sTone = localStorage.getItem('report_tone');  // Updated Key
+                const sTone = localStorage.getItem('report_tone');
                 const sPage = localStorage.getItem('config_default_page');
-                const sKey = apiService.getApiKey();
                 
                 if(sChurn) (document.getElementById('setting-churn-days') as HTMLInputElement).value = sChurn;
                 if(sVip) (document.getElementById('setting-vip-quantile') as HTMLInputElement).value = sVip;
                 
-                // API Key Handling
-                const keyInput = document.getElementById('setting-ai-key') as HTMLInputElement;
-                if (apiService.isUsingEnvKey()) {
-                    keyInput.type = 'text';
-                    keyInput.value = '已從環境設定載入';
-                    keyInput.disabled = true;
-                    keyInput.style.backgroundColor = '#f1f5f9';
-                    keyInput.style.color = '#64748b';
-                } else if(sKey) {
-                    keyInput.value = sKey;
+                // Update Key UI
+                if ((modalOverlay as any)._updateUI) {
+                    (modalOverlay as any)._updateUI();
                 }
                 
-                if(sAi) (document.getElementById('setting-ai-sensitivity') as HTMLSelectElement).value = sAi;
-                if(sTone) (document.getElementById('setting-ai-tone') as HTMLSelectElement).value = sTone;
-                if(sPage) (document.getElementById('setting-default-page') as HTMLSelectElement).value = sPage;
+                const statusEl = document.getElementById('ai-connection-status');
+                if (statusEl) statusEl.innerHTML = ''; // Clear prev status
+
+
+
             };
 
             // Bind Load to Open Button
@@ -929,6 +985,10 @@ function generateTemplateCSV() {
 /**
  * 處理檔案上傳與即時檢核 (Data Robustness)
  */
+
+/**
+ * 處理檔案上傳與即時檢核 (Data Robustness)
+ */
 function handleFileUpload(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -976,7 +1036,10 @@ function handleFileUpload(event: Event) {
             setTimeout(async () => {
                 const result = await dataStore.handleMasterImport(rawRows);
                 
-                statusMsg.innerHTML = `<span style="color:#10b981;"><i class="fa-solid fa-check-circle"></i> ✅ 萬用營運報表載入成功！已同步更新醫師產能、到診率與 AI 診斷摘要 (新增 ${result.count} 筆)</span>`;
+                const count = result.count;
+                // Construct message safely
+                const msg = '<span style="color:#10b981;"><i class="fa-solid fa-check-circle"></i> ✅ 萬用營運報表載入成功！已同步更新醫師產能、到診率與 AI 診斷摘要 (新增 ' + count + ' 筆)</span>';
+                statusMsg.innerHTML = msg;
                 
                 // Trigger Refresh
                 if (typeof (window as any).refreshOverviewPageByMonth === "function") {
