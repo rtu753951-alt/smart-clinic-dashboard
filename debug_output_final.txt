@@ -1,0 +1,19 @@
+--- DEBUG START ---
+Loaded 14 services.
+Total Raw Appointments: 55205
+First Appointment Parsed:
+{"appointment_id":"APT00001","date":"2024-01-01","time":"12:37:00","service_item":"Thermage","doctor_name":"陳醫師","staff_role":"劉護理師","status":"completed"}
+Loaded 13 staff.
+[Distribution] Unique: 7, Min=20, Max=75, P50=35, P90=60
+--- SIMULATED RENDER LOGS (Minutes Mode) ---
+[HEATMAP_COLOR]
+{"role":"doctor","bucket":"12-14","mode":"minutesPerHour","vUsed":4143,"capV":8343,"algo":"Sqrt","alpha":"0.749"}
+[HEATMAP_COLOR]
+{"role":"doctor","bucket":"14-16","mode":"minutesPerHour","vUsed":7425,"capV":8343,"algo":"Sqrt","alpha":"0.952"}
+[HEATMAP_COLOR]
+{"role":"doctor","bucket":"16-18","mode":"minutesPerHour","vUsed":8343,"capV":8343,"algo":"Sqrt","alpha":"1.000"}
+[HEATMAP_COLOR]
+{"role":"doctor","bucket":"18-21","mode":"minutesPerHour","vUsed":8258,"capV":8343,"algo":"Sqrt","alpha":"0.996"}
+[HEATMAP_COLOR]
+{"role":"nurse","bucket":"12-14","mode":"minutesPerHour","vUsed":1713,"capV":3432,"algo":"Sqrt","alpha":"0.751"}
+[VERIFICATION] Alpha Stats: Min=0.685, Max=1.000, P50=0.941, P90=1.000

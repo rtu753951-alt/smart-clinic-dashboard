@@ -123,7 +123,7 @@ export function renderHiddenLoadChart(stats: TimeStructureStats[]): void {
                       label: function(context: any) {
                           const label = context.dataset.label || '';
                           const value = context.raw || 0;
-                          return `${label}: ${value} 分鐘/人`;
+                          return `${label}: ${Math.round(value)} 分/人/日`;
                       },
                       afterBody: function(tooltipItems: any[]) {
                           const sopItem = tooltipItems.find(i => i.datasetIndex === 0);
@@ -133,11 +133,17 @@ export function renderHiddenLoadChart(stats: TimeStructureStats[]): void {
                           const hidden = hiddenItem ? (hiddenItem.raw as number) : 0;
                           const total = sop + hidden;
                           
+                          let lines = [];
+                          lines.push('----------------');
+                          lines.push(`總負荷: ${Math.round(total)} 分/人/日`);
+                          
                           if (total > 0) {
                               const ratio = Math.round((hidden / total) * 100);
-                              return `----------------\n實際負荷總計: ${total} 分鐘\n隱性佔比: ${ratio}%\n(此為流程結構診斷，非績效)`;
+                              lines.push(`結構性緩衝 (Hidden): ${ratio}%`);
                           }
-                          return '';
+                          lines.push('');
+                          lines.push('* 分母基數: 當期有排班/活躍人天數');
+                          return lines;
                       }
                   },
                   titleFont: { family: "'Noto Sans TC', sans-serif", size: 13 },

@@ -4,6 +4,7 @@ import { calculateRoleFit, generateRoleFitInsights } from "../logic/staff/staffR
 import { filterAppointmentsForMode, calculateBufferAnalysis, generateBufferInsights, calculateTimeStructure, generateBufferStructureReport } from "../logic/staff/staffBufferAnalysis.js";
 import { generateStaffSuggestions } from "../logic/aiManager.js"; 
 import { renderHiddenLoadChart } from "../logic/staff/staffHiddenLoadChart.js";
+import { calculateStaffHeatmapData, renderStaffHeatmap } from "../logic/staff/staffCharts.js";
 
 declare const Chart: any;
 
@@ -90,6 +91,15 @@ export function initStaffPage() {
   } catch (error) {
       console.error("[StaffPage] Layer 4 init failed:", error);
   }
+
+  // Layer 5: Staff Heatmap (New)
+  try {
+      const heatmapData = calculateStaffHeatmapData(monthAppointments);
+      renderStaffHeatmap(heatmapData);
+      console.log("[StaffPage] Layer 5 (Heatmap) initialized.");
+  } catch (error) {
+      console.error("[StaffPage] Layer 5 (Heatmap) init failed:", error);
+  }
   // Sandbox Listener
   window.addEventListener('sandbox-change', () => {
       console.log("[StaffPage] Sandbox changed. Refreshing...");
@@ -121,6 +131,10 @@ export function initStaffPage() {
       const newWorkloadData = calculateWorkloadData(dataStore.appointments, 'week');
       const newAiSuggestions = generateStaffSuggestions(newWorkloadData, newRoleFitStats, newBufferStats);
       renderAISuggestions(newAiSuggestions);
+
+      // 6. Update Layer 5 (Heatmap)
+      const newHeatmapData = calculateStaffHeatmapData(updatedMonthAppts);
+      renderStaffHeatmap(newHeatmapData);
   });
 }
 

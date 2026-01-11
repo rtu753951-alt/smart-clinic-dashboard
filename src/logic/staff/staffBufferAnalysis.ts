@@ -65,7 +65,10 @@ function getStaffRoleMap(): Map<string, string> {
 /**
  * Calculate Buffer Analysis with High Density Logic
  */
-export function calculateBufferAnalysis(appointments: AppointmentRecord[]): BufferStats[] {
+/**
+ * Calculate Buffer Analysis with High Density Logic (Refined)
+ */
+export function calculateBufferAnalysis(appointments: AppointmentRecord[], options: { includeCancelled?: boolean } = {}): BufferStats[] {
     const personAppts: Record<string, AppointmentRecord[]> = {};
     const staffMap = getStaffRoleMap();
 
@@ -77,7 +80,9 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[]): Buff
     };
 
     appointments.forEach(apt => {
-        if (apt.status === 'cancelled' || apt.status === 'no_show') return;
+        // Option to include cancelled for "Scheduling Pressure" vs "Actual Load"
+        if (!options.includeCancelled && (apt.status === 'cancelled' || apt.status === 'no_show')) return;
+        
         if (apt.doctor_name) addAppt(apt.doctor_name, apt);
         if (apt.staff_role) addAppt(apt.staff_role, apt);
     });
@@ -86,15 +91,18 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[]): Buff
     const sbState = sandboxStore.getState();
 
     Object.entries(personAppts).forEach(([name, appts]) => {
-        if (appts.length < 2) return;
+        if (appts.length < 2) return; // Need at least 2 to have a gap
         
         const staffRec = dataStore.staff.find(s => s.staff_name === name);
+        // Sort by Time
         appts.sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
 
         let totalGaps = 0;
         let compressedGaps = 0;
         let totalGapMinutes = 0;
-        let totalGrowthAccumulator = 0;
+        
+        // Sandbox Vars
+        let simCompressedGaps = 0;
         
         let currentDensityChainMinutes = 0;
         let totalHighDensityMinutes = 0;
@@ -103,43 +111,68 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[]): Buff
             const curr = appts[i];
             const next = appts[i + 1];
             
-            const service = dataStore.services.find(s => s.service_name === curr.service_item);
-            
-            // Growth calc
-            if (sbState.isActive && service && staffRec) {
-                 const cat = service.category || 'consult';
-                 const g = sbState.serviceGrowth[cat as keyof typeof sbState.serviceGrowth] || 0;
-                 if (isCertifiedForCategory(staffRec, cat)) totalGrowthAccumulator += g;
-            }
-
-            // Same Day check
+            // Skip cross-day gaps
             if (curr.date !== next.date) {
                 totalHighDensityMinutes += currentDensityChainMinutes;
                 currentDensityChainMinutes = 0;
-                continue;
+                continue; 
             }
 
-            const duration = service ? service.duration : 30;
-            const buffer = service ? service.buffer_time : 10;
-            const currEnd = new Date(new Date(`${curr.date}T${curr.time}`).getTime() + duration * 60000);
-            const nextStart = new Date(`${next.date}T${next.time}`);
-            const gapMinutes = Math.floor((nextStart.getTime() - currEnd.getTime()) / 60000);
+            const service = dataStore.services.find(s => s.service_name === curr.service_item);
+            const duration = service ? service.duration : 30; // Pure procedure time
+            const baseBuffer = service ? service.buffer_time : 10; // Standard buffer
 
-            if (gapMinutes < buffer) {
+            // Valid Gap: Next.Start - (Curr.Start + Duration)
+            // DO NOT include buffer in 'currEnd' for gap calculation
+            const currStartObj = new Date(`${curr.date}T${curr.time}`);
+            const currEndObj = new Date(currStartObj.getTime() + duration * 60000); 
+            const nextStartObj = new Date(`${next.date}T${next.time}`);
+            
+            const gapMinutes = Math.floor((nextStartObj.getTime() - currEndObj.getTime()) / 60000);
+
+            // 1. Regular Check
+            if (gapMinutes < baseBuffer) {
                 compressedGaps++;
                 currentDensityChainMinutes += duration;
             } else {
                 totalHighDensityMinutes += currentDensityChainMinutes;
                 currentDensityChainMinutes = 0;
             }
+
+            // 2. Sandbox Simulation Check
+            if (sbState.isActive && service && staffRec) {
+                // Logic: Increased demand shrinks effective gaps OR increases chance of overrun
+                // We model this as: effectiveGap = gap / (1 + growth)
+                // If growth is 50%, a 15min gap becomes 10min effective -> might compress
+                const cat = service.category || 'consult';
+                const growth = sbState.serviceGrowth[cat as keyof typeof sbState.serviceGrowth] || 0;
+                
+                // Only if qualified
+                if (isCertifiedForCategory(staffRec, cat)) {
+                     // Reverse logic: Growth means "tighter". 
+                     // Or conceptually: Task took longer? or Gap is tighter?
+                     // Let's assume 'Business Growth' -> 'Tighter Scheduling' -> 'Gap Compression'
+                     const effectiveGap = gapMinutes / (1 + growth);
+                     if (effectiveGap < baseBuffer) {
+                         simCompressedGaps++;
+                     }
+                } else {
+                    // No growth effect
+                    if (gapMinutes < baseBuffer) simCompressedGaps++;
+                }
+            } else {
+                // Fallback to regular if inactive
+                if (gapMinutes < baseBuffer) simCompressedGaps++;
+            }
             
             totalGaps++;
-            totalGapMinutes += gapMinutes;
+            totalGapMinutes += Math.max(0, gapMinutes);
         }
         totalHighDensityMinutes += currentDensityChainMinutes;
 
         let roleType = staffMap.get(name);
         if (!roleType) {
+            // ... fallback existing logic
             if (name.includes('醫師')) roleType = 'doctor';
             else if (name.includes('護理師')) roleType = 'nurse';
             else if (name.includes('諮詢師')) roleType = 'consultant';
@@ -149,17 +182,15 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[]): Buff
 
         if (totalGaps > 0) {
             const baseRate = Math.round((compressedGaps / totalGaps) * 100);
-            let finalRate = baseRate;
-            if (sbState.isActive) {
-                const avgGrowth = totalGrowthAccumulator / appts.length; 
-                const simImpact = Math.round(avgGrowth * 40); 
-                finalRate = Math.min(100, Math.max(0, baseRate + simImpact));
-            }
+            const simRate = Math.round((simCompressedGaps / totalGaps) * 100);
+            
+            // Final Rate: Use Sim if Active, else Base
+            const finalRate = sbState.isActive ? simRate : baseRate;
 
             results.push({
                 role: `${name} (${roleType})`,
                 totalGaps,
-                compressedGaps, 
+                compressedGaps: sbState.isActive ? simCompressedGaps : compressedGaps, 
                 avgGapMinutes: Math.round(totalGapMinutes / totalGaps),
                 compressionRate: finalRate,
                 highDensityHours: Math.round((totalHighDensityMinutes / 60) * 10) / 10
@@ -173,100 +204,125 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[]): Buff
 // ... existing imports
 
 /**
- * 分析時間結構：SOP Benchmark vs Actual Load (診斷視圖)
- * 改為計算「每人平均每日分鐘數」
+ * 分析時間結構：SOP 基準 vs 實際人力負荷 (診斷視圖) -> Refined Logic
+ * Unit: Minutes / Person / Day (Average)
  */
 export function calculateTimeStructure(appointments: AppointmentRecord[], mode: 'week' | 'month' | 'future' = 'week'): TimeStructureStats[] {
-    const roleStats: Record<string, { sop: number, actual: number, hidden: number }> = {};
+    const roleStats: Record<string, { sop: number, actual: number, hidden: number, activePersonDays: Set<string> }> = {};
     const sbState = sandboxStore.getState();
 
     // 1. 初始化統計容器
     ['doctor', 'nurse', 'therapist', 'consultant'].forEach(r => {
-        roleStats[r] = { sop: 0, actual: 0, hidden: 0 };
+        roleStats[r] = { sop: 0, actual: 0, hidden: 0, activePersonDays: new Set<string>() };
     });
 
-    // 2. 累加分鐘數 (使用 Involvement Ratios)
+    const staffMap = getStaffRoleMap();
+
+    // 2. 累加分鐘數 (使用 Involvement Ratios) & Track Active Days
     appointments.forEach(apt => {
-        // Future mode includes no_show as 'booked' demand
         if (apt.status === 'cancelled') return; 
         
+        const dateStr = apt.date;
         let serviceName = apt.service_item;
         const service = dataStore.services.find(s => s.service_name === serviceName);
         if (!service) return;
 
-        // 判斷 Service Category 以取得 Ratio
+        // Service Params
         let category = service.category;
-        if (!INVOLVEMENT_RATIOS[category]) category = 'consult'; // Fallback
-        
-        // Sandbox Growth Factor
+        if (!INVOLVEMENT_RATIOS[category]) category = 'consult'; 
         const growth = sbState.isActive ? (1 + (sbState.serviceGrowth[category as keyof typeof sbState.serviceGrowth] || 0)) : 1;
 
-        const duration = service.duration;     // SOP 核心時間
-        const buffer = service.buffer_time;    // SOP 緩衝 (或是 Hidden Load 來源)
+        const duration = service.duration;     // Pure Value-Add
+        const buffer = service.buffer_time;    // Standard Hidden Load
         const totalDuration = duration + buffer;
 
-        // 分配給各角色
-        // 遍歷所有角色，因為一個服務可能多人參與 (Occupancy)
-        Object.keys(roleStats).forEach(role => {
-            const ratio = INVOLVEMENT_RATIOS[category]?.[role] || 0;
+        // Helper: Register Load
+        const registerLoad = (role: string, name: string) => {
+            if (!roleStats[role]) return;
             
-            if (ratio > 0) {
-                // SOP Benchmark = Service Duration * Ratio * Growth
-                const sopVal = duration * ratio * growth;
-                
-                // Actual Load (Occupancy) = (Service + Buffer) * Ratio * Growth
-                const actualVal = totalDuration * ratio * growth;
+            // 2.1 Track Active Person-Day (Name + Date)
+            // If strictly analyzing "Average Load per Working Date", we count (Name+Date).
+            // Example: "Dr. Chen-2024-01-01".
+            if (!name.includes('nan')) {
+                roleStats[role].activePersonDays.add(`${name}|${dateStr}`);
+            }
 
-                // Hidden Load = Actual - SOP
+            // 2.2 Calculate Minutes
+            const ratio = INVOLVEMENT_RATIOS[category]?.[role] || 0;
+            if (ratio > 0) {
+                const sopVal = duration * ratio * growth;
+                const actualVal = totalDuration * ratio * growth;
                 const hiddenVal = actualVal - sopVal;
 
                 roleStats[role].sop += sopVal;
                 roleStats[role].actual += actualVal;
                 roleStats[role].hidden += hiddenVal;
             }
-        });
+        };
+
+        // Apply to Doctor
+        if (apt.doctor_name) {
+             let r = staffMap.get(apt.doctor_name.trim());
+             if (r === 'doctor') registerLoad('doctor', apt.doctor_name.trim());
+        }
+
+        // Apply to Staff
+        if (apt.staff_role) {
+            let r = staffMap.get(apt.staff_role.trim()) || 'therapist'; // Fallback? Or check if in map
+            if (roleStats[r]) registerLoad(r, apt.staff_role.trim());
+        }
     });
 
     // 3. 正規化 (Normalization) -> 分鐘/人/天
-    // 假設天數
-    let days = 1;
-    if (mode === 'week') days = 7;
-    if (mode === 'month') days = 30; // 簡化
-    if (mode === 'future') days = 7;
+    // Updated Logic: Divisor = Total Active Person-Days found in the data (Heuristic)
+    // If Mode is Week, and Dr. A works 2 days, Dr. B works 5 days.
+    // Total Load = Load(A) + Load(B).
+    // Total Person-Days = 2 + 5 = 7.
+    // Result = (Load A + Load B) / 7. -> "Average Daily Load per Active Staff"
+    // This correctly handles part-time and shifts.
 
-    // 假設人數 (從 DataStore 抓取 Active Staff 數量 + Sandbox Delta)
-    const getCount = (type: string) => {
-        let base = 0;
-        if (type === 'therapist') {
-             base = dataStore.staff.filter(s => (s.staff_type === 'therapist' || (s.staff_type as string) === 'beauty_therapist') && s.status === 'active').length;
-        } else {
-             base = dataStore.staff.filter(s => s.staff_type === type && s.status === 'active').length;
-        }
-        
-        let delta = 0;
-        if (sbState.isActive) {
-            delta = sbState.staffDeltas[type as keyof typeof sbState.staffDeltas] || 0;
-        }
-        return Math.max(1, base + delta); // Prevent division by zero
-    };
-
-    const staffCounts = {
-        doctor: getCount('doctor'),
-        nurse: getCount('nurse'),
-        therapist: getCount('therapist'),
-        consultant: getCount('consultant')
-    };
+    // Fallback: If no data (future), use assumptions
+    let daysInPeriod = 7;
+    if (mode === 'week') daysInPeriod = 7;
+    if (mode === 'month') daysInPeriod = 30;
 
     return Object.keys(roleStats).map(role => {
         const s = roleStats[role];
-        const count = staffCounts[role as keyof typeof staffCounts] || 1;
-        const divisor = days * count;
+        
+        let divisor = s.activePersonDays.size;
+
+        // Fallback for empty periods or future prediction where no specific schedule exists
+        if (divisor === 0) {
+            // Count total active staff * days
+            const activeCount = dataStore.staff.filter(st => st.staff_type === role && st.status === 'active').length;
+            divisor = Math.max(1, activeCount * daysInPeriod);
+        }
+
+        // Apply Sandbox Delta to Divisor (Approximate)
+        if (sbState.isActive) {
+             // If we added 1 staff in sandbox, we assume they work full period?
+             // Simplification: Scale divisor by (NewCount / OldCount)
+             const activeCount = dataStore.staff.filter(st => st.staff_type === role && st.status === 'active').length;
+             const delta = sbState.staffDeltas[role as keyof typeof sbState.staffDeltas] || 0;
+             if (activeCount > 0) {
+                 const scale = (activeCount + delta) / activeCount;
+                 // Don't scale if using actual PersonDays (since simulated staff don't have schedule).
+                 // Actually we SHOULD scale divisor UP to reflect "help is arriving" -> Average load goes DOWN.
+                 // Wait, if load (numerator) increases by Growth, and staff (denominator) increases by Delta.
+                 // Correct. 
+                 
+                 // However, s.activePersonDays only captures existing staff on schedule. 
+                 // We need to Model the 'New Staff' impact. 
+                 // If we hire 1 new nurse, the Total Load is shared by (Existing + 1).
+                 // So we multiply Divisor by factor.
+                 divisor = divisor * scale;
+             }
+        }
 
         return {
             role,
-            // 轉為「每日每人平均」
-            serviceMinutes: Math.round(s.sop / divisor),    // Reuse field name for 'SOP Benchmark'
-            bufferMinutes: Math.round(s.hidden / divisor),  // Reuse field name for 'Hidden Load'
+            serviceMinutes: Math.round(s.sop / divisor),    
+            bufferMinutes: Math.round(s.hidden / divisor), 
             totalMinutes: Math.round(s.actual / divisor),
             bufferRatio: s.actual > 0 ? Math.round((s.hidden / s.actual) * 100) : 0
         };
