@@ -139,7 +139,7 @@ npm run dev
 cd apps/backend
 npm install
 npm run dev
-
+```
 
 ### 2. 設定 AI 金鑰 (必要)
 
