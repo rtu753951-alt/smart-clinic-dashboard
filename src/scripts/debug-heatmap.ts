@@ -15,7 +15,7 @@ async function runDebug() {
     const logs: string[] = [];
     const log = (...args: any[]) => {
         console.log(...args);
-        args.forEach(a => {
+        args.forEach((a: any) => {
              const str = typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a);
              logs.push(str);
         });
@@ -27,16 +27,16 @@ async function runDebug() {
         // Robust CSV Parser (Regex handles quotes)
         const csvParse = (input: string) => {
             const cleanInput = input.replace(/^\uFEFF/, '');
-            const lines = cleanInput.split('\n').filter(l => l.trim());
+            const lines = cleanInput.split('\n').filter((l: string) => l.trim());
             if (lines.length === 0) return [];
 
-            const headers = lines[0].split(',').map(h => h.trim());
+            const headers = lines[0].split(',').map((h: string) => h.trim());
             const re = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
             
-            return lines.slice(1).map(line => {
-                const values = line.split(re).map(v => v.trim().replace(/^"|"$/g, ''));
+            return lines.slice(1).map((line: string) => {
+                const values = line.split(re).map((v: string) => v.trim().replace(/^"|"$/g, ''));
                 const obj: any = {};
-                headers.forEach((h, i) => {
+                headers.forEach((h: string, i: number) => {
                     obj[h] = values[i] || "";
                 });
                 return obj;
@@ -47,7 +47,7 @@ async function runDebug() {
         
         // 1. Load Services
         const rawServices = csvParse(fs.readFileSync(path.join(root, 'services.csv'), 'utf8'));
-        dataStore.services = rawServices.map(r => ({
+        dataStore.services = rawServices.map((r: any) => ({
             service_name: r.service_name,
             category: r.category as any,
             price: Number(r.price),
@@ -62,7 +62,7 @@ async function runDebug() {
         const rawAppts = csvParse(fs.readFileSync(path.join(root, 'appointments.csv'), 'utf8'));
         log(`Total Raw Appointments: ${rawAppts.length}`);
         
-        const appointments = rawAppts.slice(0, 2000).map(r => ({
+        const appointments = rawAppts.slice(0, 2000).map((r: any) => ({
             appointment_id: r.appointment_id,
             date: r.date,
             time: r.time,
@@ -75,7 +75,7 @@ async function runDebug() {
 
         // 3. Load Staff
         const rawStaff = csvParse(fs.readFileSync(path.join(root, 'staff.csv'), 'utf8'));
-        dataStore.staff = rawStaff.map(r => ({
+        dataStore.staff = rawStaff.map((r: any) => ({
             staff_name: r.staff_name,
             staff_type: r.staff_type as any,
             specialty: r.specialty,
@@ -85,11 +85,11 @@ async function runDebug() {
 
         // 4. Run Calc Logic
         // Explicitly cast to any to resolve interface mismatch (missing customer, age, etc in debug data)
-        const result = calculateStaffHeatmapData(appointments as any);
+        const result: any = calculateStaffHeatmapData(appointments as any);
 
         // 5. Distribution Stats Check
         const usedDurations: number[] = [];
-        appointments.forEach(apt => {
+        appointments.forEach((apt: any) => {
             const key = (apt.service_item || "").trim();
             if (!key) return;
             const s = dataStore.services.find(svc => svc.service_name.trim().toLowerCase() === key.toLowerCase());
@@ -114,12 +114,12 @@ async function runDebug() {
         
         // 6a. Calculate Per-Role P90
         const roleStats: Record<string, { max: number, p90: number, values: number[] }> = {};
-        roles.forEach(role => {
+        roles.forEach((role: string) => {
             const values: number[] = [];
             if (result[role]) {
-                Object.keys(result[role]).forEach(bucket => {
+                Object.keys(result[role]).forEach((bucket: string) => {
                     // cast bucket to any to avoid "string cannot index..." index signature error
-                    const cell = result[role][bucket as any];
+                    const cell = result[role][bucket];
                     // We simulate "Minutes Mode"
                     const v = cell.occupiedMinutesPerHour;
                     if (v > 0) values.push(v);
@@ -135,14 +135,14 @@ async function runDebug() {
         let logCount = 0;
         const alphaVals: number[] = [];
         
-        roles.forEach(role => {
+        roles.forEach((role: string) => {
             const stats = roleStats[role];
             // Strategy: Use P90 as the "Soft Max" (Cap).
             const capV = Math.max(stats.p90, 60);
 
             if (result[role]) {
-                Object.keys(result[role]).forEach(bucket => {
-                    const cell = result[role][bucket as any];
+                Object.keys(result[role]).forEach((bucket: string) => {
+                    const cell = result[role][bucket];
                     if (!cell) return;
                     
                     const vUsed = cell.occupiedMinutesPerHour;
