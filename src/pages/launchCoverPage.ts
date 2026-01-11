@@ -42,12 +42,46 @@ export async function initLaunchCover(): Promise<void> {
         return;
     }
 
+    // Inject Responsive Styles for Launch Cover
+    if (!document.getElementById('launch-cover-style')) {
+        const style = document.createElement('style');
+        style.id = 'launch-cover-style';
+        style.textContent = `
+            .launch-cover-content {
+                margin: 0 auto;
+                width: 90%;
+                max-width: 1200px;
+                text-align: center;
+                /* Spacers handle vertical positioning */
+            }
+            .launch-title {
+                font-size: 2.8rem;
+                font-weight: 800;
+                letter-spacing: 0.05em;
+                color: #fff;
+                text-shadow: 0 0 20px rgba(59, 168, 255, 0.6);
+                margin-bottom: 30px;
+                transition: font-size 0.3s ease, margin 0.3s ease;
+            }
+            /* Responsive Scaling for Height */
+            @media (max-height: 900px) {
+                .launch-cover-content { padding: 20px 0; }
+                .launch-title { font-size: 2.2rem; margin-bottom: 20px; }
+            }
+            @media (max-height: 700px) {
+                .launch-cover-content { padding: 10px 0; }
+                .launch-title { font-size: 1.8rem; margin-bottom: 15px; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // 鎖定滾動
     document.body.style.overflow = 'hidden';
 
     // 顯示封面與 Skeleton
-    coverContainer.style.display = "flex";
-    coverContainer.style.overflowY = "auto"; // Enable vertical scroll for cover content
+    coverContainer.style.display = "block";
+    // coverContainer.style.overflowY = "auto"; // Moved to CSS/HTML inline to work with flex-col
     showLoadingState(coverContainer);
 
     // [效能優化] 讓瀏覽器有機會先繪製 Skeleton (Yield to main thread)
@@ -365,26 +399,28 @@ function calculateRiskCount(): number {
  */
 function showLoadingState(container: HTMLElement): void {
     container.innerHTML = `
-        <div class="launch-cover-content">
-            <h1 class="launch-title">醫美經營智慧大腦｜啟動中心</h1>
-            
-            <div class="launch-grid">
-                <!-- 左側：亮點區 (60%) -->
-                <div class="launch-card launch-highlight">
-                    <div class="skeleton skeleton-text skeleton-large" style="margin-bottom: 20px;"></div>
-                    <div class="skeleton skeleton-text skeleton-medium"></div>
+        <div style="min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0;">
+            <div class="launch-cover-content">
+                <h1 class="launch-title">醫美經營智慧大腦｜啟動中心</h1>
+                
+                <div class="launch-grid">
+                    <!-- 左側：亮點區 (60%) -->
+                    <div class="launch-card launch-highlight">
+                        <div class="skeleton skeleton-text skeleton-large" style="margin-bottom: 20px;"></div>
+                        <div class="skeleton skeleton-text skeleton-medium"></div>
+                    </div>
+                    
+                    <!-- 右側：行動區 (40%) -->
+                    <div class="launch-card launch-action">
+                        <div class="skeleton skeleton-text skeleton-medium" style="margin-bottom: 15px;"></div>
+                        <div class="skeleton skeleton-text skeleton-small"></div>
+                    </div>
                 </div>
                 
-                <!-- 右側：行動區 (40%) -->
-                <div class="launch-card launch-action">
-                    <div class="skeleton skeleton-text skeleton-medium" style="margin-bottom: 15px;"></div>
-                    <div class="skeleton skeleton-text skeleton-small"></div>
+                <div class="launch-status">
+                    <div class="loading-spinner"></div>
+                    <p>正在同步今日營運指標…</p>
                 </div>
-            </div>
-            
-            <div class="launch-status">
-                <div class="loading-spinner"></div>
-                <p>正在同步今日營運指標…</p>
             </div>
         </div>
     `;
@@ -395,49 +431,50 @@ function showLoadingState(container: HTMLElement): void {
  */
 function renderCoverContent(container: HTMLElement, data: LaunchCoverData): void {
     container.innerHTML = `
-        <div class="launch-cover-content">
-            <h1 class="launch-title">醫美經營智慧大腦｜啟動中心</h1>
-            
-            <div class="launch-info-bar">
-                資料更新：${data.lastUpdatedTime}｜視窗：${data.windowLabel}
-            </div>
+        <div style="min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0;">
+            <div class="launch-cover-content">
+                <h1 class="launch-title">醫美經營智慧大腦｜啟動中心</h1>
+                
+                <div class="launch-info-bar">
+                    資料更新：${data.lastUpdatedTime}｜視窗：${data.windowLabel}
+                </div>
 
-            <!-- 三個並排的玻璃卡片 -->
-            <div class="launch-cards-grid">
-            <!-- 卡片 1: 營收 -->
-                <div class="launch-glass-card card-revenue" id="card-revenue-btn" data-hint="前往｜療程營收">
-                    <div class="card-icon">💰</div>
-                    <div class="card-label">本月總營收</div>
-                    <div class="card-value">${data.monthlyRevenueFormatted}</div>
-                </div>
-                
-                <!-- 卡片 2: VIP -->
-                <div class="launch-glass-card card-vip" id="card-vip-btn" data-hint="前往｜顧客洞察（RFM）">
-                    <div class="card-icon">💎</div>
-                    <div class="card-label">核心 VIP 人數</div>
-                    <div class="card-value">${data.vipCount} <span class="card-unit">位</span></div>
-                </div>
-                
-                <!-- 卡片 3: 待關懷 -->
-                <div class="launch-glass-card card-action" id="card-risk-btn" data-hint="前往｜流失風險名單">
-                    <div class="card-icon">🔔</div>
-                    <div class="card-label">本日優先行動</div>
-                    <div class="card-value">${data.riskCount} <span class="card-unit">位</span></div>
-                    <div class="card-subtext">
-                        <span style="${(data.riskBreakdown?.medium || 0) > 0 ? 'color: #fbbf24; font-weight: bold;' : 'color: rgba(255,255,255,0.35);'}">
-                            中風險 ${data.riskBreakdown?.medium || 0}
-                        </span>
-                        <span class="subtext-divider">｜</span>
-                        <span style="color: rgba(255,255,255,0.6);">
-                            低風險 ${data.riskBreakdown?.low || 0}
-                        </span>
-                        <span class="subtext-divider">｜</span>
-                        <span style="${(data.riskBreakdown?.high || 0) > 0 ? 'color: #ef4444; font-weight: bold;' : 'color: rgba(255,255,255,0.35);'}">
-                            高風險 ${data.riskBreakdown?.high || 0}
-                        </span>
+                <!-- 三個並排的玻璃卡片 -->
+                <div class="launch-cards-grid">
+                <!-- 卡片 1: 營收 -->
+                    <div class="launch-glass-card card-revenue" id="card-revenue-btn" data-hint="前往｜療程營收">
+                        <div class="card-icon">💰</div>
+                        <div class="card-label">本月總營收</div>
+                        <div class="card-value">${data.monthlyRevenueFormatted}</div>
+                    </div>
+                    
+                    <!-- 卡片 2: VIP -->
+                    <div class="launch-glass-card card-vip" id="card-vip-btn" data-hint="前往｜顧客洞察（RFM）">
+                        <div class="card-icon">💎</div>
+                        <div class="card-label">核心 VIP 人數</div>
+                        <div class="card-value">${data.vipCount} <span class="card-unit">位</span></div>
+                    </div>
+                    
+                    <!-- 卡片 3: 待關懷 -->
+                    <div class="launch-glass-card card-action" id="card-risk-btn" data-hint="前往｜流失風險名單">
+                        <div class="card-icon">🔔</div>
+                        <div class="card-label">本日優先行動</div>
+                        <div class="card-value">${data.riskCount} <span class="card-unit">位</span></div>
+                        <div class="card-subtext">
+                            <span style="${(data.riskBreakdown?.medium || 0) > 0 ? 'color: #fbbf24; font-weight: bold;' : 'color: rgba(255,255,255,0.35);'}">
+                                中風險 ${data.riskBreakdown?.medium || 0}
+                            </span>
+                            <span class="subtext-divider">｜</span>
+                            <span style="color: rgba(255,255,255,0.6);">
+                                低風險 ${data.riskBreakdown?.low || 0}
+                            </span>
+                            <span class="subtext-divider">｜</span>
+                            <span style="${(data.riskBreakdown?.high || 0) > 0 ? 'color: #ef4444; font-weight: bold;' : 'color: rgba(255,255,255,0.35);'}">
+                                高風險 ${data.riskBreakdown?.high || 0}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
             
             <button class="launch-enter-btn" id="btn-enter-dashboard">
                 <span>開始今日數據決策</span>
@@ -730,6 +767,7 @@ function renderCoverContent(container: HTMLElement, data: LaunchCoverData): void
                     </div>
                 `;
             })()}
+            </div>
         </div>
     `;
 }
@@ -739,37 +777,38 @@ function renderCoverContent(container: HTMLElement, data: LaunchCoverData): void
  */
 function renderErrorState(container: HTMLElement, errorMessage: string): void {
     container.innerHTML = `
-        <div class="launch-cover-content">
-        <div class="launch-cover-content">
-            <h1 class="launch-title">醫美經營智慧大腦｜啟動中心</h1>
-            
-            <div class="launch-grid">
-                <!-- 左側：亮點區 -->
-                <div class="launch-card launch-highlight launch-error">
-                    <div class="error-icon">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div style="min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0;">
+            <div class="launch-cover-content">
+                <h1 class="launch-title">醫美經營智慧大腦｜啟動中心</h1>
+                
+                <div class="launch-grid">
+                    <!-- 左側：亮點區 -->
+                    <div class="launch-card launch-highlight launch-error">
+                        <div class="error-icon">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="error-message">
+                            <p>${errorMessage}</p>
+                            <small>將使用離線模式進入系統</small>
+                        </div>
                     </div>
-                    <div class="error-message">
-                        <p>${errorMessage}</p>
-                        <small>將使用離線模式進入系統</small>
+                    
+                    <!-- 右側：行動區 -->
+                    <div class="launch-card launch-action launch-disabled">
+                        <div class="action-tag">資料同步中斷</div>
+                        <div class="metric-placeholder">--</div>
                     </div>
                 </div>
                 
-                <!-- 右側：行動區 -->
-                <div class="launch-card launch-action launch-disabled">
-                    <div class="action-tag">資料同步中斷</div>
-                    <div class="metric-placeholder">--</div>
-                </div>
+                <button class="launch-enter-btn launch-enter-btn-offline" id="btn-enter-dashboard">
+                    <span>繼續使用離線模式</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                
+                <button class="launch-enter-btn" style="margin-top: 10px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4);" onclick="location.reload()">
+                    <span><i class="fa-solid fa-rotate-right"></i> 重試連線</span>
+                </button>
             </div>
-            
-            <button class="launch-enter-btn launch-enter-btn-offline" id="btn-enter-dashboard">
-                <span>繼續使用離線模式</span>
-                <i class="fa-solid fa-arrow-right"></i>
-            </button>
-            
-            <button class="launch-enter-btn" style="margin-top: 10px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4);" onclick="location.reload()">
-                <span><i class="fa-solid fa-rotate-right"></i> 重試連線</span>
-            </button>
         </div>
     `;
 }
