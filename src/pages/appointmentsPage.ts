@@ -926,7 +926,13 @@ const suggestions = generateAppointmentSuggestions([]);
    Target Date: 2026-01-19 ~ 2026-01-25 (Next Week)
 ========================================================================================= */
 
+
+// Ensure global availability for debug/external calls
+(window as any).openForecastModal = openForecastModal;
+
 function openForecastModal(viewType: string = 'next_week') {
+    console.log("🚀 Advanced Analysis Modal Opened (vFit-2.0)");
+
     // 1. Create Modal Container if not exists
     let modal = document.getElementById("forecast-modal");
     if (!modal) {
