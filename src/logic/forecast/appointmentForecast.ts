@@ -63,7 +63,19 @@ function calculateBaseline30Days(appointments: AppointmentRecord[], referenceDat
   return average;
 }
 
-// ... helper functions (getSmoothSeasonalFactor, getSmoothDayOfWeekFactor, smoothTransition) omitted, keep existing ...
+const AI_FACTORS = {
+    dayWeights: [1.159, 0.973, 0.916, 0.952, 0.931, 0.98, 1.091], // 0(Sun) to 6(Sat)
+    monthlyFactors: [0, 0.781, 0.977, 1.101, 1.194, 1.139, 0.641, 0.902, 0.925, 0.978, 0.802, 1.362, 1.322] // 1-12
+};
+
+function getSmoothDayOfWeekFactor(day: number): number {
+  return AI_FACTORS.dayWeights[day] || 1.0;
+}
+
+function getSmoothSeasonalFactor(date: Date): number {
+  const month = date.getMonth() + 1;
+  return AI_FACTORS.monthlyFactors[month] || 1.0;
+}
 
 /**
  * 生成推估資料
