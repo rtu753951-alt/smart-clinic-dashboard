@@ -1,0 +1,9 @@
+Top 3 Doctors with High No-show Rate:
+1. 黃諮詢師: 133/1045 (12.7%)
+2. 陳醫師: 1232/10738 (11.5%)
+3. 李醫師: 1356/12062 (11.2%)
+
+Top 3 Treatments with High No-show Rate:
+1. Ultherapy: 182/1551 (11.7%)
+2. Skin Booster: 309/2671 (11.6%)
+3. Thermage: 249/2170 (11.5%)
