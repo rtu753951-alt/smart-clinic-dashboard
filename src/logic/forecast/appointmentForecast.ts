@@ -29,7 +29,7 @@ export interface EstimationData {
  * 計算最近30天的每日平均預約量（基準值）
  * mode: 'completed' (Actual) | 'total' (Demand)
  */
-function calculateBaseline30Days(appointments: AppointmentRecord[], referenceDate: Date, mode: 'completed' | 'total' = 'completed'): number {
+export function calculateBaseline30Days(appointments: AppointmentRecord[], referenceDate: Date, mode: 'completed' | 'total' = 'completed'): number {
   const targetAppointments = appointments.filter(apt => {
     if (mode === 'completed') return apt.status === 'completed' || apt.status === 'checked_in';
     return true; // total demand
@@ -89,7 +89,7 @@ export function generateEstimation(
   appointments: AppointmentRecord[],
   startDate: Date,
   days: number,
-  seasonalFactor: number = 0.2,
+  seasonalFactor: number = 0,
   useRawBaseline: boolean = false
 ): EstimationData[] {
   // Calculate Demand Baseline (Total) for Forecast Base

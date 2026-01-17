@@ -399,6 +399,103 @@ export function refreshServicesPage(targetYM: string) {
         </div>
       `;
   }
+  
+  // Smart Pricing Strategy (No-Show & Package Logic)
+  renderPricingStrategy();
+}
+
+/**
+ * 智慧定價策略 (Smart Pricing Strategy)
+ * 規則：
+ * 1. 找出高 No-Show 療程 (e.g. Rate > 10% or Count > 5)
+ * 2. 檢查 Package Usage (平均剩餘堂數 > 3)
+ * 3. 建議 "預付訂金" 或 "術後保養組合 (Bundling)"
+ */
+function renderPricingStrategy() {
+    console.log("💎 Checking Smart Pricing Strategy (Revenue Page)...");
+
+    // 1. Analyze No-Show Rates by Service (Using current month or full history? Smart Pricing usually looks at history)
+    // Let's use Full History in DataStore for better sample size
+    const serviceStats = new Map<string, { total: number; noShow: number }>();
+
+    dataStore.appointments.forEach(a => {
+        if (!a.service_item) return;
+        const name = a.service_item;
+        if (!serviceStats.has(name)) serviceStats.set(name, { total: 0, noShow: 0 });
+        
+        const stat = serviceStats.get(name)!;
+        stat.total++;
+        if (a.status === 'no_show') stat.noShow++;
+    });
+
+    // Find services with meaningful No-Show rate
+    const candidates: string[] = [];
+    serviceStats.forEach((stat, name) => {
+        if (stat.total < 10) return; // Ignore small sample
+        const rate = stat.noShow / stat.total;
+        if (rate > 0.05) { // Threshold: 5% No-Show
+             candidates.push(name);
+        }
+    });
+    
+    // Sort by No-Show Count (Desc)
+    candidates.sort((a, b) => serviceStats.get(b)!.noShow - serviceStats.get(a)!.noShow);
+    
+    // Fallback logic to show *something* if requested feature
+    if (candidates.length === 0) {
+        serviceStats.forEach((stat, name) => {
+             if (stat.noShow > 0) candidates.push(name);
+        });
+        candidates.sort((a, b) => serviceStats.get(b)!.noShow - serviceStats.get(a)!.noShow);
+    }
+
+    if (candidates.length === 0) return; 
+
+    const targetService = candidates[0]; 
+    
+    // 2. Check Package Usage
+    const pkgRecords = dataStore.packageUsage.filter(p => p.service_name === targetService);
+    let avgRemaining = 0;
+    if (pkgRecords.length > 0) {
+        const totalRem = pkgRecords.reduce((sum, p) => sum + p.remaining_sessions, 0);
+        avgRemaining = totalRem / pkgRecords.length;
+    }
+    
+    // 3. Determine Strategy
+    const isHighValue = /Thermage|Ulthera|音波|電波/.test(targetService);
+    
+    if (avgRemaining > 2 || isHighValue || serviceStats.get(targetService)!.noShow >= 2) {
+         // 4. Inject Alert into #srv-ai-suggestions
+         const container = document.getElementById('srv-ai-suggestions');
+         if (!container) return;
+         if (document.getElementById('ai-smart-pricing')) return;
+
+         const alertHTML = `
+            <div id="ai-smart-pricing" style="
+                margin-top: 16px;
+                padding: 12px; 
+                background: rgba(16, 185, 129, 0.08); 
+                border-left: 3px solid #10b981; 
+                border-radius: 6px;
+                display: flex;
+                align-items: start;
+                gap: 10px;
+                animation: fadeIn 0.5s ease-out;
+            ">
+                <div style="font-size: 1.1rem; color: #10b981;">💰</div>
+                <div>
+                     <strong style="color: #047857; font-size: 0.9rem; display: block; margin-bottom: 3px;">智慧定價策略</strong>
+                     <p style="color: #065f46; font-size: 0.85rem; line-height: 1.4; margin: 0;">
+                        針對 <strong style="text-decoration: underline;">${targetService}</strong>（No-Show 率 ${(serviceStats.get(targetService)!.noShow / serviceStats.get(targetService)!.total * 100).toFixed(1)}%），建議採取「預付訂金制」或「術後保養組合包 (Bundling)」，在不降價的前提下降低 No-show 損失。
+                     </p>
+                </div>
+            </div>
+         `;
+         
+         const tempDiv = document.createElement('div');
+         tempDiv.innerHTML = alertHTML;
+         container.appendChild(tempDiv);
+    }
 }
 
 // -----------------------------

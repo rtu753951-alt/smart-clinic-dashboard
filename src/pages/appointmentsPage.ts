@@ -17,7 +17,7 @@ export function createOrUpdateChart(chartId: string, ctx: any, config: any) {
 import { dataStore } from "../data/dataStore.js";
 import type { AppointmentRecord } from "../data/schema.js";
 import { generateAppointmentSuggestions } from "../logic/aiManager.js";
-import { generateEstimation, formatDateLabel, EstimationData } from "../logic/forecast/appointmentForecast.js";
+import { generateEstimation, formatDateLabel, EstimationData, calculateBaseline30Days } from "../logic/forecast/appointmentForecast.js";
 
 /* ============================
     初始化頁面
@@ -69,7 +69,7 @@ function renderAllCharts() {
 
 let trendChart: any = null;
 let currentRange: number = 30; // 目前顯示的天數範圍
-let currentSeasonalFactor: number = 0.2; // 季節性調節係數
+let currentSeasonalFactor: number = 0; // 季節性調節係數 (Default 0%)
 
 // =========================================================================================
 //  Logic: Strict Anchor & Dynamic Range Chart
@@ -105,10 +105,13 @@ function prepareChartData(range: number, sliderValue: number) {
 
     // AI Params
     const AI_PARAMS = {
-        avgRealizationRate: 0.5551,
+        // avgRealizationRate removed as we use pre-calculated realized baseline
         dayWeights: { "0": 1.159, "1": 0.973, "2": 0.916, "3": 0.952, "4": 0.931, "5": 0.98, "6": 1.091 },
         monthlyFactors: { "1": 0.781, "2": 0.977, "3": 1.101, "4": 1.194, "5": 1.139, "6": 0.641, "7": 0.902, "8": 0.925, "9": 0.978, "10": 0.802, "11": 1.362, "12": 1.322 }
     };
+
+    // Calculate Baseline (Actual Completed/Checked-in) from last 30 days
+    const baseline = calculateBaseline30Days(appointments, TODAY, 'completed');
 
     // Helper: Count appointments by filter
     const countAppts = (dStr: string, filterFn: (a: any) => boolean) => {
@@ -142,8 +145,9 @@ function prepareChartData(range: number, sliderValue: number) {
              const dWeight = (AI_PARAMS.dayWeights as any)[dayOfWeek] || 1.0;
              
              // AI Forecast Formula
-             // Note: Demand includes cancellations, so we apply RealizationRate to get "Estimated Actuals"
-             const val = demandCount * AI_PARAMS.avgRealizationRate * mFactor * dWeight * (1 + sliderValue);
+             // Base: Historical Actual Baseline
+             // Apply Seasonality & Day weights + Slider
+             const val = baseline * mFactor * dWeight * (1 + sliderValue);
              const roundedVal = Math.round(val);
              
              // Ensure Forecast >= 0
@@ -832,6 +836,11 @@ function setupSeasonalSlider() {
     const valueDisplay = document.getElementById("seasonalValue");
     
     if (!slider || !valueDisplay) return;
+
+    // Initialize Slider UI to match default state (0%)
+    slider.value = currentSeasonalFactor.toString();
+    valueDisplay.textContent = `${Math.round(currentSeasonalFactor * 100)}%`;
+    valueDisplay.style.color = "var(--primary-color)";
 
     slider.addEventListener("input", (e) => {
         const target = e.target as HTMLInputElement;

@@ -175,6 +175,153 @@ async function refreshMonthlyContent() {
         // Mocking Radar for now or call real one if implemented
         updateFutureTrendsRadar(); 
     }
+
+    // AI Pricing Suggestion (Dynamic & Category Aware)
+    checkCategoryUtilization();
+}
+
+/**
+ * AI 定價建議 (Category Intelligent Logic)
+ * 規則：
+ * 1. 串接 rooms.csv (room_type)
+ * 2. 計算未來 3 天各類型診間 (Laser, Inject, RF) 的使用率
+ * 3. 若某一類別低於 45%，針對該類別發送建議
+ */
+function checkCategoryUtilization() {
+    console.log("💰 Checking Category Utilization (AI Pricing)...");
+
+    // 1. Build Room Map (Name -> Type) & Count Capacity
+    const roomTypeMap = new Map<string, string>();
+    const typeCountMap = new Map<string, number>();
+
+    dataStore.rooms.forEach(r => {
+        if (!r.room_name) return;
+        const type = r.room_type || 'consult'; // Default
+        roomTypeMap.set(r.room_name, type);
+        
+        typeCountMap.set(type, (typeCountMap.get(type) || 0) + 1);
+    });
+
+    // 2. Determine Date Range (Next 3 Days)
+    const today = new Date();
+    const nextDays: string[] = [];
+    for (let i = 1; i <= 3; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        nextDays.push(d.toISOString().slice(0, 10));
+    }
+
+    // 3. Filter Appointments & Calculate Usage per Type
+    const typeUsageMinutes = new Map<string, number>();
+    
+    // Quick service duration map
+    const serviceDurationMap = new Map<string, number>();
+    dataStore.services.forEach(s => serviceDurationMap.set(s.service_name, s.duration || 60));
+
+    const targetApps = dataStore.appointments.filter(a => nextDays.includes(a.date) && a.status !== 'cancelled');
+
+    targetApps.forEach(a => {
+        // Find Room Type
+        const roomName = a.room;
+        const type = roomTypeMap.get(roomName); 
+        if (!type) return;
+
+        const duration = serviceDurationMap.get(a.service_item) || 60;
+        typeUsageMinutes.set(type, (typeUsageMinutes.get(type) || 0) + duration);
+    });
+
+    // 4. Evaluate Utilization per Category
+    // Capacity = RoomCount * 8 Hours * 60 Mins * 3 Days
+    const MINUTES_PER_DAY = 8 * 60;
+    const DAYS = 3;
+    
+    // Check each type found in rooms
+    for (const [type, count] of typeCountMap) {
+        if (count === 0) continue;
+        const totalCapacity = count * MINUTES_PER_DAY * DAYS;
+        const used = typeUsageMinutes.get(type) || 0;
+        const utilization = used / totalCapacity;
+        
+        console.log(`📊 [AI Pricing] ${type}: ${(utilization * 100).toFixed(1)}% (${used}/${totalCapacity} min)`);
+
+        // Threshold < 45%
+        if (utilization < 0.45) {
+            // Trigger Alert for THIS category
+            renderCategoryPricingAlert(type, utilization);
+            return; // Show only one priority suggestion to avoid clutter
+        }
+    }
+}
+
+function renderCategoryPricingAlert(category: string, utilization: number) {
+    const container = document.querySelector('.ai-insights-section');
+    if (!container) return;
+    
+    // Avoid duplicate
+    if (document.getElementById('ai-pricing-alert')) return;
+    
+    // Friendly Name Mapping
+    const catNameMap: Record<string, string> = {
+        'consult': '諮詢診間 (診間A/B)',
+        'laser': '雷射治療室',
+        'rf': 'RF電波治療室',
+        'procedure': '處置室',
+        'iv': '點滴室'
+    };
+    
+    // Determine Strategic Action
+    let actionSuggestion = '';
+    const catLower = category.toLowerCase();
+
+    if (catLower === 'consult') {
+        actionSuggestion = '啟動舊客回訪計畫，發送免費專業諮詢邀請，活化沈睡客群。';
+    } else if (catLower === 'laser' || catLower === 'rf') {
+        actionSuggestion = '針對主力儀器療程（如皮秒、電波）提供限時 85 折或加贈導入服務，提升高單價時段利用率。';
+    } else if (catLower === 'iv' || catLower === 'procedure' || catLower === 'treatment') {
+        actionSuggestion = '推廣基礎保養加購優惠（如美白點滴、術後修復），降低門檻以提升門診填充率。';
+    } else {
+        // Fallback
+        actionSuggestion = '針對該類別項目進行限時促銷或組套優惠，以提升使用率。';
+    }
+
+    const displayName = catNameMap[catLower] || `${category} 診間`;
+    const utilPct = (utilization * 100).toFixed(0);
+
+    const alertHTML = `
+        <div id="ai-pricing-alert" style="
+            margin-top: 20px;
+            padding: 16px; 
+            background: rgba(245, 158, 11, 0.08); 
+            border-left: 4px solid #f59e0b; 
+            border-radius: 6px;
+            display: flex;
+            align-items: start;
+            gap: 14px;
+            animation: fadeIn 0.5s ease-out;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        ">
+            <div style="font-size: 1.4rem; color: #f59e0b;">💡</div>
+            <div>
+                    <div style="color: #b45309; font-size: 0.95rem; line-height: 1.6;">
+                        <b style="color: #d97706;">[智慧定價建議]</b><br/>
+                        檢測到 <b style="color: #b45309;">${displayName}</b> 未來三天產能過剩（預估使用率僅 ${utilPct}%）。<br/>
+                        <span style="display:inline-block; margin-top:6px; font-weight:500; color: #92400e;">
+                            💡 建議動作：${actionSuggestion}
+                        </span>
+                    </div>
+            </div>
+        </div>
+        <style>
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        </style>
+    `;
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = alertHTML;
+    container.appendChild(tempDiv);
 }
 
 /* ===================== KPI 區 ===================== */
