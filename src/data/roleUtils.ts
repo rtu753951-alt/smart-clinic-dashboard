@@ -11,3 +11,11 @@ export const ROLE_DISPLAY_NAMES: Record<StaffType, string> = {
 export function getRoleDisplayName(role: StaffType | string): string {
     return ROLE_DISPLAY_NAMES[role as StaffType] || role;
 }
+
+export function normalizeRole(role: string, defaultRole: StaffType = "therapist"): StaffType {
+    const r = role.toLowerCase().trim();
+    if (r === "doctor" || r === "nurse" || r === "therapist" || r === "consultant" || r === "admin") {
+        return r;
+    }
+    return defaultRole;
+}
