@@ -405,7 +405,7 @@ export function refreshServicesPage(targetYM: string) {
 }
 
 /**
- * 智慧定價策略 (Smart Pricing Strategy)
+ * 智慧營收保衛戰 (Smart Pricing Strategy)
  * 規則：
  * 1. 找出高 No-Show 療程 (e.g. Rate > 10% or Count > 5)
  * 2. 檢查 Package Usage (平均剩餘堂數 > 3)
@@ -484,7 +484,7 @@ function renderPricingStrategy() {
             ">
                 <div style="font-size: 1.1rem; color: #10b981;">💰</div>
                 <div>
-                     <strong style="color: #047857; font-size: 0.9rem; display: block; margin-bottom: 3px;">智慧定價策略</strong>
+                     <strong style="color: #047857; font-size: 0.9rem; display: block; margin-bottom: 3px;">智慧營收保衛戰</strong>
                      <p style="color: #065f46; font-size: 0.85rem; line-height: 1.4; margin: 0;">
                         針對 <strong style="text-decoration: underline;">${targetService}</strong>（No-Show 率 ${(serviceStats.get(targetService)!.noShow / serviceStats.get(targetService)!.total * 100).toFixed(1)}%），建議採取「預付訂金制」或「術後保養組合包 (Bundling)」，在不降價的前提下降低 No-show 損失。
                      </p>

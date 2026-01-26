@@ -11,6 +11,7 @@ import { ModalManager } from "../ui/ModalManager.js";
 import { TaskStore } from "../data/taskStore.js";
 import { calculateRevenue } from "../logic/revenue/revenueLogic.js";
 import { sandboxStore } from "../features/sandbox/sandboxStore.js";
+import { renderStaffWorkloadChart } from "../logic/staff/staffWorkloadChart.js";
 
 
 /**
@@ -169,11 +170,15 @@ async function refreshMonthlyContent() {
     
     // Section 4: AI Insights
     updateAISummaryBlocks();
-    
     // Future Trends Radar (Needs Chart.js)
     if (document.getElementById('future-trends-radar')) {
-        // Mocking Radar for now or call real one if implemented
         updateFutureTrendsRadar(); 
+    }
+
+    // Staff Workload Chart (Ensure it renders)
+    if (document.getElementById('staffWorkloadChart')) {
+        const currentMonth = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
+        renderStaffWorkloadChart(currentMonth);
     }
 
     // AI Pricing Suggestion (Dynamic & Category Aware)
@@ -303,8 +308,8 @@ function renderCategoryPricingAlert(category: string, utilization: number) {
             <div style="font-size: 1.4rem; color: #f59e0b;">💡</div>
             <div>
                     <div style="color: #b45309; font-size: 0.95rem; line-height: 1.6;">
-                        <b style="color: #d97706;">[智慧定價建議]</b><br/>
-                        檢測到 <b style="color: #b45309;">${displayName}</b> 未來三天產能過剩（預估使用率僅 ${utilPct}%）。<br/>
+                        <b style="color: #d97706;">[智慧銷售策略]</b><br/>
+                        預警：檢測到 <b style="color: #b45309;">${displayName}</b> 未來三日預約排程存在顯著缺口（預估使用率僅 ${utilPct}%）。<br/>
                         <span style="display:inline-block; margin-top:6px; font-weight:500; color: #92400e;">
                             💡 建議動作：${actionSuggestion}
                         </span>
@@ -327,13 +332,14 @@ function renderCategoryPricingAlert(category: string, utilization: number) {
 /* ===================== KPI 區 ===================== */
 
 function updateTodayKPI() {
-    const { todayTotal, showRate, docCount, nurseCount, consultantCount } = calcTodayKPI(dataStore.appointments, dataStore.staff);
+    const { todayTotal, showRate, docCount, nurseCount, consultantCount, adminCount } = calcTodayKPI(dataStore.appointments, dataStore.staff);
 
     setText("ov-total", todayTotal);
     setText("ov-show-rate", `${showRate}%`);
     setText("ov-doc-count", docCount);
     setText("ov-nurse-count", nurseCount);
     setText("ov-consultant-count", consultantCount);
+    setText("ov-admin-count", adminCount);
 }
 
 /* ===================== Doctor/Treatment Top3 ===================== */
@@ -2003,10 +2009,14 @@ function generateKPIDetail(type: string): string {
              targetStaff = staff.filter(s => s.staff_type === 'nurse' || s.staff_type === 'therapist');
              title = '護理/美療師值班名單';
              staffIcon = '👩‍⚕️';
-        } else {
+        } else if (type === 'kpi-consultant') {
              targetStaff = staff.filter(s => s.staff_type === 'consultant');
              title = '諮詢師值班名單';
              staffIcon = '🤵';
+        } else {
+             targetStaff = staff.filter(s => s.staff_type === 'admin');
+             title = '行政人員值班名單';
+             staffIcon = '🛡️';
         }
         
         const count = targetStaff.length;
@@ -2596,7 +2606,8 @@ export function handleOverviewModal(modalType: string): boolean {
         case "kpi-show-rate":
         case "kpi-doc":
         case "kpi-nurse":
-        case "kpi-consultant": {
+        case "kpi-consultant":
+        case "kpi-admin": {
             const content = generateKPIDetail(modalType);
             ModalManager.open("📊 營運指標詳細分析", content);
             return true;

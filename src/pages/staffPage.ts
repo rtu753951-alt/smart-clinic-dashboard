@@ -12,7 +12,23 @@ export function initStaffPage() {
   const currentMonth = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
   console.log(`[StaffPage] Initializing... Global Month: ${currentMonth}`);
 
+  // Check if data is ready
+  if (!dataStore.isAppointmentsLoaded) {
+      console.log("[StaffPage] Data not ready. Prefetching...");
+      // Show simple loading state if needed, or just keep previous state (skeleton usually handled by HTML)
+      // Actually, let's inject a loading overlay if possible, or just wait.
+      const container = document.querySelector('.staff-dashboard'); // Assuming class exists
+      if (container) container.innerHTML = '<div style="padding:40px; text-align:center;"><i class="fa-solid fa-spinner fa-spin" style="font-size:32px; color:var(--primary-color);"></i><p>載入分析資料中...</p></div>';
+
+      dataStore.prefetchCoreData().then(async () => {
+          await new Promise(r => requestAnimationFrame(r));
+          initStaffPage(); // Retry
+      });
+      return;
+  }
+
   const appointments = dataStore.appointments; 
+
   const monthAppointments = appointments.filter(a => a.date.startsWith(currentMonth));
 
   let updateHiddenLoadLayer: (mode: 'week' | 'month' | 'future') => void;
@@ -64,7 +80,7 @@ export function initStaffPage() {
   // Layer 2: Role Fit
   let roleFitStats: any[] = [];
   try {
-      roleFitStats = calculateRoleFit(monthAppointments);
+      roleFitStats = calculateRoleFit(monthAppointments, currentMonth);
       renderRoleFitChart(roleFitStats);
       renderRoleFitInsights(roleFitStats);
       console.log("[StaffPage] Layer 2 (Role Fit) initialized.");
@@ -118,7 +134,7 @@ export function initStaffPage() {
       initWorkloadCards();
 
       // 3. Update Layer 2 (Role Fit)
-      const newRoleFitStats = calculateRoleFit(updatedMonthAppts);
+      const newRoleFitStats = calculateRoleFit(updatedMonthAppts, (window as any).currentDashboardMonth);
       renderRoleFitChart(newRoleFitStats);
       renderRoleFitInsights(newRoleFitStats);
 
@@ -147,6 +163,23 @@ function renderRoleFitChart(stats: any[]) {
     if ((window as any).roleFitChartInstance) {
         (window as any).roleFitChartInstance.destroy();
     }
+
+    // Sort Stats by Role Category (Fixed Order)
+    const order = ['doctor', 'nurse', 'therapist', 'consultant', 'admin'];
+    stats.sort((a, b) => {
+        const getRole = (str: string) => {
+            if (str.includes('(')) return str.split('(')[1].replace(')', '').trim().toLowerCase();
+            return 'other';
+        };
+        const rA = getRole(a.role);
+        const rB = getRole(b.role);
+        
+        const idxA = order.indexOf(rA) !== -1 ? order.indexOf(rA) : 99;
+        const idxB = order.indexOf(rB) !== -1 ? order.indexOf(rB) : 99;
+        
+        if (idxA !== idxB) return idxA - idxB;
+        return a.role.localeCompare(b.role); // secondary sort by name
+    });
 
     const labels = stats.map(s => s.role);
     const categories = new Set<string>();
@@ -203,6 +236,7 @@ function getColorForCategory(cat: string): string {
         'consult': '#10b981',
         'drip': '#f59e0b', 
         'facial': '#8b5cf6',
+        'admin_work': '#6b7280', // Gray for admin
         'other': '#9ca3af'
     };
     return colors[cat] || colors['other'];
@@ -223,7 +257,7 @@ function renderRoleFitInsights(stats: any[]) {
 // Module-level state for sorting
 let cachedBufferStats: any[] = [];
 let cachedTimeStructureStats: any[] = [];
-let currentSort: { key: string, dir: 'asc' | 'desc' } = { key: 'compressionRate', dir: 'desc' };
+let currentSort: { key: string, dir: 'asc' | 'desc' } = { key: 'role', dir: 'asc' };
 
 function renderBufferAnalysis(bufferStats: any[], timeStructureStats: any[]) {
     const container = document.getElementById('staffBufferAnalysis');
@@ -260,8 +294,14 @@ function renderBufferTable() {
             const pA = parse(a.role);
             const pB = parse(b.role);
             
-            // Primary: Type (A-Z)
-            if (pA.type !== pB.type) return pA.type.localeCompare(pB.type) * dir;
+            // Fixed Order
+            const order = ['doctor', 'nurse', 'therapist', 'consultant', 'admin'];
+            const idxA = order.indexOf(pA.type.toLowerCase()) !== -1 ? order.indexOf(pA.type.toLowerCase()) : 99;
+            const idxB = order.indexOf(pB.type.toLowerCase()) !== -1 ? order.indexOf(pB.type.toLowerCase()) : 99;
+            
+            // Primary: Type (Fixed Order)
+             if (idxA !== idxB) return (idxA - idxB) * dir;
+             
             // Secondary: Name (A-Z)
             return pA.name.localeCompare(pB.name) * dir;
         }

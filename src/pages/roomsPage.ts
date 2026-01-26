@@ -328,7 +328,7 @@ function renderEquipmentLog() {
             <td>${a.date}</td>
             <td>${a.time}</td>
             <td><strong style="color: var(--primary-color);">${a.equipment}</strong></td>
-            <td>${a.staff_role || "-"}</td>
+            <td>${a.assistant_name || "-"}</td>
             <td>${duration}</td>
             <td>
                 <span class="status-badge status-${a.status}">

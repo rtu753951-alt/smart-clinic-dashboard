@@ -22,9 +22,11 @@ import { initLaunchCover } from "./pages/launchCoverPage.js";
 import { initTasksPage } from "./pages/tasksPage.js";
 import { openChurnRiskViewGlobal } from "./pages/customersPage.js";
 import { initAdminPage } from "./pages/adminPage.js";
+import { initSchedulingSimulatorPage } from "./pages/schedulingSimulatorPage.js";
 import { SystemHealthEvaluator } from "./logic/systemHealthEvaluator.js";
 
-
+// CSS
+import "./styles/scheduler.css";
 
 // === 全域註冊頁面初始化（給 pageController 使用）===
 (window as any).initOverviewPage = initOverviewPage;
@@ -36,6 +38,7 @@ import { SystemHealthEvaluator } from "./logic/systemHealthEvaluator.js";
 (window as any).initLaunchCover = initLaunchCover;
 (window as any).initTasksPage = initTasksPage;
 (window as any).initAdminPage = initAdminPage;
+(window as any).initSchedulingSimulatorPage = initSchedulingSimulatorPage;
 
 // === Global Event Delegation for Modals ===
 document.addEventListener('click', (e) => {

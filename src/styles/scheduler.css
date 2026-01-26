@@ -1,0 +1,531 @@
+/* src/styles/scheduler.css */
+
+/* === Variables & Design Tokens (Light Medical Aesthetic Theme) === */
+:root {
+    /* Backgrounds: Clean, Bright, Soft */
+    --sched-bg-app: #f8fafc;     /* Neural Light Grey */
+    --sched-bg-sidebar: #ffffff; /* Pure White */
+    --sched-bg-card: #ffffff;
+    --sched-bg-table-header: #f1f5f9;
+    
+    /* Text: Dark Grey for Readability */
+    --sched-text-main: #334155;      /* Slate 700 */
+    --sched-text-secondary: #475569; /* Slate 600 */
+    --sched-text-muted: #94a3b8;     /* Slate 400 */
+    --sched-text-inverse: #ffffff;
+    
+    /* Borders & Separators */
+    --sched-border: #e2e8f0;
+    
+    /* Role Colors (Pastel/Elegant) */
+    --role-doctor: #0ea5e9;    /* Sky Blue */
+    --role-nurse: #db2777;     /* Rose Pink */
+    --role-therapist: #8b5cf6; /* Lavender */
+    --role-consultant: #d97706;/* Amber Gold */
+    --role-admin: #64748b;     /* Slate */
+
+    /* Action Colors */
+    --sched-primary: #0ea5e9;
+    --sched-primary-hover: #0284c7;
+    --sched-shortage-bg: #fef2f2;
+    --sched-shortage-border: #fca5a5;
+    
+    /* Shadows */
+    --sched-shadow-sm: 0 1px 3px rgba(0,0,0,0.05); /* Soft shadow */
+    --sched-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --sched-shadow-float: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* === Layout === */
+.scheduler-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    height: calc(100vh - 80px);
+    overflow: hidden;
+    color: var(--sched-text-main);
+    font-family: 'Noto Sans TC', 'Inter', system-ui, sans-serif;
+    background: var(--sched-bg-app);
+}
+
+/* === Sidebar (Controls) === */
+.scheduler-sidebar {
+    background: var(--sched-bg-sidebar);
+    border-right: 1px solid var(--sched-border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    height: 100%;
+    overflow-y: auto;
+    z-index: 20;
+}
+
+.control-section {
+    margin-bottom: 32px;
+}
+.control-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--sched-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid var(--sched-bg-app); /* Subtle separator */
+    padding-bottom: 8px;
+}
+.control-section-header i {
+    color: var(--sched-primary);
+}
+
+/* Inputs */
+.sched-input-group {
+    margin-bottom: 16px;
+}
+.sched-input-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--sched-text-secondary);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+.sched-input, .sched-select {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--sched-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--sched-text-main);
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    box-shadow: var(--sched-shadow-sm);
+}
+.sched-input:focus, .sched-select:focus {
+    border-color: var(--sched-primary);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1); /* Soft Blue Glow */
+    outline: none;
+}
+
+/* Toggle Switch - Elegant */
+.sched-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    cursor: pointer;
+    padding: 10px;
+    background: var(--sched-bg-app);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+.sched-toggle:hover {
+    background: #f1f5f9;
+}
+.toggle-label {
+    font-size: 0.9rem;
+    color: var(--sched-text-main);
+    font-weight: 500;
+}
+.toggle-track {
+    width: 44px;
+    height: 24px;
+    background: #cbd5e1; /* Grey inactive */
+    border-radius: 20px;
+    position: relative;
+    transition: background 0.3s ease;
+}
+.toggle-knob {
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.sched-toggle input:checked + .toggle-track {
+    background: var(--sched-primary);
+}
+.sched-toggle input:checked + .toggle-track .toggle-knob {
+    transform: translateX(20px);
+}
+
+.btn-run-sim {
+    background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);
+    transition: all 0.2s;
+    margin-top: 10px;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+.btn-run-sim:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 12px -2px rgba(14, 165, 233, 0.3);
+}
+
+/* === Main Content === */
+.scheduler-main {
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+    gap: 24px;
+    overflow: hidden;
+    position: relative; /* Context for absolute drawers */
+}
+
+/* KPI Grid */
+.sched-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+.sched-kpi-card {
+    background: var(--sched-bg-card);
+    border: 1px solid var(--sched-border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--sched-shadow-card);
+    position: relative;
+    overflow: hidden;
+}
+/* Left Color Bar */
+.sched-kpi-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+}
+.kpi-coverage::before { background: var(--role-doctor); }
+.kpi-risk::before { background: #ef4444; }
+.kpi-affinity::before { background: var(--role-therapist); }
+.kpi-hours::before { background: var(--role-nurse); }
+
+.kpi-icon {
+    font-size: 1.8rem;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+/* Pastel Backgrounds for Icons */
+.kpi-coverage .kpi-icon { background: #e0f2fe; color: var(--role-doctor); }
+.kpi-risk .kpi-icon { background: #fee2e2; color: #ef4444; }
+.kpi-affinity .kpi-icon { background: #f3e8ff; color: var(--role-therapist); }
+.kpi-hours .kpi-icon { background: #fce7f3; color: var(--role-nurse); }
+
+.kpi-data {
+    display: flex;
+    flex-direction: column;
+}
+.kpi-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--sched-text-main);
+    line-height: 1.1;
+    font-family: 'Inter', sans-serif;
+}
+.kpi-label {
+    font-size: 0.85rem;
+    color: var(--sched-text-secondary);
+    font-weight: 500;
+}
+
+/* === Schedule Table === */
+.sched-table-container {
+    flex: 1;
+    overflow: auto;
+    background: var(--sched-bg-card);
+    border: 1px solid var(--sched-border);
+    border-radius: 12px; /* Smoother corners */
+    box-shadow: var(--sched-shadow-card);
+}
+
+.sched-grid {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.sched-grid th {
+    position: sticky;
+    top: 0;
+    background: var(--sched-bg-table-header);
+    padding: 16px;
+    text-align: left;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sched-text-secondary);
+    border-bottom: 1px solid var(--sched-border);
+    z-index: 10;
+}
+
+.sched-grid td {
+    padding: 16px;
+    border-bottom: 1px solid var(--sched-border);
+    border-right: 1px dashed var(--sched-border); /* Subtle dashed vertical */
+    vertical-align: middle;
+    background: #fff;
+}
+.sched-grid td:last-child {
+    border-right: none;
+}
+.sched-grid tr:last-child td {
+    border-bottom: none;
+}
+.sched-grid tr:hover td {
+    background: #f8fafc;
+}
+
+/* Cells */
+.sched-date-cell {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    color: var(--sched-text-main);
+    font-weight: 600;
+}
+.shift-badge {
+    display: inline-block;
+    padding: 4px 0;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    width: 60px;
+}
+/* Soft Pastels */
+.shift-am { background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+.shift-pm { background: #f0f9ff; color: #0369a1; border: 1px solid #e0f2fe; }
+
+/* Assignment Layout */
+.assignment-cell {
+    transition: background 0.1s;
+    cursor: pointer;
+}
+.assignment-cell:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* Shortage State - Elegant Error */
+.assignment-cell.is-shortage {
+    background: #fff5f5; /* Very light red */
+    position: relative;
+    box-shadow: inset 3px 0 0 #ef4444; /* Left border indicator */
+}
+
+.role-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+    padding: 4px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.role-row:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+.role-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.role-dot.doctor { background: var(--role-doctor); box-shadow: 0 0 0 2px #e0f2fe; }
+.role-dot.nurse { background: var(--role-nurse); box-shadow: 0 0 0 2px #fce7f3; }
+.role-dot.therapist { background: var(--role-therapist); box-shadow: 0 0 0 2px #f3e8ff; }
+.role-dot.consultant { background: var(--role-consultant); box-shadow: 0 0 0 2px #fef3c7; }
+
+.role-names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+    align-items: center;
+}
+
+/* Chips - Clean */
+.staff-chip {
+    font-size: 0.85rem;
+    color: var(--sched-text-main);
+    font-weight: 500;
+}
+
+.more-chip {
+    font-size: 0.75rem;
+    color: var(--sched-text-muted);
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 12px;
+}
+
+.shortage-indicator {
+    background: #fee2e2;
+    color: #ef4444;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px; /* Pill shape */
+    margin-left: auto;
+}
+
+/* === Log Toggle === */
+.log-toggle-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px; /* Move slightly inward */
+    background: #fff;
+    border: 1px solid var(--sched-border);
+    color: var(--sched-text-secondary);
+    padding: 10px 20px;
+    border-radius: 30px; /* Full pill */
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 50;
+    box-shadow: var(--sched-shadow-float);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.log-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 25px -5px rgba(0,0,0,0.1);
+}
+
+/* === Drawers (FIXED Z-INDEX & POSITION) === */
+.log-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 280px; /* Aligned with sidebar edge */
+    right: 0;
+    height: 250px; /* Fixed height */
+    background: #1e293b; /* Keep dark for Logs (Terminál style) */
+    border-top: 4px solid var(--sched-primary);
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 40; /* Below Details Drawer */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+}
+.log-drawer.active {
+    transform: translateY(0);
+}
+.log-header {
+    padding: 12px 24px;
+    background: #0f172a;
+    color: #fff;
+    border-bottom: 1px solid #334155;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+}
+.log-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: #4ade80; /* Green text */
+    line-height: 1.6;
+}
+
+/* Right Drawer - Light Theme */
+.details-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 400px;
+    background: #ffffff;
+    border-left: 1px solid var(--sched-border);
+    box-shadow: -10px 0 40px rgba(0,0,0,0.05);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 99999; /* Force highest Z-Index */
+    padding: 80px 32px 32px 32px; /* Extra padding to clear Global Header */
+    overflow-y: auto;
+}
+.details-drawer.active {
+    transform: translateX(0);
+}
+.details-title {
+    color: var(--sched-text-main);
+    font-size: 1.5rem;
+    font-weight: 700;
+    border-bottom: 3px solid var(--sched-primary);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+.details-block {
+    background: var(--sched-bg-app);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+.details-label {
+    color: var(--sched-text-secondary);
+    font-weight: 700;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.candidate-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 0.95rem;
+    color: var(--sched-text-main);
+}
+.candidate-item:last-child { border-bottom: none; }
+.score-badge {
+    background: #dcfce7;
+    color: #166534;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+.details-close {
+    position: absolute;
+    top: 24px;
+    left: 24px; /* Moved to left to avoid overlapping with Global Bell Icon on the right */
+    right: auto;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--sched-text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.details-close:hover {
+    color: var(--sched-primary);
+}

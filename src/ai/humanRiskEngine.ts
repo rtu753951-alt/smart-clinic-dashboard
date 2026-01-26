@@ -15,6 +15,7 @@
 import { AppointmentRecord } from "../data/schema.js";
 import { SandboxState } from "../features/sandbox/sandboxStore.js";
 import { calculateBufferAnalysis } from "../logic/staff/staffBufferAnalysis.js";
+import { INVOLVEMENT_RATIOS } from "../data/treatmentRatios.js";
 
 // ===== 型別定義 =====
 
@@ -82,14 +83,9 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
   const bufferStats = calculateBufferAnalysis(monthData);
   const bufferMap = new Map(bufferStats.map(s => [s.role.split(' ')[0], s])); // Name is unique key? staffBufferAnalysis returns "Name (Role)" or just check name matching
 
+
   // 2. Calculate Workload (Utilization Rate) for All
-  const INVOLVEMENT_RATIOS: Record<string, Record<string, number>> = {
-    inject: { doctor: 0.35, therapist: 0, nurse: 0.6, consultant: 0 },
-    rf: { doctor: 0.35, therapist: 0, nurse: 0.4, consultant: 0 },
-    laser: { doctor: 0.15, therapist: 1.0, nurse: 0.2, consultant: 0 },
-    drip: { doctor: 0.10, therapist: 0, nurse: 1.0, consultant: 0 },
-    consult: { doctor: 0.30, therapist: 0, nurse: 0, consultant: 0.70 }
-  };
+  // INVOLVEMENT_RATIOS imported from treatmentRatios.ts
 
   const staffWorkload: Record<string, {
     staff_name: string;
@@ -111,8 +107,8 @@ export function analyzeHumanRisks(input: HumanRiskInput): HumanRiskOutput {
     const buffer = service ? Number(service.buffer_time) : 10;
     const totalMinutes = duration + buffer;
 
-    const category = service?.category || 'inject';
-    const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['inject'];
+    const category = service?.category || 'other';
+    const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['other'];
     
     let growth = 1;
     if (input.sandboxState && input.sandboxState.isActive) {

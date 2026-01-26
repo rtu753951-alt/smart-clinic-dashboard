@@ -39,6 +39,11 @@ async function parseCSVData<T>(csvText: string): Promise<T[]> {
 
   const lines = csvText.trim().split("\n");
 
+  // Remove BOM from first line if present
+  if (lines.length > 0) {
+      lines[0] = lines[0].replace(/^\uFEFF/, '');
+  }
+
   const rawHeaders = parseCSVLine(lines[0]);
   const headers = rawHeaders.map(h => h.trim()); // 去除每個 header 的空白字符（包括 \r）
   const data: T[] = [];

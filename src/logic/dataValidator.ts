@@ -104,7 +104,7 @@ const AppointmentRowSchema = z.object({
   purchased_services: z.string().optional(),
   service_item: z.string().optional(),
   doctor_name: z.string().optional(),
-  staff_role: z.string().optional(),
+  assistant_name: z.string().optional(),
   room: z.string().optional(),
   equipment: z.string().optional(),
   customer_id: z.string().optional()
@@ -267,19 +267,26 @@ export class DataValidator {
           const requiredRole = serviceDef.executor_role; // e.g. "doctor", "therapist"
           
           if (requiredRole) {
-              const actualRole = row.staff_role; // e.g. "doctor"
-              const actualStaffName = row.staff_name || row.doctor_name; // Fallback logic logic
+              const assistantName = row.assistant_name; 
               
-              if (actualRole && actualRole.toLowerCase() !== requiredRole.toLowerCase()) {
-                   // Allow compatibility? e.g. Doctor can do Nurse job? 
-                   // User said: "service.executor_role=Doctor -> staff_role MUST be Doctor"
-                   // But maybe Doctor can do Therapist job?
-                   // For now, strict match as requested "Example: role must match"
-                   rowIssues.push({
-                       dataset: 'appointments', rowIndex: index, id: rowId, field: 'staff_role',
-                       code: 'logic_error', message: `Role Mismatch: Service '${serviceItem}' requires '${requiredRole}', but record has '${actualRole}'`, severity: 'warning'
-                   });
-                   trackError('ROLE_MISMATCH');
+              if (assistantName && assistantName !== "" && assistantName !== "nan") {
+                  const staffRec = allStaffMap.get(assistantName);
+                  const actualRole = staffRec ? staffRec.staff_type : undefined;
+
+                  if (actualRole && actualRole.toLowerCase() !== requiredRole.toLowerCase()) {
+                       rowIssues.push({
+                           dataset: 'appointments', rowIndex: index, id: rowId, field: 'assistant_name',
+                           code: 'logic_error', message: `Role Mismatch: Service '${serviceItem}' requires '${requiredRole}', but assistant '${assistantName}' is '${actualRole}'`, severity: 'warning'
+                       });
+                       trackError('ROLE_MISMATCH');
+                  } else if (!actualRole) {
+                       // Assistant name exists but not found in staff map?
+                       // Maybe warning?
+                       rowIssues.push({
+                           dataset: 'appointments', rowIndex: index, id: rowId, field: 'assistant_name',
+                           code: 'ref_error', message: `Assistant '${assistantName}' not found in Staff Directory`, severity: 'warning'
+                       });
+                  }
               }
           }
       }

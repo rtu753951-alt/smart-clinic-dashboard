@@ -140,7 +140,8 @@ function showPage(pageId: string) {
     services: "療程營收",
     customers: "顧客洞察",
     tasks: "營運指揮中心 | 任務清單",
-    admin: "數據檢核 (Data Health)"
+    admin: "數據檢核 (Data Health)",
+    scheduler: "排班模擬器 (AI Scheduler)"
   };
 
   // 🔽 全站月份狀態同步（供 AI 建議等使用）
@@ -154,12 +155,28 @@ if (monthSelect) {
 
   // 呼叫各頁的 init（僅第一次）
   const initName = secEl?.dataset.init;
-  if (initName && typeof (window as any)[initName] === "function") {
-    // 避免重複初始化 (Staff Page 特別豁免; Tasks Page 需每次刷新以顯示最新待辦)
-    if (!(secEl as any)._initialized || pageId === 'staff' || pageId === 'tasks') {
-      (window as any)[initName]();
-      (secEl as any)._initialized = true;
-    }
+  console.log(`[PageController] Switch to ${pageId}. InitFn: ${initName}`);
+  
+  if (initName) {
+      const fn = (window as any)[initName];
+      console.log(`[PageController] Fn found? ${!!fn}`);
+      
+      if (typeof fn === "function") {
+        // 避免重複初始化 (Staff Page 特別豁免; Tasks Page 需每次刷新以顯示最新待辦)
+        if (!(secEl as any)._initialized || pageId === 'staff' || pageId === 'tasks') {
+            console.log(`[PageController] Executing ${initName}...`);
+            try {
+                fn();
+                (secEl as any)._initialized = true;
+            } catch (e) {
+                console.error(`[PageController] Error executing ${initName}:`, e);
+            }
+        } else {
+            console.log(`[PageController] Skipping (Already Initialized)`);
+        }
+      } else {
+         console.warn(`[PageController] Warning: Function ${initName} is not attached to window.`);
+      }
   }
 }
 /* ===========================

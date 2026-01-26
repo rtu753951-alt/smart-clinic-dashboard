@@ -16,14 +16,7 @@ import { isCertifiedForCategory } from "../../data/skillMap.js";
  * 4. 使用醫師介入比例模型
  */
 
-// Doctor involvement ratio model with consultation role split
-export const INVOLVEMENT_RATIOS: Record<string, Record<string, number>> = {
-  inject: { doctor: 0.4, therapist: 0.2, nurse: 0.6, consultant: 0.4 },
-  rf: { doctor: 0.6, therapist: 0.8, nurse: 0.4, consultant: 0.3 },
-  laser: { doctor: 0.2, therapist: 0.8, nurse: 0.5, consultant: 0.2 },
-  drip: { doctor: 0.05, therapist: 0.1, nurse: 0.9, consultant: 0.1 },
-  consult: { doctor: 0.10, therapist: 0, nurse: 0, consultant: 1.0 }
-};
+import { INVOLVEMENT_RATIOS } from "../../data/treatmentRatios.js";
 
 /**
  * 建立員工名稱對職務的對照表 (Dynamic Mapping)
@@ -236,8 +229,8 @@ export function calculateWorkloadData(
     const totalMinutes = duration + buffer;
 
     // 定義該 Service 的介入比例模型
-    const category = service?.category || 'inject'; // default fallback
-    const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['inject'];
+    const category = service?.category || 'other'; // default fallback
+    const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['other'];
     
 
 
@@ -259,29 +252,137 @@ export function calculateWorkloadData(
                  
                  stats['doctor'].usedMinutes += totalMinutes * ratio * effectiveGrowth;
                  stats['doctor'].originalMinutes += totalMinutes * ratio; // No Growth
-                 stats['doctor'].taskCount += 1 * effectiveGrowth; 
+                 stats['doctor'].taskCount += 1 * effectiveGrowth;
              }
         }
     }
 
-    // --- 統計 Primary Staff ---
-    if (apt.staff_role && (apt.staff_role as string) !== 'nan') {
-        const staffName = (apt.staff_role as string).trim();
-        const role = staffMap.get(staffName); // 透過名字查表！
+    // --- 統計 Assistant (Nurse/Therapist) ---
+    if (apt.assistant_name && apt.assistant_name !== 'nan') {
+        const staffName = apt.assistant_name.trim();
+        let role = staffMap.get(staffName);
         
-        if (role && stats[role]) {
-            const ratio = ratios[role] || 0; 
-            const effectiveRatio = ratio === 0 ? 0.1 : ratio;
-            
-            // Check Certification
-            const staffRec = dataStore.staff.find(s => s.staff_name === staffName);
-            const effectiveGrowth = (staffRec && isCertifiedForCategory(staffRec, category)) ? (1 + rawGrowth) : 1;
+        // Use assistant_role from appointment if map lookup fails or just to be robust
+        if (apt.assistant_role) {
+             const raw = apt.assistant_role.trim().toLowerCase();
+             if (raw.includes('nurse')) role = 'nurse';
+             else if (raw.includes('therapist')) role = 'therapist';
+             else if (raw.includes('consultant')) role = 'consultant';
+             // If manual role is valid, use it. Priority? Map is usually "Official". 
+             // But if Map is missing, this is critical.
+             if (!role) role = raw;
+        }
 
-            stats[role].usedMinutes += totalMinutes * effectiveRatio * effectiveGrowth;
-            stats[role].originalMinutes += totalMinutes * effectiveRatio; // No Growth
-            stats[role].taskCount += 1 * effectiveGrowth;
+        if (role && stats[role]) {
+            const effectiveRatio = ratios[role] || 0;
+            
+            if (effectiveRatio > 0) {
+                 const staffRec = dataStore.staff.find(s => s.staff_name === staffName);
+                 const effectiveGrowth = (staffRec && isCertifiedForCategory(staffRec, category)) ? (1 + rawGrowth) : 1;
+
+                 stats[role].usedMinutes += totalMinutes * effectiveRatio * effectiveGrowth;
+                 stats[role].originalMinutes += totalMinutes * effectiveRatio; // No Growth
+                 stats[role].taskCount += 1 * effectiveGrowth;
+            }
         }
     }
+  });
+
+  // --- 2.5 Integrate staff_workload.csv (Manual Records) ---
+  // Re-calculate Date Range for filtering staffWorkload (Reuse logic logic roughly)
+  // To avoid code duplication, we really should have shared date range logic, but for now we copy the bounds determination.
+  const globalMonth = (window as any).currentDashboardMonth;
+  let anchorDate = new Date();
+  if (globalMonth) anchorDate = new Date(`${globalMonth}-01`);
+  anchorDate.setHours(0, 0, 0, 0);
+
+  const currentDay = anchorDate.getDay(); 
+  const distToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+  const thisMonday = new Date(anchorDate);
+  thisMonday.setDate(anchorDate.getDate() + distToMonday);
+  thisMonday.setHours(0, 0, 0, 0);
+
+  let startDate: Date;
+  let endDate: Date;
+
+  switch (period) {
+    case "week":
+      startDate = new Date(thisMonday);
+      endDate = new Date(thisMonday);
+      endDate.setDate(endDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case "next_week":
+      startDate = new Date(thisMonday);
+      startDate.setDate(startDate.getDate() + 7);
+      endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 6);
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    case "future30":
+    case "month": // Treat month same as future30 for range or similar, OR strict month?
+      // filterAppointmentsByPeriod handles 'future30'. 'month' passed appointments directly usually.
+      // If period is 'month', we should use the whole month of globalMonth.
+      if (period === 'month') {
+          startDate = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
+          endDate = new Date(anchorDate.getFullYear(), anchorDate.getMonth() + 1, 0, 23, 59, 59, 999);
+      } else {
+          startDate = new Date(anchorDate); 
+          endDate = new Date(anchorDate);
+          endDate.setDate(endDate.getDate() + 29);
+          endDate.setHours(23, 59, 59, 999);
+      }
+      break;
+  }
+
+  const workloadRecords = dataStore.staffWorkload || [];
+  workloadRecords.forEach(rec => {
+      // Date Check
+      const d = new Date(rec.date);
+      if (isNaN(d.getTime())) return;
+      if (d < startDate || d > endDate) return;
+
+      // Role Lookup
+      const name = rec.staff_name.trim();
+      let role = staffMap.get(name);
+      
+      // Fallback
+      if (!role) {
+           // 1. Check Action Type
+           const type = (rec.action_type || '').toLowerCase();
+           if (type === 'admin' || type.includes('admin')) role = 'admin';
+
+           // 2. Check Name / ID
+           else if (name.includes('行政') || name.toLowerCase().includes('admin')) role = 'admin';
+           else if (name.includes('S016')) role = 'admin'; // Known Admin ID
+           
+           else if (name.includes('醫師')) role = 'doctor';
+           else if (name.includes('護理師')) role = 'nurse';
+           else if (name.includes('美療師')) role = 'therapist';
+           else if (name.includes('諮詢師')) role = 'consultant';
+      }
+
+      if (role && stats[role]) {
+          const count = rec.count || 0;
+          
+          // Estimate Minutes (Fallback averages since CSV might not have duration)
+          // Doctor: 60, Nurse: 60, Therapist: 60, Consultant: 30
+          let estMins = 60;
+          if (role === 'consultant') estMins = 30;
+          if (role === 'admin') estMins = 60;
+          
+          // Use real minutes if available (from schema update)
+          const totalMinutes = (rec.minutes && rec.minutes > 0) ? rec.minutes : (count * estMins);
+
+          stats[role].usedMinutes += totalMinutes;
+          stats[role].originalMinutes += totalMinutes;
+          stats[role].taskCount += count;
+          
+          // Debug logs for first few
+          if (stats[role].taskCount <= 5) {
+             console.log(`[Workload CSV Merge] Added ${count} tasks for ${name} (${role})`);
+          }
+      }
   });
 
   // 3. 計算最終指標
@@ -411,8 +512,8 @@ export function renderWorkloadCards(
   }
 
   const workloadData = calculateWorkloadData(dataToUse, period);
-  // Fixed Sort Order: Doctor > Nurse > Therapist > Consultant
-  const fixedOrder = ['doctor', 'nurse', 'therapist', 'consultant'];
+  // Fixed Sort Order: Doctor > Nurse > Therapist > Consultant > Admin
+  const fixedOrder = ['doctor', 'nurse', 'therapist', 'consultant', 'admin'];
   workloadData.sort((a, b) => {
       const idxA = fixedOrder.indexOf(a.role);
       const idxB = fixedOrder.indexOf(b.role);

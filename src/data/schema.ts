@@ -24,7 +24,7 @@ export type AppointmentStatus = "completed" | "no_show" | "cancelled" | string;
  * - therapist 代表「美療師」（UI 顯示層可轉換為中文）
  * - 不允許 beauty_therapist 出現在資料邏輯中
  */
-export type StaffType = "doctor" | "nurse" | "therapist" | "consultant";
+export type StaffType = "doctor" | "nurse" | "therapist" | "consultant" | "admin";
 
 /**
  * StaffRole 別名（與 StaffType 相同）
@@ -82,12 +82,15 @@ export interface AppointmentRecord {
   is_new: "yes" | "no";
   purchased_services: string;
   doctor_name: string;
-  staff_role: StaffType | "";
+  assistant_name: string;
+  assistant_role?: string;
   service_item: string;
   status: AppointmentStatus;
   room: string;
   equipment: string;
   customer_id: string;   // 🔥 新增這一行
+  amount?: number;
+  duration?: number;
 }
 
 
@@ -170,7 +173,8 @@ export interface StaffWorkloadRecord {
   date: string;
   staff_name: string;      // 對應 StaffRecord.staff_name
   action_type: StaffActionType;
-  count: number;
+  count: number;           // Mapped from 'cases' or 'count'
+  minutes?: number;        // Mapped from 'minutes' (New)
 }
 
 // ------------------------------------
@@ -229,30 +233,7 @@ export interface CustomerVisit {
   revenue: number;
 }
 
-export interface AppointmentRecord {
-    appointment_id: string;
-    date: string;
-    time: string;
 
-    // 顧客資訊
-    customer_id: string;
-    age: number;
-    gender: "male" | "female";
-    is_new: "yes" | "no";
-
-    // 本次預約的項目
-    service_item: string;      // ← 本次預約療程
-
-    // 顧客歷史購買紀錄（多筆以逗號或分號串接）
-    purchased_services: string;
-
-    // 醫師 / 人員資訊
-    doctor_name: string;
-    staff_role: "" | StaffType;
-    
-    // 金額 (Universal Import)
-    amount?: number;
-}
 
 
 // ------------------------------------

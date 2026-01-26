@@ -134,7 +134,7 @@ function analyzeStaffWorkloads(
   
   appointments.forEach(apt => {
     const staffName = apt.doctor_name || '未指定';
-    const role = apt.staff_role || 'unknown';
+    const role = 'doctor'; // Default to doctor as we group by doctor_name
     const date = apt.date || '';
     
     if (!staffMap.has(staffName)) {

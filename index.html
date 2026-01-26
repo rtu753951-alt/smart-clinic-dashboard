@@ -109,6 +109,11 @@
             <i class="fa-solid fa-flask"></i>
             <span>情境模擬</span>
           </li>
+          <!-- NEW: Scheduling Simulator -->
+          <li data-tab="scheduler" style="margin-top: 5px;">
+             <i class="fa-solid fa-calendar-week"></i>
+             <span>排班模擬器</span>
+          </li>
         </ul>
 
         <!-- NEW: System Status Footer -->
@@ -227,6 +232,19 @@
               <div class="kpi-content">
                 <span class="kpi-value" id="ov-consultant-count">--</span>
                 <span class="kpi-label">諮詢師</span>
+              </div>
+            </div>
+
+            <!-- 行政人員 -->
+            <div
+              class="kpi-item js-open-modal"
+              data-modal="kpi-admin"
+              title="行政人員人數（status = active）"
+            >
+              <i class="fa-solid fa-shield-halved kpi-icon"></i>
+              <div class="kpi-content">
+                <span class="kpi-value" id="ov-admin-count">--</span>
+                <span class="kpi-label">行政人員</span>
               </div>
             </div>
 
@@ -1659,6 +1677,10 @@
             <!-- JS Injected Content -->
           </div>
         </section>
+          <!-- 9. Scheduler Page -->
+          <section id="scheduler" class="page-section" data-init="initSchedulingSimulatorPage">
+              <div id="scheduler-content" style="height: 100%;"></div>
+          </section>
       </main>
     </div>
 

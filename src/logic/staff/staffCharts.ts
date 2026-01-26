@@ -1,5 +1,6 @@
 import { AppointmentRecord } from "../../data/schema";
 import { dataStore } from "../../data/dataStore";
+import { INVOLVEMENT_RATIOS } from "../../data/treatmentRatios";
 
 // --- Types ---
 export type BucketId = "12-14" | "14-16" | "16-18" | "18-21";
@@ -31,7 +32,7 @@ const BUCKET_DEFS: { id: BucketId; label: string; hours: number; startH: number;
 
 export function calculateStaffHeatmapData(appointments: AppointmentRecord[]): StaffHeatmapData {
     // Initialize container
-    const roles = ['doctor', 'nurse', 'therapist', 'consultant']; 
+    const roles = ['doctor', 'nurse', 'therapist', 'consultant', 'admin']; 
     const data: StaffHeatmapData = {};
 
     roles.forEach(role => {
@@ -97,14 +98,12 @@ export function calculateStaffHeatmapData(appointments: AppointmentRecord[]): St
 
         const service = dataStore.services.find(s => s.service_name.trim().toLowerCase() === helperKey);
         
-        // A) Minutes Calculation
-        let occupiedMins = 0;
+        // Duration Calculation
+        let baseDuration = 0;
         let isReal = false;
 
         if (service) {
-             // duration + buffer_time
-             // Ensure numbers
-             occupiedMins = (service.duration || 0) + (service.buffer_time || 0);
+             baseDuration = (service.duration || 0) + (service.buffer_time || 0);
              isReal = true;
         } else {
              // Log missing
@@ -113,36 +112,111 @@ export function calculateStaffHeatmapData(appointments: AppointmentRecord[]): St
              missingLog.set(serviceKey, curr);
         }
 
+        // Apply Ratios
+        const category = service?.category || 'other';
+        const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['other']; 
+
         const stats = (role: string) => {
              if (!data[role]) return;
-             const cell = data[role][bucketId];
              
-             cell.count++; // Always increment count
-             processedCount++;
+             // Determine Effective Minutes
+             let effectiveMinutes = 0;
+             let effectiveIsReal = isReal;
 
-             if (isReal && occupiedMins > 0) {
-                 cell.occupiedMinutes += occupiedMins;
-                 cell.minutesSource = "REAL"; 
+             if (isReal) {
+                 const ratio = ratios[role] !== undefined ? ratios[role] : 0;
+                 effectiveMinutes = baseDuration * ratio;
              } else {
-                 cell.missingServiceMappingCount++;
-                 // Fallback Logic (Estimation) if missing
-                 // This causes the "Uniformity" if mostly missing.
+                 // Fallback Estimation
                  let fallback = 50;
                  if (role === 'doctor') fallback = 60;
-                 if (role === 'nurse') fallback = 30;
+                 if (role === 'nurse') fallback = 30; 
                  if (role === 'therapist') fallback = 45;
                  if (role === 'consultant') fallback = 20;
-                 cell.occupiedMinutes += fallback;
+                 if (role === 'admin') fallback = 60; // Admin tasks default 60m
+                 
+                 effectiveMinutes = fallback;
+                 effectiveIsReal = false; 
              }
+
+             if (effectiveMinutes <= 0) return; // Skip zero load
+
+             const cell = data[role][bucketId];
+             cell.count++; 
+             processedCount++;
+
+             cell.occupiedMinutes += effectiveMinutes;
+             if (effectiveIsReal) cell.minutesSource = "REAL";
+             else cell.missingServiceMappingCount++;
         };
 
         if (apt.doctor_name) {
             const r = staffMap.get(apt.doctor_name.trim());
             if (r === 'doctor') stats('doctor');
         }
-        if (apt.staff_role) {
-            const r = staffMap.get(apt.staff_role.trim());
+        if (apt.assistant_name) {
+            let r = '';
+            if (apt.assistant_role && apt.assistant_role !== '') {
+                 // Map raw role to standard if needed
+                 const raw = apt.assistant_role.trim().toLowerCase();
+                 if (raw.includes('nurse')) r = 'nurse';
+                 else if (raw.includes('therapist')) r = 'therapist';
+                 else if (raw.includes('consultant')) r = 'consultant';
+                 else r = raw;
+            }
+            if (!r) {
+                 r = staffMap.get(apt.assistant_name.trim()) || '';
+            }
             if (r) stats(r);
+        }
+
+
+
+    });
+
+    // --- INTEGRATION: Staff Workload CSV (Manual Records) ---
+    // Spread the daily count across buckets to simulate activity
+    const manualWorkload = dataStore.staffWorkload || [];
+    manualWorkload.forEach(rec => {
+        const name = rec.staff_name.trim();
+        let role = staffMap.get(name);
+        
+        if (!role) {
+             const type = (rec.action_type || '').toLowerCase();
+             
+             if (type === 'admin' || type.includes('admin')) role = 'admin';
+             else if (name.includes('行政') || name.toLowerCase().includes('admin')) role = 'admin';
+             else if (name.includes('S016')) role = 'admin';
+             
+             else if (name.includes('醫師')) role = 'doctor';
+             else if (name.includes('護理師')) role = 'nurse';
+             else if (name.includes('美療師')) role = 'therapist';
+             else if (name.includes('諮詢師')) role = 'consultant';
+        }
+        
+        if (role && data[role]) {
+            const count = rec.count || 0;
+            if (count > 0) {
+                // Distribute evenly across 4 buckets: 12-14, 14-16, 16-18, 18-21
+                // Count per bucket = Total / 4
+                const countPerBucket = count / 4;
+                
+                // Estimate Minutes: 
+                // Doctor/Nurse/Therapist ~ 60m, Consultant ~ 30m
+                let estMins = 60;
+                if (role === 'consultant') estMins = 30;
+                
+                // Use real minutes if available
+                const totalMinutes = (rec.minutes && rec.minutes > 0) ? rec.minutes : (count * estMins);
+                const minutesPerBucket = totalMinutes / 4; // Distributed evenly across 4 buckets
+
+                BUCKET_DEFS.forEach(b => {
+                    const cell = data[role][b.id];
+                    cell.count += countPerBucket; 
+                    cell.occupiedMinutes += minutesPerBucket;
+                    // Note: We don't mark as REAL source, keep as ESTIMATED
+                });
+            }
         }
     });
 

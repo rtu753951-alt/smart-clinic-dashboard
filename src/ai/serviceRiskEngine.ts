@@ -19,7 +19,7 @@
  */
 
 import { AppointmentRecord } from "../data/schema.js";
-import { INVOLVEMENT_RATIOS } from "../logic/staff/staffWorkloadCards.js";
+import { INVOLVEMENT_RATIOS } from "../data/treatmentRatios.js";
 import { SandboxState } from "../features/sandbox/sandboxStore.js";
 
 // ===== 型別定義 =====

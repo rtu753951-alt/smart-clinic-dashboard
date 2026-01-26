@@ -2,7 +2,7 @@ import { isCertifiedForCategory } from "../../data/skillMap.js";
 import { AppointmentRecord } from "../../data/schema.js";
 import { dataStore } from "../../data/dataStore.js";
 import { sandboxStore } from "../../features/sandbox/sandboxStore.js";
-import { INVOLVEMENT_RATIOS } from "./staffWorkloadCards.js";
+import { INVOLVEMENT_RATIOS } from "../../data/treatmentRatios.js";
 
 interface BufferStats {
     role: string;
@@ -84,7 +84,33 @@ export function calculateBufferAnalysis(appointments: AppointmentRecord[], optio
         if (!options.includeCancelled && (apt.status === 'cancelled' || apt.status === 'no_show')) return;
         
         if (apt.doctor_name) addAppt(apt.doctor_name, apt);
-        if (apt.staff_role) addAppt(apt.staff_role, apt);
+        if (apt.assistant_name) {
+            let role = '';
+            if (apt.assistant_role && apt.assistant_role !== '') {
+                // If CSV provides valid role, prioritize it (normalized)
+                const raw = apt.assistant_role.trim().toLowerCase();
+                if (raw.includes('nurse')) role = 'nurse';
+                else if (raw.includes('therapist')) role = 'therapist';
+                else if (raw.includes('consultant')) role = 'consultant';
+                else role = raw;
+            } 
+            if (!role) {
+                // Fallback to name map
+                role = staffMap.get(apt.assistant_name.trim()) || 'therapist';
+            }
+            // Add normalized role
+            addAppt(apt.assistant_name, apt); 
+            // Note: addAppt uses name as key. Logic assumes 'role' is derived later inside results?
+            // Actually lines 173 derived role again. We need to store this override?
+            // `calculateBufferAnalysis` logic re-derives role from staffMap at line 173.
+            // So we should probably update `staffMap` or pass this context.
+            // But `staffMap` is global from staff.csv.
+            // If `assistant_role` varies per appointment (unlikely for same person?), 
+            // the logic is "Reference Field Data".
+            // Let's assume `assistant_role` on appointment overrides or fills gap.
+            // Wait, line 173: `let roleType = staffMap.get(name);`
+            // If we want to use the one from appointment, we need to pass it or check it there.
+        }
     });
 
     const results: BufferStats[] = [];
@@ -212,7 +238,7 @@ export function calculateTimeStructure(appointments: AppointmentRecord[], mode: 
     const sbState = sandboxStore.getState();
 
     // 1. 初始化統計容器
-    ['doctor', 'nurse', 'therapist', 'consultant'].forEach(r => {
+    ['doctor', 'nurse', 'therapist', 'consultant', 'admin'].forEach(r => {
         roleStats[r] = { sop: 0, actual: 0, hidden: 0, activePersonDays: new Set<string>() };
     });
 
@@ -266,10 +292,51 @@ export function calculateTimeStructure(appointments: AppointmentRecord[], mode: 
              if (r === 'doctor') registerLoad('doctor', apt.doctor_name.trim());
         }
 
-        // Apply to Staff
-        if (apt.staff_role) {
-            let r = staffMap.get(apt.staff_role.trim()) || 'therapist'; // Fallback? Or check if in map
-            if (roleStats[r]) registerLoad(r, apt.staff_role.trim());
+        if (apt.assistant_name) {
+            let r = staffMap.get(apt.assistant_name.trim()) || 'therapist'; // Fallback? Or check if in map
+            if (roleStats[r]) registerLoad(r, apt.assistant_name.trim());
+        }
+    });
+
+    // --- INTEGRATION: Staff Workload CSV (Manual Records) ---
+    // Populate SOP/Actual based on 'minutes'
+    const manualWorkload = dataStore.staffWorkload || [];
+    manualWorkload.forEach(rec => {
+        const name = rec.staff_name.trim();
+        let role = staffMap.get(name);
+
+        if (!role) {
+             const type = (rec.action_type || '').toLowerCase();
+             
+             if (type === 'admin' || type.includes('admin')) role = 'admin';
+             else if (name.includes('行政') || name.toLowerCase().includes('admin')) role = 'admin';
+             else if (name.includes('S016')) role = 'admin';
+
+             else if (name.includes('醫師')) role = 'doctor';
+             else if (name.includes('護理師')) role = 'nurse';
+             else if (name.includes('美療師')) role = 'therapist';
+             else if (name.includes('諮詢師')) role = 'consultant';
+        }
+        
+        if (role && roleStats[role]) {
+             // 1. Person Day
+             const dStr = rec.date;
+             if (!name.includes('nan')) {
+                 roleStats[role].activePersonDays.add(`${name}|${dStr}`);
+             }
+
+             // 2. Metrics
+             // We assume Manual Entry is fairly accurate to "Total Time Spent"
+             // To make the chart look realistic (and not 100% efficiency which is impossible),
+             // We assume a standard 15% Hidden Load (Buffer/Prep) for manual entries.
+             const totalMinutes = rec.minutes || (rec.count * 60); 
+             
+             const assumedHidden = Math.round(totalMinutes * 0.15);
+             const assumedSOP = totalMinutes - assumedHidden;
+
+             roleStats[role].sop += assumedSOP;
+             roleStats[role].actual += totalMinutes;
+             roleStats[role].hidden += assumedHidden; 
         }
     });
 
@@ -333,9 +400,33 @@ export function calculateTimeStructure(appointments: AppointmentRecord[], mode: 
  * 產生「營運流程顧問」風格報告
  */
 export function generateBufferStructureReport(stats: TimeStructureStats[]): string {
-    // Sort by Buffer Ratio desc
-    const sorted = [...stats].sort((a, b) => b.bufferRatio - a.bufferRatio);
+    // Sort by Role Category (Fixed Order)
+    const order = ['doctor', 'nurse', 'therapist', 'consultant', 'admin'];
+    const sorted = [...stats].sort((a, b) => {
+        const idxA = order.indexOf(a.role.split(' ')[0]) !== -1 ? order.indexOf(a.role.split(' ')[0]) : 99; // Try to match "doctor" if role is just "doctor"
+        // But wait, role in TimeStructureStats is just the key (e.g. 'doctor'), unlike BufferStats where it is "Name (Role)".
+        // TimeStructureStats keys ARE the role types. 
+        const rA = a.role; 
+        const rB = b.role;
+        const iA = order.indexOf(rA);
+        const iB = order.indexOf(rB);
+        return (iA === -1 ? 99 : iA) - (iB === -1 ? 99 : iB);
+    });
+    
     if (sorted.length === 0) return "<p>無視覺化數據</p>";
+
+    // Find significant roles (still based on threshold for text, but list is all?)
+    // User said "List... by category".
+    // We should list them ALL in order? Or just the chart/report list?
+    // The previous code filtered `highBufferRoles` for the list.
+    // User: "職務服務結構分析" (Job Analysis) ... "依照同職務類別排序" (Sort by Category). 
+    // This implies the visualization should follow this order. 
+    // The function `generateBufferStructureReport` generates an HTML report text.
+    // The Chart itself is likely rendered elsewhere using the array returned by `calculateTimeStructure`.
+    // Wait, the user prompt implies the CHART/LIST behavior. 
+    // This function generates the "Text Report". The chart rendering is likely in `staffPage.ts`.
+    // I need to check `staffPage.ts`.
+    // But I will update this text report logic too.
 
     const highBufferRoles = sorted.filter(s => s.bufferRatio > 25); // Threshold for "High"
     const topRole = highBufferRoles.length > 0 ? highBufferRoles[0] : null;

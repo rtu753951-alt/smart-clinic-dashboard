@@ -128,15 +128,17 @@ class DataStore {
  * 重型載入（Appointments）：
  * 專門處理 appointments.csv，這是最卡的部分
  */
-async loadAppointments(): Promise<void> {
-  if (this.isAppointmentsLoaded) return;
 
-  if (this.coreDataPromise) {
-    console.log("[DataStore] Appointments loading already in progress, reusing promise.");
-    return this.coreDataPromise;
-  }
+  async loadAppointments(): Promise<void> {
+    if (this.isAppointmentsLoaded) return;
 
-  console.log("[DataStore] Loading Appointments Data (Heavy)...");
+    if (this.coreDataPromise) {
+      console.log("[DataStore] Appointments loading already in progress, reusing promise.");
+      return this.coreDataPromise;
+    }
+
+    console.log("[DataStore] Loading Appointments & Workload Data (Heavy)...");
+
 
   // Dynamic Import Validator to avoid circular/init issues if any
   const { DataValidator } = await import("../logic/dataValidator.js");
@@ -188,23 +190,28 @@ async loadAppointments(): Promise<void> {
         }
     }
 
-    // --- LEGACY CSV MODE ---
-    const rawAppointments = await loadCSV<any>("data/appointments.csv");
+      // --- LEGACY CSV MODE ---
+      const [rawAppointments, rawStaffWorkload] = await Promise.all([
+          loadCSV<any>("data/appointments.csv"),
+          loadCSV<any>("data/staff_workload.csv")
+      ]);
 
-    if (!this.isAppointmentsLoaded) {
-      this.processAppointments(rawAppointments);
+      if (!this.isAppointmentsLoaded) {
+        this.processAppointments(rawAppointments);
+        this.processStaffWorkload(rawStaffWorkload); // Process Workload
 
-      // --- RUN VALIDATOR ---
-      if (this.appointments.length > 0) {
-        // Ensure services/staff are loaded first (Bootstrap should be done usually)
-        if (!this.isBootstrapLoaded) {
-           console.warn("[DataStore] Warning: Validator running before Bootstrap loaded. Validation might fail ref checks.");
-           // Ideally we await loadBootstrap here or assume caller order. 
-           // For now, let's just warn or let it run partial.
-        }
-        
-        const report = DataValidator.runAll(this.appointments, this.staff, this.services);
-        this.validationReport = report;
+        // --- RUN VALIDATOR ---
+        if (this.appointments.length > 0) {
+          // Ensure services/staff are loaded first (Bootstrap should be done usually)
+          if (!this.isBootstrapLoaded) {
+             console.warn("[DataStore] Warning: Validator running before Bootstrap loaded. Validation might fail ref checks.");
+             // Ideally we await loadBootstrap here or assume caller order. 
+             // For now, let's just warn or let it run partial.
+          }
+          
+          const report = DataValidator.runAll(this.appointments, this.staff, this.services);
+          this.validationReport = report;
+
         
         // Apply Partitioning (Keep clean for UI, Move errors to Quarantine)
         this.appointments = report.validAppointments;
@@ -241,8 +248,8 @@ async loadAppointments(): Promise<void> {
   private processAppointments(rawAppointments: any[]) {
     this.appointments = (rawAppointments || []).map((raw: any): AppointmentRecord => {
       const gender = raw.gender === "male" || raw.gender === "female" ? raw.gender : "female";
-      const staffRoleRaw = (raw.staff_role ?? "").trim();
-      const staffRole = staffRoleRaw === "" ? "" : (staffRoleRaw as StaffType);
+      const staffRoleRaw = (raw.assistant_name ?? "").trim();
+      const assistant_name = staffRoleRaw === "" ? "" : staffRoleRaw; // Keep as string (or StaffType if verified)
       const statusRaw = (raw.status ?? "completed").trim().toLowerCase();
       const status: AppointmentStatus =
         statusRaw === "completed" || statusRaw === "no_show" || statusRaw === "cancelled"
@@ -253,35 +260,24 @@ async loadAppointments(): Promise<void> {
         appointment_id: String(raw.appointment_id ?? "").trim(),
         date: String(raw.date ?? "").trim(),
         time: String(raw.time ?? "").trim(),
-        age: Number(raw.age) || 0,
+        customer_id: String(raw.customer_id ?? "").trim(),
+        age: Number(raw.age ?? 0),
         gender,
-        is_new: raw.is_new === "yes" ? "yes" : "no",
-        purchased_services: String(raw.purchased_services ?? "").trim(),
-        doctor_name: String(raw.doctor_name ?? "").trim(),
-        staff_role: staffRole,
+        is_new: (String(raw.is_new ?? "no").toLowerCase() === "yes") ? "yes" : "no",
         service_item: String(raw.service_item ?? "").trim(),
-        status,
+        purchased_services: String(raw.purchased_services ?? "").trim(),
+        doctor_name: String(raw.doctor_name ?? "nan").trim(),
+        assistant_name: assistant_name,
+        amount: raw.amount ? Number(raw.amount) : undefined,
+        status: status,
         room: String(raw.room ?? "").trim(),
         equipment: String(raw.equipment ?? "").trim(),
-        customer_id: String(raw.customer_id ?? "").trim(),
+        duration: raw.duration ? Number(raw.duration) : undefined,
         customer: undefined,
         service: undefined,
-        doctor: undefined,
-        amount: raw.amount ? Number(raw.amount) : undefined // Ensure amount is mapped if present
+        doctor: undefined
       };
     });
-
-    // Fix Amount mapping from Service if missing (Logic from original map)
-    // The original logic didn't actually map 'amount' from CSV in the map function 
-    // but calculated it later or assumed it exists. 
-    // Wait, the original loadAll map logic DID NOT include `amount` property in the return object explicitly 
-    // except it was added to the type later? 
-    // Looking at original file lines 82-101: `amount` is MISSING in the return object literal!
-    // But `handleMasterImport` adds it. 
-    // I should probably ensure it's there if the CSV has 'price' or 'amount'.
-    // appointments.csv usually has purchased_services but maybe not explicit amount column in this dataset schema?
-    // Let's stick to EXACT behavior of original map for safety, just moved code.
-    // Original map lines 82-101.
   }
 
   private processServices(rawServices: any[]) {
@@ -326,12 +322,12 @@ async loadAppointments(): Promise<void> {
 
   private processStaff(rawStaff: any[]) {
     this.staff = (rawStaff || []).map((raw: any): StaffRecord => {
-      const staffType = (raw.staff_type ?? "").trim() as StaffType;
+      const staffType = (raw.staff_type ?? "").trim().toLowerCase() as StaffType;
       let status = "";
       const possibleStatusKeys = ["status", "Status", "STATUS", "status ", " status"];
       for (const key of possibleStatusKeys) {
         if (raw[key] !== undefined) {
-          status = String(raw[key]).trim();
+          status = String(raw[key]).trim().toLowerCase();
           break;
         }
       }
@@ -350,16 +346,26 @@ async loadAppointments(): Promise<void> {
       this.staffWorkload = (rawStaffWorkload || []).map(
       (raw: any): StaffWorkloadRecord => {
         const actionType = (raw.action_type ?? "").trim() as StaffActionType;
-        let countRaw = raw.count ?? raw["count "] ?? raw["count\r"] ?? raw["count \r"] ?? "";
+        
+        // Correct Mapping based on User Feedback
+        // Key: 'cases' (shown in console) or fallback to 'count'
+        let countRaw = raw.cases ?? raw.count ?? raw.Count ?? raw.tasks ?? "0";
+        
         if (typeof countRaw === "string") {
           countRaw = countRaw.replace(/\r/g, "").trim();
         }
         const countValue = Number(countRaw) || 0;
+
+        // Map Minutes
+        let minutesRaw = raw.minutes ?? raw.Minutes ?? "0";
+        const minutesValue = Number(minutesRaw) || 0;
+
         return {
           date: String(raw.date ?? "").trim(),
           staff_name: String(raw.staff_name ?? "").trim(),
           action_type: actionType,
           count: countValue,
+          minutes: minutesValue 
         };
       }
     );
@@ -506,7 +512,8 @@ async loadAppointments(): Promise<void> {
               service_item: serviceItem,
               purchased_services: get('purchased_services') || serviceItem,
               doctor_name: docName,
-              staff_role: '' as StaffType, // Will try to map below
+              assistant_name: staffName || '',
+              assistant_role: get('assistant_role') || '',
               status: (get('status').toLowerCase() || 'completed') as AppointmentStatus,
               room: get('room'),
               equipment: get('equipment'),
@@ -547,9 +554,7 @@ async loadAppointments(): Promise<void> {
               }
               
               const finalStaff = this.staff.find(s => s.staff_name === staffName);
-              if (finalStaff) {
-                  rec.staff_role = finalStaff.staff_type;
-              }
+              // Removed obsolete staff_role assignment
           }
 
           // 4. Task Creation (Compliance Check)

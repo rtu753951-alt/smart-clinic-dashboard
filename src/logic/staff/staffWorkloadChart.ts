@@ -17,14 +17,7 @@ import { sandboxStore } from "../../features/sandbox/sandboxStore.js";
  * 4. 與右上方月份選單同步
  */
 
-// Doctor involvement ratio model with consultation role split
-const INVOLVEMENT_RATIOS: Record<string, Record<string, number>> = {
-  inject: { doctor: 0.35, therapist: 0, nurse: 0, consultant: 0 },
-  rf: { doctor: 0.35, therapist: 0, nurse: 0, consultant: 0 },
-  laser: { doctor: 0.15, therapist: 1.0, nurse: 0, consultant: 0 },
-  drip: { doctor: 0.10, therapist: 0, nurse: 1.0, consultant: 0 },
-  consult: { doctor: 0.30, therapist: 0, nurse: 0, consultant: 0.70 }
-};
+import { INVOLVEMENT_RATIOS } from "../../data/treatmentRatios.js";
 
 // 職務人數設定（從 staff.csv 動態計算）
 function getStaffCounts(): Record<string, number> {
@@ -52,7 +45,8 @@ const ROLE_NAMES: Record<string, string> = {
   doctor: "醫師",
   consultant: "諮詢師",
   nurse: "護理師",
-  therapist: "美療師"
+  therapist: "美療師",
+  admin: "行政人員"
 };
 
 // 職務顏色映射
@@ -60,7 +54,8 @@ const ROLE_COLORS: Record<string, string> = {
   doctor: "rgba(59, 130, 246, 0.8)",      // 藍色
   consultant: "rgba(139, 92, 246, 0.8)",  // 紫色
   nurse: "rgba(16, 185, 129, 0.8)",       // 綠色
-  therapist: "rgba(236, 72, 153, 0.8)"    // 粉色
+  therapist: "rgba(236, 72, 153, 0.8)",    // 粉色
+  admin: "rgba(107, 114, 128, 0.8)"       // 灰色
 };
 
 interface WorkloadData {
@@ -106,7 +101,8 @@ export function calculateStaffWorkloadData(
     doctor: { usedMinutes: 0 },
     consultant: { usedMinutes: 0 },
     nurse: { usedMinutes: 0 },
-    therapist: { usedMinutes: 0 }
+    therapist: { usedMinutes: 0 },
+    admin: { usedMinutes: 0 }
   };
 
   // 取得 Sandbox 狀態
@@ -121,13 +117,31 @@ export function calculateStaffWorkloadData(
     const totalMinutes = duration + buffer;
 
     // 取得療程類別以決定介入比例
-    const category = service?.category || 'inject'; // Default assumption
-    const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['inject'];
+    const category = service?.category || 'other'; // Safe default
+    const ratios = INVOLVEMENT_RATIOS[category] || INVOLVEMENT_RATIOS['other'];
     
     // Sandbox Growth Factor
     const growthFactor = sbState.isActive ? (1 + (sbState.serviceGrowth[category as keyof typeof sbState.serviceGrowth] || 0)) : 1;
 
-    const primaryRole = (service?.executor_role || apt.staff_role) as string;
+    // Determine Role
+    let roleFromStaff = '';
+    
+    // 1. Try assistant_role from record
+    if (apt.assistant_role) {
+         const raw = apt.assistant_role.trim().toLowerCase();
+         if (raw.includes('nurse')) roleFromStaff = 'nurse';
+         else if (raw.includes('therapist')) roleFromStaff = 'therapist';
+         else roleFromStaff = raw;
+    }
+
+    // 2. Fallback to name lookup (Need staffMap access? It's not in scope here!)
+    // We need to look it up from dataStore.staff
+    if (!roleFromStaff && apt.assistant_name) {
+         const s = dataStore.staff.find(st => st.staff_name === apt.assistant_name);
+         if (s) roleFromStaff = s.staff_type;
+    }
+
+    const primaryRole = (service?.executor_role || roleFromStaff || apt.assistant_name) as string;
 
     // 應用介入比例計算等效工時 (乘上成長率)
     // 醫師等效工時
@@ -155,6 +169,52 @@ export function calculateStaffWorkloadData(
     } else if (primaryRole === 'therapist') {
       stats['nurse'].usedMinutes += totalMinutes * 0.15 * growthFactor;
     }
+  });
+
+  // --- INTEGRATION: staff_workload.csv (Manual Records) ---
+  const manualWorkload = dataStore.staffWorkload || [];
+  manualWorkload.forEach(rec => {
+      // 1. Date Check (Must match targetMonth)
+      if (!rec.date.startsWith(targetMonth)) return;
+
+      const d = new Date(rec.date);
+      // Same logic as filteredAppointments: 
+      // If < today, included. If >= today, included. 
+      // Since manual records are usually "done" or "planned", we include them if they exist in the file for this month.
+      // But let's respect the "Today" logic if needed? 
+      // Usually manual records are retrospective or specific plans. Let's include all matching month.
+      
+      const name = rec.staff_name.trim();
+      let role = ''; // derive
+      
+      // Try map
+      const s = dataStore.staff.find(st => st.staff_name === name);
+      if (s) role = s.staff_type;
+      
+      // Fallback
+      if (!role) {
+           // 1. Check Action Type
+           const type = (rec.action_type || '').toLowerCase();
+           if (type === 'admin' || type.includes('admin')) role = 'admin';
+
+           // 2. Check Name / ID
+           else if (name.includes('行政') || name.toLowerCase().includes('admin')) role = 'admin';
+           else if (name.includes('S016')) role = 'admin'; 
+
+           else if (name.includes('醫師')) role = 'doctor';
+           else if (name.includes('護理師')) role = 'nurse';
+           else if (name.includes('美療師')) role = 'therapist';
+           else if (name.includes('諮詢師')) role = 'consultant';
+      }
+
+      if (role && stats[role]) {
+           let estMins = 60;
+           if (role === 'consultant') estMins = 30;
+           if (role === 'admin') estMins = 60;
+
+           const activeMins = (rec.minutes && rec.minutes > 0) ? rec.minutes : (rec.count * estMins);
+           stats[role].usedMinutes += activeMins;
+      }
   });
 
   // 取得職務人數

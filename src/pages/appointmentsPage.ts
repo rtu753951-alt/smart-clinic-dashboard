@@ -1141,9 +1141,7 @@ function renderForecastContent(viewType: string) {
                     2026-01-19 (一) ~ 2026-01-25 (日)
                 </p>
             </div>
-            <p style="color:#64748b; font-size:0.85rem; background:#f8fafc; padding:8px; border-radius:4px;">
-                <i class="fa-solid fa-circle-info"></i> 已隱藏離峰時段 (10:00, 11:00, 21:00)，僅顯示核心營業時間。
-            </p>
+
             ${html}
         `;
         

@@ -24,7 +24,8 @@ export function calcTodayKPI(appointments: AppointmentRecord[], staffList: any[]
             showRate: 0,
             docCount: 0,
             nurseCount: 0,
-            consultantCount: 0
+            consultantCount: 0,
+            adminCount: 0
         };
     }
 
@@ -40,13 +41,13 @@ export function calcTodayKPI(appointments: AppointmentRecord[], staffList: any[]
         a.status === "completed" || a.status === "checked_in"
     );
     const todayShow = todayCompleted.length;
-
     const showRate = todayTotal === 0 ? 0 : Math.round((todayShow / todayTotal) * 100);
 
     // 直接從 staff 資料中統計 active 人員（不依賴今日預約）
     let docCount = 0;
     let nurseCount = 0;
     let consultantCount = 0;
+    let adminCount = 0;
 
     staffList.forEach(s => {
         // 只計算 status === "active" 的人員
@@ -58,6 +59,8 @@ export function calcTodayKPI(appointments: AppointmentRecord[], staffList: any[]
             nurseCount++;
         } else if (s.staff_type === 'consultant') {
             consultantCount++;
+        } else if (s.staff_type === 'admin') {
+            adminCount++;
         }
     });
 
@@ -75,10 +78,9 @@ export function calcTodayKPI(appointments: AppointmentRecord[], staffList: any[]
         showRate,
         docCount,
         nurseCount,
-        consultantCount
+        consultantCount,
+        adminCount
     };
-
-
 }
 /**
  * 醫師 Top3 - 月度統計
