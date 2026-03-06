@@ -1,3 +1,32 @@
+// === Mock Global Date for Demo (Locked to 2025-12-01) ===
+console.log("[Main] Initializing Global Date Mock...");
+const OriginalDate = globalThis.Date;
+const FIXED_TIME = new OriginalDate('2025-12-01T00:00:00+08:00').getTime();
+
+// @ts-ignore
+globalThis.Date = new Proxy(OriginalDate, {
+    construct(target, args) {
+        if (args.length === 0) {
+            return new target(FIXED_TIME);
+        }
+        // @ts-ignore
+        return new target(...args);
+    },
+    apply(target, thisArg, args) {
+        // Native Date() call as function ignores arguments and returns current time string
+        if (args.length === 0) {
+            return new target(FIXED_TIME).toString();
+        }
+        return Reflect.apply(target, thisArg, args);
+    }
+});
+
+// @ts-ignore
+globalThis.Date.now = () => FIXED_TIME;
+globalThis.Date.parse = OriginalDate.parse;
+globalThis.Date.UTC = OriginalDate.UTC;
+// Proxy inherits prototype from OriginalDate via the constructor trap results
+
 // === Import Styles (Unified) ===
 import "../style.css";
 import "../style_global_interactive.css";

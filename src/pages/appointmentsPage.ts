@@ -73,13 +73,10 @@ let currentSeasonalFactor: number = 0; // 季節性調節係數 (Default 0%)
 
 // =========================================================================================
 //  Logic: Strict Anchor & Dynamic Range Chart
-//  Anchor: 2026-01-15 (Today)
+//  Anchor: Dashboard Date (Today)
 //  History: Today - Range
 //  Future: Today + 30 Days
 // =========================================================================================
-
-const FIXED_TODAY_STR = "2026-01-15";
-const TODAY = new Date(FIXED_TODAY_STR);
 
 /**
  * 準備圖表數據 (核心邏輯)
@@ -87,6 +84,14 @@ const TODAY = new Date(FIXED_TODAY_STR);
  * @param sliderValue 增益係數 (-1.0 ~ 1.0)
  */
 function prepareChartData(range: number, sliderValue: number) {
+    const TODAY = new Date();
+    const toLocalYYYYMMDD = (d: Date) => {
+        const yy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yy}-${mm}-${dd}`;
+    };
+    const FIXED_TODAY_STR = toLocalYYYYMMDD(TODAY);
     const appointments = dataStore.appointments;
 
     // 1. 定義時間軸
@@ -121,60 +126,110 @@ function prepareChartData(range: number, sliderValue: number) {
     let currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-        const dStr = currentDate.toISOString().split('T')[0];
+        const dStr = toLocalYYYYMMDD(currentDate);
         labels.push(formatDateLabel(dStr));
 
-        const isFuture = currentDate > TODAY;
         const isToday = dStr === FIXED_TODAY_STR;
+        // Strict Future check (ignore time)
+        const isFuture = dStr > FIXED_TODAY_STR;
 
         // 1. Demand (Always valid for context)
-        // Count ALL records for this date
         const demandCount = countAppts(dStr, () => true);
         demandData.push(demandCount);
 
         // 2. Actual & Forecast Logic
         if (isFuture) {
-             // Future Logic
-             // Actual: Null
              actualData.push(null);
-             
-             // Forecast: Demand * Rate * Factors * Slider
              const month = (currentDate.getMonth() + 1).toString();
              const dayOfWeek = currentDate.getDay().toString();
              const mFactor = (AI_PARAMS.monthlyFactors as any)[month] || 1.0;
              const dWeight = (AI_PARAMS.dayWeights as any)[dayOfWeek] || 1.0;
              
-             // AI Forecast Formula
-             // Base: Historical Actual Baseline
-             // Apply Seasonality & Day weights + Slider
-             const val = baseline * mFactor * dWeight * (1 + sliderValue);
-             const roundedVal = Math.round(val);
-             
-             // Ensure Forecast >= 0
-             forecastData.push(Math.max(0, roundedVal));
-
+             const val = (baseline || 15) * mFactor * dWeight * (1 + sliderValue);
+             forecastData.push(Math.round(val));
         } else {
-             // Past & Today Logic
-             // Actual: Completed | Checked_in
              const actualCount = countAppts(dStr, a => a.status === 'completed' || a.status === 'checked_in');
              actualData.push(actualCount);
 
              if (isToday) {
-                 // Anchor Point: Today
-                 // Forecast starts here to connect with Actual
                  forecastData.push(actualCount);
              } else {
-                 // Pure Past: No Forecast Line needed (or could shadow Actual)
-                 // User Requirement 1: "estimated 應與 actual 重合或隱藏"
-                 // Setting to null hides it, keeping chart clean.
                  forecastData.push(null);
              }
         }
 
         currentDate.setDate(currentDate.getDate() + 1);
     }
-
+    
     return { labels, demandData, actualData, forecastData };
+}
+
+/**
+ * 新增：渲染趨勢對照表格
+ * 讓使用者可以直接看到數值，避免圖表不顯示時無從核對
+ */
+function renderTrendTable(labels: string[], demand: (number|null)[], actual: (number|null)[], forecast: (number|null)[]) {
+    const tableId = 'appt-trend-data-table';
+    let container = document.getElementById('trend-table-container');
+    
+    if (!container) {
+        // Find a place to insert the table (after the chart card)
+        const chartCard = document.querySelector('#appointments .card');
+        if (chartCard) {
+            container = document.createElement('div');
+            container.id = 'trend-table-container';
+            container.style.marginTop = '20px';
+            container.style.overflowX = 'auto';
+            chartCard.after(container);
+        }
+    }
+    
+    if (!container) return;
+
+    // Filter to show only dates around Today to keep it compact (e.g., -5 to +5 days) or full range?
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // Let's show the full range but limited to a scrollable area
+    let html = `
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <h2>📈 預約趨勢數據對照表 (本日: ${todayStr})</h2>
+            </div>
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                    <thead style="position: sticky; top: 0; background: var(--card-bg); z-index: 1;">
+                        <tr>
+                            <th style="text-align: left; padding: 12px; border-bottom: 2px solid rgba(255,255,255,0.1);">日期</th>
+                            <th style="text-align: center; padding: 12px; border-bottom: 2px solid rgba(255,255,255,0.1);">總需求 (Demand)</th>
+                            <th style="text-align: center; padding: 12px; border-bottom: 2px solid rgba(255,255,255,0.1); color: #4A90E2;">實績 (Actual)</th>
+                            <th style="text-align: center; padding: 12px; border-bottom: 2px solid rgba(255,255,255,0.1); color: #ff8c00;">預測 (Forecast)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+
+    labels.forEach((label, i) => {
+        const isToday = label.includes('Today');
+        const rowStyle = isToday ? 'background: rgba(255, 255, 0, 0.05); font-weight: bold;' : '';
+        html += `
+            <tr style="${rowStyle} border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 10px;">${label}</td>
+                <td style="text-align: center; padding: 10px;">${demand[i] ?? 0}</td>
+                <td style="text-align: center; padding: 10px; color: #4A90E2;">${actual[i] ?? '-'}</td>
+                <td style="text-align: center; padding: 10px; color: #ff8c00;">${forecast[i] ?? '-'}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
 }
 
 function renderTrendChart(range: number = 30) { 
@@ -187,6 +242,9 @@ function renderTrendChart(range: number = 30) {
 
     // Initial Calculation
     const { labels, demandData, actualData, forecastData } = prepareChartData(currentRange, currentSeasonalFactor);
+
+    // Sync Trend Table
+    renderTrendTable(labels, demandData, actualData, forecastData);
 
     // Gradients
     const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
@@ -237,8 +295,8 @@ function renderTrendChart(range: number = 30) {
                     borderWidth: 2,
                     borderDash: [5, 5],
                     pointRadius: (ctx: any) => {
-                        const index = ctx.dataIndex;
-                        return ctx.dataIndex === ctx.chart.data.labels.length - 1 ? 0 : 0; 
+                        const val = ctx.dataset.data[ctx.dataIndex];
+                        return val !== null && val !== undefined ? 0 : 0; // Default to 0 points for forecast, keep it clean
                     },
                     pointHoverRadius: 4,
                     fill: false,
@@ -250,6 +308,7 @@ function renderTrendChart(range: number = 30) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             interaction: {
                 mode: 'index',
                 intersect: false,
@@ -258,7 +317,7 @@ function renderTrendChart(range: number = 30) {
                 legend: { position: 'top' },
                 title: {
                     display: true,
-                    text: `分析基準日: ${FIXED_TODAY_STR} (藍線:實績 / 橘線:預測 / 灰虛線:總需求)`,
+                    text: `分析基準日: ${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')} (藍線:實績 / 橘線:預測 / 灰虛線:總需求)`,
                     font: { size: 12 },
                     padding: { bottom: 10 }
                 },
@@ -323,8 +382,8 @@ function renderShowRateChart() {
     let show = 0;
     let noShow = 0;
 
-    // 基準日期：2025-12-16
-    const today = new Date("2025-12-16");
+    // 基準日期：今日 (已全域 Mock)
+    const today = new Date();
 
     dataStore.appointments.forEach(a => {
         const d = new Date(a.date);
@@ -362,6 +421,7 @@ function renderShowRateChart() {
     options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             layout: {
                 padding: {
                     top: 0,
@@ -557,6 +617,7 @@ function renderTimeDistributionChart() {
             indexAxis: 'x', // Vertical
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             layout: {
                 padding: { top: 30, bottom: 10 }
             },
@@ -649,7 +710,7 @@ function renderQualityChart() {
     if (!ctx) return;
     
     // 1. 設定基準日與篩選範圍 (僅過去資料)
-    const today = new Date("2025-12-17"); // 根據需求固定時間
+    const today = new Date(); // 根據需求固定時間
     const pastAppointments = dataStore.appointments.filter(a => {
         const d = new Date(a.date);
         // 只統計發生過或當日的預約 (<= 2025-12-17)
@@ -736,6 +797,7 @@ function renderQualityChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: false,
             layout: {
                 padding: {
                     bottom: 40, // 增加底部空間給 HTML 文字
@@ -932,7 +994,7 @@ const suggestions = generateAppointmentSuggestions([]);
 /* =========================================================================================
    Advanced Analysis Modal Logic
    Feature: Heatmap, Resource Allocation, Risk Alerts
-   Target Date: 2026-01-19 ~ 2026-01-25 (Next Week)
+   Target Date: Dynamic (Next Week / Future 30 Days)
 ========================================================================================= */
 
 
@@ -1018,7 +1080,7 @@ function openForecastModal(viewType: string = 'next_week') {
                         進階營運分析
                     </h2>
                     <span style="font-size:0.85rem; color:#64748b; background:#e2e8f0; padding:2px 8px; border-radius:4px;">
-                        Today: 2026-01-16
+                        Today: ${new Date().toISOString().split('T')[0]}
                     </span>
                 </div>
                 <div class="forecast-tabs">
@@ -1072,12 +1134,14 @@ function renderForecastContent(viewType: string) {
     if (!container || !aiContainer) return;
 
     // Helper: Generate Dates
-    // Today based on user request context: 2026-01-16
-    const TODAY_DATE = new Date("2026-01-16");
+    // Today based on global mapped Date
+    const TODAY_DATE = new Date();
     
-    // 1. Next Week Strings (Jan 19 - Jan 25)
-    // Note: If Today is Jan 16 (Fri), Next Week starts Jan 19 (Mon).
-    const nextWeekStart = new Date("2026-01-19");
+    // 1. Next Week Strings
+    // Calculate the next Monday relative to TODAY_DATE
+    const nextWeekStart = new Date(TODAY_DATE);
+    const daysUntilNextMonday = (1 - TODAY_DATE.getDay() + 7) % 7 || 7;
+    nextWeekStart.setDate(TODAY_DATE.getDate() + daysUntilNextMonday);
     const nextWeekDates = Array.from({length: 7}, (_, i) => {
         const d = new Date(nextWeekStart);
         d.setDate(d.getDate() + i);
@@ -1138,7 +1202,7 @@ function renderForecastContent(viewType: string) {
             <div style="margin-bottom:15px; border-left:4px solid #3b82f6; padding-left:10px;">
                 <h3 style="margin:0; color:#1e293b;">📅 下週時段熱力圖</h3>
                 <p style="margin:5px 0 0; color:#64748b; font-size:0.9rem;">
-                    2026-01-19 (一) ~ 2026-01-25 (日)
+                    ${nextWeekDates[0]} (一) ~ ${nextWeekDates[6]} (日)
                 </p>
             </div>
 

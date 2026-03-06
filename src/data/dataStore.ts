@@ -145,7 +145,7 @@ class DataStore {
 
   this.coreDataPromise = (async () => {
     // ✅ 讓 UI 先 paint，避免 Edge/桌機冷啟動看起來像掛掉（很建議）
-    await new Promise(requestAnimationFrame);
+    await new Promise(resolve => requestAnimationFrame(resolve));
 
     // --- BACKEND API MODE ---
     if (USE_BACKEND_API) {
@@ -204,9 +204,8 @@ class DataStore {
         if (this.appointments.length > 0) {
           // Ensure services/staff are loaded first (Bootstrap should be done usually)
           if (!this.isBootstrapLoaded) {
-             console.warn("[DataStore] Warning: Validator running before Bootstrap loaded. Validation might fail ref checks.");
-             // Ideally we await loadBootstrap here or assume caller order. 
-             // For now, let's just warn or let it run partial.
+             console.warn("[DataStore] Warning: Validator running before Bootstrap loaded. Forcing loadBootstrap().");
+             await this.loadBootstrap();
           }
           
           const report = DataValidator.runAll(this.appointments, this.staff, this.services);
@@ -217,9 +216,11 @@ class DataStore {
         this.appointments = report.validAppointments;
         this.quarantinedAppointments = report.quarantinedAppointments;
 
-        console.log(`[DataStore] Validation Complete. Valid: ${this.appointments.length}, Quarantined: ${this.quarantinedAppointments.length}`);
-        
-        // Log Errors for Dev
+        console.log(`[CHART DEBUG] Validation Complete. RAW Length: ${rawAppointments.length}`);
+        console.log(`[CHART DEBUG] Valid: ${this.appointments.length}, Quarantined: ${this.quarantinedAppointments.length}`);
+        if(this.quarantinedAppointments.length > 0) {
+            console.log(`[CHART DEBUG] Quarantine reason example:`, this.quarantinedAppointments[0].reasons);
+        }
         if (report.meta.errorCount > 0) {
            console.groupCollapsed(`[Validator] ⚠️ Found ${report.meta.errorCount} Errors`);
            console.table(report.issues.filter((i: any) => i.severity === 'error'));

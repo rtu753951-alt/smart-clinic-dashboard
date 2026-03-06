@@ -74,7 +74,7 @@ export function calculateStaffWorkloadData(
   appointments: AppointmentRecord[],
   targetMonth: string
 ): WorkloadData[] {
-  const today = new Date("2025-12-16"); // 基準日期
+  const today = new Date(); // 基準日期
   today.setHours(0, 0, 0, 0);
 
   // 篩選目標月份的預約

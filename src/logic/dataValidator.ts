@@ -300,16 +300,16 @@ export class DataValidator {
                  const actualType = allStaffMap.get(docName)?.staff_type;
                  rowIssues.push({
                     dataset: 'appointments', rowIndex: index, id: rowId, field: 'doctor_name',
-                    code: 'ref_error', message: `Staff '${docName}' is type '${actualType}', expected 'doctor'`, severity: 'error' // Upgraded to error as requested implies strictness
+                    code: 'ref_error', message: `Staff '${docName}' is type '${actualType}', expected 'doctor'`, severity: 'warning'
                  });
-                 isError = true; 
+                 // isError = true; // Downgraded to warning to avoid hiding real historical charts 
                  trackError('DOCTOR_TYPE_MISMATCH');
              } else {
                  rowIssues.push({
                     dataset: 'appointments', rowIndex: index, id: rowId, field: 'doctor_name',
-                    code: 'ref_error', message: `Doctor '${docName}' not found in Staff Directory`, severity: 'error'
+                    code: 'ref_error', message: `Doctor '${docName}' not found in Staff Directory`, severity: 'warning'
                  });
-                 isError = true;
+                 // isError = true; // Downgraded to warning
                  trackError('UNKNOWN_DOCTOR');
              }
           }

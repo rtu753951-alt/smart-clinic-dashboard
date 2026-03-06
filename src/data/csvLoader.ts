@@ -56,7 +56,7 @@ async function parseCSVData<T>(csvText: string): Promise<T[]> {
     const record: any = {};
 
     headers.forEach((h, idx) => {
-      record[h] = row[idx] ?? ""; // 確保空欄位不會變 undefined
+      record[h] = (row[idx] ?? "").trim(); // 確保空欄位不會變 undefined 並去除前後空白
     });
 
     data.push(record as T);

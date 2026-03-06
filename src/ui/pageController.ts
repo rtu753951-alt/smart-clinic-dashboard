@@ -385,17 +385,19 @@ function bindTopBarActions() {
                 const riskCount = riskList.length;
 
                 // 3. Calculate Revenue & Check Milestones
-                const targetDate = '2026-01-01'; // Simulation Today
+                const now = new Date();
+                const targetDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; // Simulation Today
                 const milestone = checkRevenueMilestones(targetDate, dataStore.appointments);
                 
                 // 4. Marketing Campaigns Logic
+                const currentYear = new Date().getFullYear();
                 const campaigns = [
-                    { name: '女王節 (Women Day)', date: '2026-03-08', msg: '建議主打亮白與女性保養專題，同步推出閨蜜同行優惠。' },
-                    { name: '母親節 (Mother Day)', date: '2026-05-10', msg: '年度大檔！建議提前規劃抗老拉提專題，並準備 VIP 預購會。' },
-                    { name: '週年慶 (Anniversary)', date: '2026-11-01', msg: '全年度最高折扣檔期，建議盤點庫存並設計滿額贈禮。' }
+                    { name: '女王節 (Women Day)', date: `${currentYear}-03-08`, msg: '建議主打亮白與女性保養專題，同步推出閨蜜同行優惠。' },
+                    { name: '母親節 (Mother Day)', date: `${currentYear}-05-10`, msg: '年度大檔！建議提前規劃抗老拉提專題，並準備 VIP 預購會。' },
+                    { name: '週年慶 (Anniversary)', date: `${currentYear}-11-01`, msg: '全年度最高折扣檔期，建議盤點庫存並設計滿額贈禮。' }
                 ];
                 
-                const simDate = new Date('2026-01-01');
+                const simDate = new Date();
                 let nextCampaign = null;
                 let daysLeft = 0;
                 
@@ -522,7 +524,7 @@ function bindTopBarActions() {
                     if (!task.dueDate || !task.reminders) return;
                     
                     const due = new Date(task.dueDate);
-                    const now = new Date('2026-01-01'); // Keeping simulation date
+                    const now = new Date(); // Using the global mocked date
                     const diffTime = due.getTime() - now.getTime();
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                     
@@ -979,9 +981,10 @@ function generateTemplateCSV() {
     ];
     
     // Example Rows
+    const dummyDate = new Date().toISOString().split('T')[0];
     const rows = [
-        ['IMP-001', '2026-03-01', 'CUS888', 'female', '35', 'yes', 'PicoSure', '8000', 'Dr. Chen', 'Nurse Lin', 'completed', 'R01', 'Laser-A', '5', 'high_value', 'none'],
-        ['IMP-002', '2026-03-02', 'CUS999', 'male', '42', 'no', 'Thermage', '60000', 'Dr. Wu', 'Nurse Wang', 'completed', 'R02', 'RF-B', '0', 'vip', 'none']
+        ['IMP-001', dummyDate, 'CUS888', 'female', '35', 'yes', 'PicoSure', '8000', 'Dr. Chen', 'Nurse Lin', 'completed', 'R01', 'Laser-A', '5', 'high_value', 'none'],
+        ['IMP-002', dummyDate, 'CUS999', 'male', '42', 'no', 'Thermage', '60000', 'Dr. Wu', 'Nurse Wang', 'completed', 'R02', 'RF-B', '0', 'vip', 'none']
     ];
     
     let csvContent = "data:text/csv;charset=utf-8," + "\ufeff"; // Add BOM
