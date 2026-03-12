@@ -9,7 +9,23 @@ import { calculateStaffHeatmapData, renderStaffHeatmap } from "../logic/staff/st
 declare const Chart: any;
 
 export function initStaffPage() {
-  const currentMonth = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
+  let currentMonth = (window as any).currentDashboardMonth;
+  if (!currentMonth && dataStore.appointments && dataStore.appointments.length > 0) {
+      // Find month with most appointments
+      const monthCounts = dataStore.appointments.reduce((acc, a) => {
+          const m = a.date.slice(0, 7);
+          acc[m] = (acc[m] || 0) + 1;
+          return acc;
+      }, {} as Record<string, number>);
+      
+      const bestMonth = Object.entries(monthCounts).sort((a, b) => b[1] - a[1])[0];
+      currentMonth = bestMonth ? bestMonth[0] : new Date().toISOString().slice(0, 7);
+      const count = bestMonth ? bestMonth[1] : 0;
+      console.log(`[StaffPage] Auto-selected best data month: ${currentMonth} (Count: ${count})`);
+  } else if (!currentMonth) {
+      currentMonth = new Date().toISOString().slice(0, 7);
+  }
+  (window as any).currentDashboardMonth = currentMonth;
   console.log(`[StaffPage] Initializing... Global Month: ${currentMonth}`);
 
   // Check if data is ready
@@ -80,10 +96,13 @@ export function initStaffPage() {
   // Layer 2: Role Fit
   let roleFitStats: any[] = [];
   try {
-      roleFitStats = calculateRoleFit(monthAppointments, currentMonth);
-      renderRoleFitChart(roleFitStats);
-      renderRoleFitInsights(roleFitStats);
-      console.log("[StaffPage] Layer 2 (Role Fit) initialized.");
+    // --- Layer 2: Role Fit Structure Analysis (Value-Add Proportions) ---
+    const roleStats = calculateRoleFit(monthAppointments, currentMonth);
+    console.log(`[StaffPage] calculateRoleFit returned ${roleStats.length} stats. First stat example:`, roleStats[0]);
+    renderRoleFitChart(roleStats);
+    renderRoleFitInsights(roleStats);
+    roleFitStats = roleStats; // Assign to roleFitStats for later use
+    console.log("[StaffPage] Layer 2 (Role Fit) initialized.");
   } catch (error) {
       console.error("[StaffPage] Layer 2 init failed:", error);
   }
@@ -166,7 +185,7 @@ function renderRoleFitChart(stats: any[]) {
 
     // Sort Stats by Role Category (Fixed Order)
     const order = ['doctor', 'nurse', 'therapist', 'consultant', 'admin'];
-    stats.sort((a, b) => {
+    const sortedStats = [...stats].sort((a, b) => {
         const getRole = (str: string) => {
             if (str.includes('(')) return str.split('(')[1].replace(')', '').trim().toLowerCase();
             return 'other';
@@ -181,16 +200,24 @@ function renderRoleFitChart(stats: any[]) {
         return a.role.localeCompare(b.role); // secondary sort by name
     });
 
-    const labels = stats.map(s => s.role);
+    const labels = sortedStats.map(s => s.role);
     const categories = new Set<string>();
-    stats.forEach(s => Object.keys(s.categoryStats).forEach(c => categories.add(c)));
+    sortedStats.forEach(s => Object.keys(s.categoryStats).forEach(c => categories.add(c)));
     
+    // Safety: ensure common categories are always in the legend even if count is 0
+    ['inject', 'laser', 'rf', 'consult', 'facial', 'other'].forEach(c => categories.add(c));
+    
+    console.log(`[StaffPage] Rendering Chart with Categories:`, Array.from(categories));
     const datasets = Array.from(categories).map(cat => ({
         label: cat,
-        data: stats.map(s => s.categoryStats[cat] || 0),
+        data: sortedStats.map(s => s.categoryStats[cat] || 0),
         backgroundColor: getColorForCategory(cat),
         stack: 'Stack 0',
+        borderWidth: 0,
+        minBarLength: 5 // Ensure tiny values are visible
     }));
+    
+    console.log(`[StaffPage] Rendering Chart. Labels count: ${labels.length}, Datasets:`, datasets.map(d => `${d.label}(${d.data.reduce((a,b)=>a+b,0)})`));
 
     const ctx = canvas.getContext('2d');
     if (ctx) {
@@ -201,28 +228,28 @@ function renderRoleFitChart(stats: any[]) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false, // Performance and visibility safety
                 plugins: {
+                    legend: { 
+                        position: 'top', 
+                        labels: { font: { family: "'Noto Sans TC', sans-serif" }, usePointStyle: true } 
+                    },
                     tooltip: {
                         callbacks: {
-                            label: (context: any) => `${context.dataset.label}: ${context.raw} 筆`
+                            label: (context: any) => `${context.dataset.label}: ${context.raw} 次服務`
                         }
-                    }
-                },
-                layout: {
-                    padding: {
-                        bottom: 30 // 增加底部間距，防止旋轉標籤被切斷
                     }
                 },
                 scales: { 
                     x: { 
                         stacked: true,
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45,
-                            autoSkip: false // 顯示所有標籤，不隱藏
-                        }
+                        ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 }
                     }, 
-                    y: { stacked: true } 
+                    y: { 
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: '服務人次 (Count)', font: { weight: 'bold' } }
+                    } 
                 }
             }
         });
@@ -231,13 +258,14 @@ function renderRoleFitChart(stats: any[]) {
 
 function getColorForCategory(cat: string): string {
     const colors: Record<string, string> = {
-        'inject': '#3b82f6',
-        'laser': '#ef4444',
-        'consult': '#10b981',
-        'drip': '#f59e0b', 
-        'facial': '#8b5cf6',
-        'admin_work': '#6b7280', // Gray for admin
-        'other': '#9ca3af'
+        'inject': '#3b82f6',     // Blue
+        'laser': '#ef4444',      // Red
+        'rf': '#ec4899',         // Pink
+        'consult': '#10b981',    // Green
+        'drip': '#f59e0b',       // Amber
+        'facial': '#8b5cf6',     // Purple
+        'admin_work': '#6b7280', // Gray
+        'other': '#94a3b8'       // Slate
     };
     return colors[cat] || colors['other'];
 }

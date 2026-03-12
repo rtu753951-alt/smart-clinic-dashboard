@@ -259,7 +259,7 @@ class DataStore {
 
       return {
         appointment_id: String(raw.appointment_id ?? "").trim(),
-        date: String(raw.date ?? "").trim(),
+        date: String(raw.date ?? "").trim().replace(/\//g, "-"), // Normalize to dashes
         time: String(raw.time ?? "").trim(),
         customer_id: String(raw.customer_id ?? "").trim(),
         age: Number(raw.age ?? 0),

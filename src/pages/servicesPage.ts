@@ -53,8 +53,11 @@ function getDailyTopTreatmentMap(appointments: any[]) {
 // 工具：是否在指定月份
 // -----------------------
 function isInMonth(dateStr: string, year: number, month: number): boolean {
-  const d = new Date(dateStr);
-  return d.getFullYear() === year && d.getMonth() === month;
+  if (!dateStr) return false;
+  // Use string slicing for robustness against timezone/Date object quirks
+  // Expected format: YYYY-MM-DD
+  const targetYM = `${year}-${String(month + 1).padStart(2, "0")}`;
+  return dateStr.startsWith(targetYM);
 }
 
 // -----------------------
@@ -108,7 +111,7 @@ function computeRevenue(
   const serviceRevenue: Record<string, number> = {};
   const categoryRevenue: Record<string, number> = {};
 
-  appointments.forEach(a => {
+  appointments.forEach((a, idx) => {
     if (!isInMonth(a.date, targetYear, targetMonth)) return;
 
     const d = new Date(a.date);
@@ -118,15 +121,15 @@ function computeRevenue(
     let shouldIncludeRevenue = false;
 
     if (isFuture) {
-        // 未來：completed + no_show + cancelled
+        // 未來：completed + no_show + cancelled + paid
         // (含 cancelled/no_show 代表計算"原本預期會有的營收")
-        if (["completed", "checked_in", "no_show", "cancelled"].includes(a.status)) {
+        if (["completed", "checked_in", "no_show", "cancelled", "paid"].includes(a.status)) {
             shouldIncludeRevenue = true;
             hasFutureContribution = true;
         }
     } else {
-        // 過去 (含今天)：僅 completed
-        if (["completed", "checked_in"].includes(a.status)) {
+        // 過去 (含今天)：僅 completed + paid
+        if (["completed", "checked_in", "paid"].includes(a.status)) {
             shouldIncludeRevenue = true;
         }
     }
@@ -137,10 +140,14 @@ function computeRevenue(
     const isCompleted = status === "completed" || status === "checked_in";
     const isPotential = isCompleted || status === "booked";
     if (isPotential) potentialVisitCount++;
-    if (isCompleted) successVisitCount++; // 轉換率分子維持只看真正完成的
+    if (isCompleted) successVisitCount++; 
 
     // 若不計入營收，就跳過金額計算
     if (!shouldIncludeRevenue) return;
+
+    // Normalizing date key to YYYY-MM-DD for consistency
+    // Handle both YYYY-MM-DD and YYYY/MM/DD
+    const dateKey = a.date.slice(0, 10).replace(/\//g, "-");
 
     const items: string[] = (a.service_item || "")
          .split(";")
@@ -176,11 +183,15 @@ function computeRevenue(
       // 注意：successVisitCount 用於轉換率，這裡 orderCount 用於客單價
       // 因為未來 cancelled 沒真正完成，但我們這裡算進營收，所以也算進訂單數合理
 
-      if (!dailyRevenue[a.date]) dailyRevenue[a.date] = 0;
-      dailyRevenue[a.date] += sum;
+      if (!dailyRevenue[dateKey]) dailyRevenue[dateKey] = 0;
+      dailyRevenue[dateKey] += sum;
     }
   });
   
+  console.log(`[Services] computeRevenue: Processed ${appointments.length} total. Found ${orderCount} valid revenue orders for ${targetYear}-${targetMonth+1}. Total Revenue: ${totalRevenue}`);
+  if (appointments.length > 0 && orderCount === 0) {
+      console.warn("[Services] computeRevenue: Matching Dec appointments but ZERO revenue. Check status values or serviceMap.");
+  }
 
   const avgOrderValue = orderCount === 0 ? 0 : totalRevenue / orderCount;
   const conversionRate =
@@ -324,6 +335,10 @@ export function refreshServicesPage(targetYM: string) {
   const targetMonth = Number(monthStr) - 1;
 
   const appts = dataStore.appointments;
+  if (!appts || appts.length === 0) {
+      console.warn("[Services] No appointments in dataStore during refresh.");
+      return;
+  }
   const services = dataStore.services;
 
   // 1. 計算當月 (Simulated)
@@ -363,24 +378,12 @@ export function refreshServicesPage(targetYM: string) {
   const finalData = {
       ...currentResults,
       mom: mom,
-      prevRevenue: prevResults.totalRevenue,
-      targetYear,
-      targetMonth,
       dailyTopTreatments: getDailyTopTreatmentMap(appts),
-      revenueDelta,     // New
-      revenueDeltaPct   // New
+      revenueDelta,
+      revenueDeltaPct
   };
 
-  currentServicesData = finalData; // Cache for toggle
-
-  // Reset toggle UI to 'Month'
-  const btnMonth = document.getElementById("srv-struct-btn-month");
-  const btnAll = document.getElementById("srv-struct-btn-all");
-  const noteEl = document.getElementById("service-structure-note");
-
-  if (btnMonth) btnMonth.classList.add("active");
-  if (btnAll) btnAll.classList.remove("active");
-  if (noteEl) noteEl.textContent = "顯示所選月份之已完成療程營收結構（不含取消與未到診）";
+  currentServicesData = finalData;
 
   renderKPI(finalData);
   renderRevenueChart(finalData);
@@ -404,98 +407,47 @@ export function refreshServicesPage(targetYM: string) {
   renderPricingStrategy();
 }
 
-/**
- * 智慧營收保衛戰 (Smart Pricing Strategy)
- * 規則：
- * 1. 找出高 No-Show 療程 (e.g. Rate > 10% or Count > 5)
- * 2. 檢查 Package Usage (平均剩餘堂數 > 3)
- * 3. 建議 "預付訂金" 或 "術後保養組合 (Bundling)"
- */
 function renderPricingStrategy() {
     console.log("💎 Checking Smart Pricing Strategy (Revenue Page)...");
-
-    // 1. Analyze No-Show Rates by Service (Using current month or full history? Smart Pricing usually looks at history)
-    // Let's use Full History in DataStore for better sample size
     const serviceStats = new Map<string, { total: number; noShow: number }>();
 
     dataStore.appointments.forEach(a => {
         if (!a.service_item) return;
         const name = a.service_item;
         if (!serviceStats.has(name)) serviceStats.set(name, { total: 0, noShow: 0 });
-        
         const stat = serviceStats.get(name)!;
         stat.total++;
         if (a.status === 'no_show') stat.noShow++;
     });
 
-    // Find services with meaningful No-Show rate
     const candidates: string[] = [];
     serviceStats.forEach((stat, name) => {
-        if (stat.total < 10) return; // Ignore small sample
+        if (stat.total < 10) return;
         const rate = stat.noShow / stat.total;
-        if (rate > 0.05) { // Threshold: 5% No-Show
-             candidates.push(name);
-        }
+        if (rate > 0.05) candidates.push(name);
     });
     
-    // Sort by No-Show Count (Desc)
     candidates.sort((a, b) => serviceStats.get(b)!.noShow - serviceStats.get(a)!.noShow);
-    
-    // Fallback logic to show *something* if requested feature
-    if (candidates.length === 0) {
-        serviceStats.forEach((stat, name) => {
-             if (stat.noShow > 0) candidates.push(name);
-        });
-        candidates.sort((a, b) => serviceStats.get(b)!.noShow - serviceStats.get(a)!.noShow);
-    }
-
     if (candidates.length === 0) return; 
 
     const targetService = candidates[0]; 
-    
-    // 2. Check Package Usage
-    const pkgRecords = dataStore.packageUsage.filter(p => p.service_name === targetService);
-    let avgRemaining = 0;
-    if (pkgRecords.length > 0) {
-        const totalRem = pkgRecords.reduce((sum, p) => sum + p.remaining_sessions, 0);
-        avgRemaining = totalRem / pkgRecords.length;
-    }
-    
-    // 3. Determine Strategy
-    const isHighValue = /Thermage|Ulthera|音波|電波/.test(targetService);
-    
-    if (avgRemaining > 2 || isHighValue || serviceStats.get(targetService)!.noShow >= 2) {
-         // 4. Inject Alert into #srv-ai-suggestions
-         const container = document.getElementById('srv-ai-suggestions');
-         if (!container) return;
-         if (document.getElementById('ai-smart-pricing')) return;
+    const container = document.getElementById('srv-ai-suggestions');
+    if (!container || document.getElementById('ai-smart-pricing')) return;
 
-         const alertHTML = `
-            <div id="ai-smart-pricing" style="
-                margin-top: 16px;
-                padding: 12px; 
-                background: rgba(16, 185, 129, 0.08); 
-                border-left: 3px solid #10b981; 
-                border-radius: 6px;
-                display: flex;
-                align-items: start;
-                gap: 10px;
-                animation: fadeIn 0.5s ease-out;
-            ">
-                <div style="font-size: 1.1rem; color: #10b981;">💰</div>
-                <div>
-                     <strong style="color: #047857; font-size: 0.9rem; display: block; margin-bottom: 3px;">智慧營收保衛戰</strong>
-                     <p style="color: #065f46; font-size: 0.85rem; line-height: 1.4; margin: 0;">
-                        針對 <strong style="text-decoration: underline;">${targetService}</strong>（No-Show 率 ${(serviceStats.get(targetService)!.noShow / serviceStats.get(targetService)!.total * 100).toFixed(1)}%），建議採取「預付訂金制」或「術後保養組合包 (Bundling)」，在不降價的前提下降低 No-show 損失。
-                     </p>
-                </div>
+    const alertHTML = `
+        <div id="ai-smart-pricing" style="margin-top: 16px; padding: 12px; background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10b981; border-radius: 6px; display: flex; align-items: start; gap: 10px;">
+            <div style="font-size: 1.1rem; color: #10b981;">💰</div>
+            <div>
+                 <strong style="color: #047857; font-size: 0.9rem; display: block; margin-bottom: 3px;">智慧營收保衛戰</strong>
+                 <p style="color: #065f46; font-size: 0.85rem; line-height: 1.4; margin: 0;">
+                    針對 ${targetService}，建議採取「預付訂金制」或「術後保養組合包」，在不降價的前提下降低 No-show 損失。
+                 </p>
             </div>
-         `;
-         
-         const tempDiv = document.createElement('div');
-         tempDiv.innerHTML = alertHTML;
-         container.appendChild(tempDiv);
-    }
+        </div>
+    `;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = alertHTML;
+    container.appendChild(tempDiv);
 }
 
 // -----------------------------
@@ -509,44 +461,24 @@ function renderRevenueChart(data: any) {
     const ctx = cvs.getContext("2d");
     if (!ctx) return;
 
-    // 1. 準備日期資料
     const year = data.targetYear;
-    const month = data.targetMonth; // 0-based
+    const month = data.targetMonth;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     
     const labels: string[] = [];
     const values: number[] = [];
     
-    // 基準日期 (String compare is safer for "YYYY-MM-DD")
-    const cutoffDateStr = "2025-12-17";
-
     for (let d = 1; d <= daysInMonth; d++) {
-        // Format: YYYY-MM-DD
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
         labels.push(dateStr);
-        values.push(data.dailyRevenue[dateStr] || 0);
+        const val = data.dailyRevenue[dateStr];
+        values.push(typeof val === 'number' ? val : 0);
     }
     
-    // 2. 設定 Segment 樣式 (實線 vs 虛線)
-    const segmentStyle = {
-        borderDash: (ctx: any) => {
-            const dateStr = labels[ctx.p1DataIndex];
-            if (dateStr > cutoffDateStr) return [6, 6]; // Dashed
-            return undefined; // Solid
-        },
-        borderColor: (ctx: any) => {
-             const dateStr = labels[ctx.p1DataIndex];
-             if (dateStr > cutoffDateStr) return "#f39c12"; // Orange for estimated
-             return "#10b981"; // Primary Green for actual
-        }
-    };
-
-    // 3. 銷毀舊圖表
     if (revenueChart) {
         revenueChart.destroy();
     }
 
-    // 4. 建立新圖表
     revenueChart = new Chart(ctx, {
         type: "line",
         data: {
@@ -554,88 +486,54 @@ function renderRevenueChart(data: any) {
             datasets: [{
                 label: "每日營收",
                 data: values,
+                borderColor: "#10b981", 
+                backgroundColor: "rgba(16, 185, 129, 0.1)",
                 fill: true,
-                backgroundColor: (context: any) => {
-                    const chart = context.chart;
-                    const {ctx, chartArea} = chart;
-                    if (!chartArea) return null;
-                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                    gradient.addColorStop(0, "rgba(16, 185, 129, 0.05)");
-                    gradient.addColorStop(1, "rgba(16, 185, 129, 0.2)");
-                    return gradient;
-                },
-                borderColor: "#10b981", // default color
-                borderWidth: 2,
+                borderWidth: 3,
                 tension: 0.3,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                segment: segmentStyle 
+                pointRadius: 4,
+                pointBackgroundColor: "#fff",
+                pointBorderWidth: 2,
+                pointHoverRadius: 7
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 10, bottom: 0, left: 10, right: 10 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(50, 50, 50, 0.9)', // Darker background
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    titleFont: { family: "'Noto Sans TC', sans-serif", size: 14 },
-                    bodyFont: { family: "'Noto Sans TC', sans-serif", size: 13 },
-                    callbacks: {
-                        title: function(context: any) {
-                            const dateStr = context[0].label;
-                            const d = new Date(dateStr);
-                            const dayOfWeek = d.getDay();
-                            const dayNames = ["(日)", "(一)", "(二)", "(三)", "(四)", "(五)", "(六)"];
-                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                            
-                            let title = `${dateStr} ${dayNames[dayOfWeek]}`;
-                            if (isWeekend) {
-                                title += " ★週末";
-                            }
-                            // cutoffDateStr is defined in the outer scope of renderRevenueChart
-                            if (dateStr > "2025-12-17") { 
-                                title += " (預估)";
-                            }
-                            return title;
-                        },
-                        label: function(context: any) {
-                            return `💰 營收: ${formatCurrency(context.parsed.y)}`;
-                        },
-                        afterBody: function(context: any) {
-                            const dateStr = context[0].label;
-                            const topItem = data.dailyTopTreatments ? data.dailyTopTreatments[dateStr] : null;
-                            if (topItem) {
-                                return `👑 Top 1: ${topItem.name} (${formatCurrency(topItem.amount)})`;
-                            }
-                            return [];
-                        }
-                    },
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
                     padding: 12,
-                    cornerRadius: 8,
-                    displayColors: false
+                    callbacks: {
+                        label: function(context: any) {
+                             const val = context.parsed.y;
+                             return `💰 營收: NT$${val.toLocaleString()}`;
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
+                    grid: { display: false },
                     ticks: {
-                        color: '#4b5563', // Darker text
-                        font: { family: "'Inter', sans-serif", size: 11, weight: 500 },
-                        maxTicksLimit: 10,
-                    },
-                    grid: { display: false }
+                        color: '#64748b',
+                        font: { size: 10 },
+                        maxRotation: 45,
+                        autoSkip: true,
+                        maxTicksLimit: 12
+                    }
                 },
                 y: {
                     beginAtZero: true,
+                    grid: { color: 'rgba(226, 232, 240, 0.5)' },
                     ticks: {
-                        color: '#4b5563', // Darker text
+                        color: '#64748b',
                         callback: (v: any) => {
                             if (v >= 10000) return (v / 10000).toFixed(0) + "萬";
                             return v;
-                        },
-                        font: { family: "'Inter', sans-serif", size: 11, weight: 500 }
+                        }
                     }
                 }
             }
@@ -960,11 +858,42 @@ function generateCustomLegend(chart: any, labels: string[], colors: string[], va
 // -----------------------------
 // ⭐ 入口：頁面初始化
 // -----------------------------
-export function initServicesPage() {
+export async function initServicesPage() {
   console.log("[Services] Init Page");
 
+  // 1. 檢查資料是否就緒 (Strict Readiness Check)
+  if (!dataStore.isAppointmentsLoaded) {
+      console.log("[Services] Appointments data not ready. Waiting...");
+      const kpiContainer = document.querySelector(".kpi-grid");
+      if (kpiContainer) {
+          // Temporarily show loading in KPI area
+          (kpiContainer as HTMLElement).style.opacity = "0.5";
+      }
+      
+      const chartContainer = document.getElementById("srvRevenueChart")?.parentElement;
+      if (chartContainer) {
+          chartContainer.innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:300px; color:#64748b;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                <p>正在載入營收大數據...</p>
+            </div>`;
+      }
+
+      await dataStore.prefetchCoreData();
+      
+      // Restore UI state
+      if (kpiContainer) (kpiContainer as HTMLElement).style.opacity = "1";
+      // Re-render chart container skeleton if we replaced it
+      if (chartContainer) {
+          chartContainer.innerHTML = `<canvas id="srvRevenueChart"></canvas>`;
+      }
+  }
+
   const appts = dataStore.appointments;
-  if (!appts || appts.length === 0) return;
+  if (!appts || appts.length === 0) {
+      console.error("[Services] No data available after loading.");
+      return;
+  }
 
   // 取得所有月份
   const months = [...new Set(
@@ -972,6 +901,8 @@ export function initServicesPage() {
   )].sort();
 
   const select = document.getElementById("monthSelect") as HTMLSelectElement;
+  if (!select) return;
+
   select.innerHTML = months
     .map(m => `<option value="${m}">${m}</option>`)
     .join("");
@@ -985,9 +916,9 @@ export function initServicesPage() {
   }
 
   // 綁定事件：切換月份
-  select.addEventListener("change", e => {
+  select.onchange = (e) => {
     refreshServicesPage((e.target as HTMLSelectElement).value);
-  });
+  };
 
   // 綁定事件：結構圖切換 (本月 vs 歷史)
   const btnMonth = document.getElementById("srv-struct-btn-month");

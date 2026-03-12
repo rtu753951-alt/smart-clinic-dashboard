@@ -23,7 +23,7 @@ function getStaffRoleMap(): Map<string, string> {
 }
 
 /**
- * 分析職務與服務項目的匹配度 (Grouped by Individual Name)
+ * 分析職務與服務項目匹配度 (Grouped by Individual Name)
  * Updated: Uses Involvement Ratios to show "Effective Load" structure, not just raw count.
  */
 export function calculateRoleFit(appointments: AppointmentRecord[], targetMonth?: string): RoleFitStats[] {
@@ -33,6 +33,8 @@ export function calculateRoleFit(appointments: AppointmentRecord[], targetMonth?
     // Helper to process a person
     const processPerson = (name: string, serviceCategory: string) => {
         if (!name || name === 'nan' || name === 'undefined') return;
+        
+        const safeCategory = (serviceCategory || 'other').toLowerCase().trim();
         
         // Find staff type (role) for this person
         let roleType = staffMap.get(name);
@@ -58,44 +60,41 @@ export function calculateRoleFit(appointments: AppointmentRecord[], targetMonth?
             };
         }
 
-        // Apply Ratio
-        const ratios = INVOLVEMENT_RATIOS[serviceCategory] || INVOLVEMENT_RATIOS['other'];
-        const ratio = ratios[roleType] !== undefined ? ratios[roleType] : 0;
-
-        // If ratio is 0, we can still count it as trace load (e.g. 0.05) or ignore.
-        // But if we ignore, chart might be empty for primary assigned staff who has 0 ratio? 
-        // (Unlikely, if assigned, ratio usually > 0 or at least should be).
-        // Let's use actual ratio. Exception: if ratio is 0 but name is explicitly assigned, give minimum 0.05?
-        // Let's stick to strict ratio to show the "Unbalanced" nature if desired.
-        // But for "Structure Analysis", users usually want to see "What are they doing?".
-        // If Laser=0.15 Doctor, then chart shows small Red bar. This is what user wants ("Proportional").
-        
-        const effectiveCount = ratio;
+        // Apply Ratio - For "Role Fit" bar chart, researchers often want to see "What items are they doing?"
+        // If we use fractional ratios (0.15), the bars are too microscopic to see (0.15 vs 250 scale).
+        // Let's use raw count (1.0 per person per appointment) to show the "Architecture" clearly.
+        const effectiveCount = 1.0; 
 
         if (effectiveCount > 0) {
             stats[key].totalTasks += effectiveCount;
             // Round to 2 decimals to avoid floating point mess in UI
-            stats[key].categoryStats[serviceCategory] = (stats[key].categoryStats[serviceCategory] || 0) + effectiveCount;
+            stats[key].categoryStats[safeCategory] = (stats[key].categoryStats[safeCategory] || 0) + effectiveCount;
         }
     };
+
+    if (!appointments || appointments.length === 0) {
+        console.warn("[RoleFit] No appointments provided for analysis.");
+    }
 
     appointments.forEach(apt => {
         if (apt.status === 'cancelled') return;
 
-        const serviceName = apt.service_item;
+        const serviceName = (apt.service_item || '').trim();
         const service = dataStore.services.find(s => s.service_name === serviceName);
         const category = service?.category || 'other';
 
         // 1. Process Doctor
-        if (apt.doctor_name) {
+        if (apt.doctor_name && apt.doctor_name !== 'nan') {
             processPerson(apt.doctor_name.trim(), category);
         }
 
         // 2. Process Staff Role (Secondary)
-        if (apt.assistant_name) {
+        if (apt.assistant_name && apt.assistant_name !== 'nan') {
             processPerson(apt.assistant_name.trim(), category);
         }
     });
+    
+    console.log(`[RoleFit] Processed ${appointments.length} appointments. Current stats keys:`, Object.keys(stats));
 
     // --- INTEGRATION: Staff Workload CSV ---
     const manualWorkload = dataStore.staffWorkload || [];
@@ -107,27 +106,23 @@ export function calculateRoleFit(appointments: AppointmentRecord[], targetMonth?
         const count = rec.count || 0;
         
         // Handle Garbled Name / Admin Detection Early
-        // If name is ??? or empty, but action_type is admin
         const type = (rec.action_type || '').toLowerCase();
         if (name === '???' || name === '' || type === 'admin') {
-             if (type === 'admin' || type.includes('admin') || name.includes('S016')) {
-                 // Force a readable name for the chart
-                 if (name === '???' || name === '') name = "行政人員 (Admin)";
-             }
+            if (type === 'admin' || type.includes('admin') || name.includes('S016')) {
+                if (name === '???' || name === '') name = "行政人員 (Admin)";
+            }
         }
         let role = staffMap.get(name);
 
         if (!role) {
-             const type = (rec.action_type || '').toLowerCase();
-             
-             if (type === 'admin' || type.includes('admin')) role = 'admin';
-             else if (name.includes('行政') || name.toLowerCase().includes('admin')) role = 'admin';
-             else if (name.includes('S016')) role = 'admin';
-
-             else if (name.includes('醫師')) role = 'doctor';
-             else if (name.includes('護理師')) role = 'nurse';
-             else if (name.includes('美療師')) role = 'therapist';
-             else if (name.includes('諮詢師')) role = 'consultant';
+            const typeLower = (rec.action_type || '').toLowerCase();
+            if (typeLower === 'admin' || typeLower.includes('admin')) role = 'admin';
+            else if (name.includes('行政') || name.toLowerCase().includes('admin')) role = 'admin';
+            else if (name.includes('S016')) role = 'admin';
+            else if (name.includes('醫師')) role = 'doctor';
+            else if (name.includes('護理師')) role = 'nurse';
+            else if (name.includes('美療師')) role = 'therapist';
+            else if (name.includes('諮詢師')) role = 'consultant';
         }
         
         // Use Heuristics for Category Color
@@ -138,11 +133,13 @@ export function calculateRoleFit(appointments: AppointmentRecord[], targetMonth?
         else if (role === 'doctor') category = 'laser';
         else if (role === 'admin') category = 'admin_work';
         
-        // Manual records are usually "Tasks". Apply ratio.
+        // Manual records are usually "Tasks". 
         for(let i=0; i<count; i++) {
              processPerson(name, category);
         }
     });
+
+    console.log(`[RoleFit] Logic complete. Final staff count: ${Object.keys(stats).length}`);
 
     // Compute Scores & Rounding
     return Object.values(stats).map(stat => {
@@ -180,7 +177,6 @@ export function calculateRoleFit(appointments: AppointmentRecord[], targetMonth?
 export function generateRoleFitInsights(stats: RoleFitStats[]): string[] {
     const insights: string[] = [];
     
-    // Find highest misalignment
     const sorted = [...stats].sort((a,b) => b.misalignmentScore - a.misalignmentScore);
     const critical = sorted.find(s => s.misalignmentScore > 20);
 

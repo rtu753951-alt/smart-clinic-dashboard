@@ -35,6 +35,7 @@ import "../style_customer_insights.css";
 import "./styles/workload-cards.css";
 import "./styles/launchCover.css";
 import "./styles/admin.css";
+import "./styles/dashboard.css"; // formerly sandbox.css
 
 // === Import 區 ===
 import { initPanelController, bindModalEvents } from "./ui/panelController.js";
@@ -235,5 +236,6 @@ function setupSystemHealthStatus() {
 }
 
 // Expose to window for calling after data load
+(window as any).dataStore = dataStore;
 (window as any).updateSystemHealthStatus = setupSystemHealthStatus;
 

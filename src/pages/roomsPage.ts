@@ -26,19 +26,52 @@ const PAGE_SIZE = 50;
 export function initRoomsPage() {
     console.log("[RoomsPage] Init");
 
-    // 1. 取得全域月份
-    const globalMonth = (window as any).currentDashboardMonth || new Date().toISOString().slice(0, 7);
+    // 1. 取得全域月份 (與智慧自動選取)
+    let globalMonth = (window as any).currentDashboardMonth;
 
-    // 2. 檢查是否需要重新計算數據 (緩存機制)
-    // 若月份變更或尚未有緩存資料，則執行過濾與聚合
+    if (!globalMonth && dataStore.appointments && dataStore.appointments.length > 0) {
+        // 智慧選取：找資料最多的月份
+        const monthCounts = dataStore.appointments.reduce((acc, a) => {
+            const m = a.date.slice(0, 7);
+            acc[m] = (acc[m] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        const bestMonth = Object.entries(monthCounts).sort((a, b) => b[1] - a[1])[0];
+        globalMonth = bestMonth ? bestMonth[0] : new Date().toISOString().slice(0, 7);
+        (window as any).currentDashboardMonth = globalMonth;
+        console.log(`[RoomsPage] Auto-selected best month: ${globalMonth}`);
+    } else if (!globalMonth) {
+        globalMonth = new Date().toISOString().slice(0, 7);
+        (window as any).currentDashboardMonth = globalMonth;
+    }
+
+    // 2. 檢查資料是否就緒 (Strict Readiness Check)
+    if (!dataStore.isAppointmentsLoaded) {
+        console.log("[RoomsPage] Appointments data not ready. Prefetching...");
+        const container = document.getElementById("roomHeatmap");
+        if (container) {
+            container.innerHTML = `
+                <div style="text-align:center; padding: 60px; color:#64748b;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i>
+                    <p>正在載入房室數據分析中...</p>
+                </div>`;
+        }
+        
+        dataStore.loadAppointments().then(() => {
+            console.log("[RoomsPage] Data loaded, re-initializing...");
+            initRoomsPage();
+        });
+        return;
+    }
+
+    // 3. 檢查是否需要重新計算數據 (緩存機制)
     if (globalMonth !== cachedMonth || filteredAppts.length === 0) {
         console.log(`[RoomsPage] Data Refresh for ${globalMonth}`);
         updateDataCache(globalMonth);
-    } else {
-        console.log(`[RoomsPage] Using Cached Data for ${globalMonth}`);
     }
 
-    // 3. 渲染各區塊
+    // 4. 渲染各區塊
     renderRoomHeatmap();
     renderEquipmentUsage();
     renderEquipmentLog(); // 內含分頁邏輯
@@ -68,6 +101,8 @@ function updateDataCache(month: string) {
         return VALID_STATUSES.includes(status);
     });
 
+    console.log(`[RoomsPage] Month: ${month}, Found ${filteredAppts.length} valid appointments.`);
+
     // 2. 聚合計算
     equipUsageMinutes = {};
     roomHeatmapData = {};
@@ -89,6 +124,8 @@ function updateDataCache(month: string) {
             roomHeatmapData[room][hour] = (roomHeatmapData[room][hour] || 0) + 1;
         }
     });
+
+    console.log(`[RoomsPage] Aggregate result. Equipment keys:`, Object.keys(equipUsageMinutes));
 
     // 3. 重置分頁
     currentPage = 1;
@@ -221,25 +258,34 @@ function renderEquipmentUsage() {
     if (!canvas) return;
 
     // 資料準備
-    const labels = Object.keys(equipUsageMinutes);
+    const labels = Object.keys(equipUsageMinutes).sort(); // 確保排序一致
     const values = labels.map(k => equipUsageMinutes[k]);
 
+    console.log(`[RoomsPage] Rendering Equipment Chart. Labels: ${labels.length}, Data:`, values);
+
     // 若無數據
-    if (labels.length === 0 && equipChart) {
-        equipChart.data.labels = [];
-        equipChart.data.datasets[0].data = [];
-        equipChart.update();
+    if (labels.length === 0) {
+        if (equipChart) {
+            equipChart.destroy();
+            equipChart = null;
+        }
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '14px sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.textAlign = 'center';
+            ctx.fillText('本月尚無設備使用數據', canvas.width / 2, canvas.height / 2);
+        }
         return;
     }
 
     // 更新或建立圖表
     if (equipChart) {
-        // Update existing chart
         equipChart.data.labels = labels;
         equipChart.data.datasets[0].data = values;
         equipChart.update();
     } else {
-        // Create new chart
         equipChart = new Chart(canvas, {
             type: "bar",
             data: {
@@ -248,19 +294,21 @@ function renderEquipmentUsage() {
                     {
                         label: "本月累計使用 (分鐘)",
                         data: values,
-                        backgroundColor: "rgba(59, 130, 246, 0.6)",
+                        backgroundColor: "rgba(59, 130, 246, 0.7)",
                         borderColor: "rgba(59, 130, 246, 1)",
                         borderWidth: 1,
-                        borderRadius: 4
+                        borderRadius: 6,
+                        minBarLength: 5 // 關鍵：確保小數值也能看見
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: false, // 暫時關閉動畫以利觀察即時變化
                 layout: {
                     padding: {
-                        left: 40, // 增加左側 Padding 避免 Y 軸標籤被切到 (Increased to 40)
+                        left: 20,
                         right: 20,
                         top: 20,
                         bottom: 10
@@ -269,19 +317,35 @@ function renderEquipmentUsage() {
                 scales: {
                     y: { 
                         beginAtZero: true,
-                        title: { display: true, text: '分鐘' },
-                        grace: '5%' // 頂部留白，避免最高柱狀圖頂到邊界
+                        ticks: {
+                            callback: (value: any) => value.toLocaleString() + ' min'
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
+                        suggestedMax: 100 // 基本高度
                     },
                     x: {
+                        grid: { display: false },
                         ticks: {
-                            autoSkip: false // 確保每個設備標籤都顯示
+                            font: { size: 12 }
                         }
                     }
                 },
                 plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { boxWidth: 12, usePointStyle: true }
+                    },
                     tooltip: {
-                        mode: 'index',
-                        intersect: false
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        padding: 12,
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            label: (context: any) => ` 使用時長: ${context.parsed.y.toLocaleString()} 分鐘`
+                        }
                     }
                 }
             }
